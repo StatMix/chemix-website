@@ -8,28 +8,29 @@ title: Description of the project
 
 **Instructors**
 
-| Name                          | Contact                                                                                                                                     | Location     | Role       |
-|----------|-----------------------------------------|----------|----------|
-| Prof. Amy Herring             | <a href="mailto:amy.herring@duke.edu" title="email"><i class="fa fa-envelope"></i></a> [amy.herring\@duke.edu](mailto:amy.herring@duke.edu) | Old Chem 208 | Supervisor |
-| [Yunran Chen](yunranchen.com) | <a href="mailto:yunran.chen@duke.edu" title="email"><i class="fa fa-envelope"></i></a> [yunran.chen\@duke.edu](mailto:yunran.chen@duke.edu) | Old Chem 022 | Mentor     |
+| Name                                   | Contact                                                                                                                                     | Location     | Role       |
+|-------------|-----------------------------------|-------------|-------------|
+| Prof. Amy Herring                      | <a href="mailto:amy.herring@duke.edu" title="email"><i class="fa fa-envelope"></i></a> [amy.herring\@duke.edu](mailto:amy.herring@duke.edu) | Old Chem 208 | Supervisor |
+| [Yunran Chen](https://yunranchen.com/) | <a href="mailto:yunran.chen@duke.edu" title="email"><i class="fa fa-envelope"></i></a> [yunran.chen\@duke.edu](mailto:yunran.chen@duke.edu) | Old Chem 022 | Mentor     |
 
 <br>
 
 **Research Assistants**
 
-| Name | Contact | Location |     |
-|------|---------|----------|-----|
-| TBD  | TBD     | TBD      |     |
+| Name          | Contact              | Role               |     |
+|---------------|----------------------|--------------------|-----|
+| Olivia Fan    | <a href="mailto:zimeng.fan@duke.edu" title="email"><i class="fa fa-envelope"></i></a> [zimeng.fan\@duke.edu](mailto:zimeng.fan@duke.edu) | Research Assistant |     |
+| Ryan Mitchell | <a href="mailto:ryan.mitchell@duke.edu" title="email"><i class="fa fa-envelope"></i></a> [ryan.mitchell\@duke.edu](mailto:ryan.mitchell@duke.edu)  | Research Assistant |     |
 
 ## Project Meetings
 
 |          | Day | Time | Location |
 |----------|-----|------|----------|
-| Meetings | TBD | TBD  | TBD      |
+| Meetings | Tuesdays | TBD  |   Old Chem 208    |
 
 ## Project Description
 
-We are exposed to numerous environmental chemicals each day. We are interested in quantifying the health effects of environmental chemical mixtures, assessing joint actions, and identifying the interactions of combined chemicals. Analyzing health effects of chemical exposures can contribute to preventive measures to mitigate the potential impact of these exposures. 
+We are exposed to numerous environmental chemicals each day. We are interested in quantifying the health effects of environmental chemical mixtures, assessing joint actions, and identifying the interactions of combined chemicals. Analyzing health effects of chemical exposures can contribute to preventive measures to mitigate the potential impact of these exposures.
 
 In this project, we aim to summarize advanced statistical approaches for analysis of complex mixtures and knit them to R tutorials to make them accessible to researchers without extensive statistics or mathematics backgrounds. This will include online tutorials to introduce advanced statistical approaches to scientists and to provide examples of their use using national survey data. A possible side project, depending on skills and interests, includes improving workflow using virtual lab notebooks for data collection and annotation.
 
@@ -51,8 +52,10 @@ By the end of the semester, we will have ...
 
 ## Important Dates
 
--   **Friday, August 12 at 5:00pm** Last day to post projects
--   **Monday, August 22 at 12:00am** First day to accept applications
 -   **Friday, September 2 at 5:00pm** Last day to accept applications
 -   **Saturday, September 3 at 12:00am** First day to agree to contracts
 -   **Friday, September 9 at 5:00pm** Last day to agree to contracts
+-   **09/15 11am-12pm** SuperFund meeting
+-   **09/23 all day** SuperFund Symposium
+-   **10/20 1pm-2pm** SuperFund meeting
+-   **11/10 11am-12pm** SuperFund meeting
