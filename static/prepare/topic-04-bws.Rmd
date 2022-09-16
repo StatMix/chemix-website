@@ -1,0 +1,19 @@
+---
+title: "BWS: Bayesian Weighted Sums"
+output: 
+  html_document:
+    css: "prepare.css"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+### Related Paper
+
+-   [Bayesian Weighted Sums: A Flexible Approach to Estimate Summed Mixture Effects](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7913173/)
+
+### R package
+
+-   [bws](https://cran.r-project.org/web/packages/bws/bws.pdf)

@@ -1,0 +1,20 @@
+---
+title: "WQS: Weighted Quantile Sum Regression"
+output: 
+  html_document:
+    css: "prepare.css"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Online Tutorials
+
+-   [Course Materials of “Statistical methods for Environmental Mixtures”](https://bookdown.org/andreabellavia/mixtures/the-weighted-quantile-sum-wqs-and-its-extensions.html)
+
+### Related Paper
+
+-   [Assessment of Weighted Quantile Sum Regression for Modeling Chemical Mixtures and Cancer Risk](https://pubmed.ncbi.nlm.nih.gov/26005323/)
+
+-   [A Quantile-Based g-Computation Approach to Addressing the Effects of Exposure Mixtures](https://pubmed.ncbi.nlm.nih.gov/32255670/)

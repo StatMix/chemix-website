@@ -1,0 +1,16 @@
+---
+title: "Introduction"
+output: 
+  html_document:
+    css: "prepare.css"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Materials 
+
+-   [Course Materials of “Statistical methods for Environmental Mixtures”](https://bookdown.org/andreabellavia/mixtures/preface.html) 
+
+-   [PRIME](https://www.mdpi.com/1660-4601/19/3/1378)

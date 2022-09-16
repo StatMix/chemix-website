@@ -1,0 +1,21 @@
+---
+title: "Intro to R and Linear Regression"
+output: 
+  html_document:
+    css: "prepare.css"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Materials 
+
+For Regression Analysis:
+
+  -   [STA 210 Course Website](https://mine-cr.com/teaching/sta210/)
+
+For Intro to R:
+
+  -   [Data Science in a Box](https://mine-cr.com/project/datasciencebox/)
+
