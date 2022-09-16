@@ -1,5 +1,5 @@
 ---
-title: "Quantile G-Computation"
+title: "Quantile G-Computation "
 output: 
   html_document:
     css: "prepare.css"
