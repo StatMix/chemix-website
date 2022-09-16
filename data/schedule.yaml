@@ -2,12 +2,12 @@ lessons:
   - title: '<span class="fake-header-table"></span>'
     header: True
     
-  - week: "Week 01"
-    date: "Mon, Aug 23"
-    title: "Introduction to the research project!"
-    prepare: "week-01.html"
-    slides: "01-welcome.html"
-    ae: "ae-01-movies.html"
-    lab: "lab-01-ikea.html"
+  - week: ""
+    date: ""
+    title: ""
+    prepare: ""
+    slides: ""
+    ae: ""
+    lab: ""
 
     

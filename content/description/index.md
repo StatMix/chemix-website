@@ -9,7 +9,7 @@ title: Description of the project
 **Instructors**
 
 | Name                                   | Contact                                                                                                                                     | Location     | Role       |
-|-------------|-----------------------------------|-------------|-------------|
+|----------------|--------------------------|----------------|----------------|
 | Prof. Amy Herring                      | <a href="mailto:amy.herring@duke.edu" title="email"><i class="fa fa-envelope"></i></a> [amy.herring\@duke.edu](mailto:amy.herring@duke.edu) | Old Chem 208 | Supervisor |
 | [Yunran Chen](https://yunranchen.com/) | <a href="mailto:yunran.chen@duke.edu" title="email"><i class="fa fa-envelope"></i></a> [yunran.chen\@duke.edu](mailto:yunran.chen@duke.edu) | Old Chem 022 | Mentor     |
 
@@ -17,16 +17,18 @@ title: Description of the project
 
 **Research Assistants**
 
-| Name          | Contact              | Role               |     |
-|---------------|----------------------|--------------------|-----|
-| Olivia Fan    | <a href="mailto:zimeng.fan@duke.edu" title="email"><i class="fa fa-envelope"></i></a> [zimeng.fan\@duke.edu](mailto:zimeng.fan@duke.edu) | Research Assistant |     |
-| Ryan Mitchell | <a href="mailto:ryan.mitchell@duke.edu" title="email"><i class="fa fa-envelope"></i></a> [ryan.mitchell\@duke.edu](mailto:ryan.mitchell@duke.edu)  | Research Assistant |     |
+| Name          | Contact                                                                                                                                           | Role               |     |
+|-----------------|---------------------|-------------------|-----------------|
+| Olivia Fan    | <a href="mailto:zimeng.fan@duke.edu" title="email"><i class="fa fa-envelope"></i></a> [zimeng.fan\@duke.edu](mailto:zimeng.fan@duke.edu)          | Research Assistant |     |
+| Ryan Mitchell | <a href="mailto:ryan.mitchell@duke.edu" title="email"><i class="fa fa-envelope"></i></a> [ryan.mitchell\@duke.edu](mailto:ryan.mitchell@duke.edu) | Research Assistant |     |
+| Bradley Bowen | <a href="mailto:bradley.bowen@duke.edu" title="email"><i class="fa fa-envelope"></i></a> [bradley.bowen\@duke.edu](mailto:bradley.bowen@duke.edu) | Research Assistant |     |
 
 ## Project Meetings
 
-|          | Day | Time | Location |
-|----------|-----|------|----------|
-| Meetings | Tuesdays | TBD  |   Old Chem 208    |
+|          | Day        | Time           | Location     |
+|----------|------------|----------------|--------------|
+| Meetings | Wednesdays | 9:15am-10:15am | Old Chem 208 |
+|          | Thursdays  | 3:30pm-4:30pm  | Old Chem 208 |
 
 ## Project Description
 
