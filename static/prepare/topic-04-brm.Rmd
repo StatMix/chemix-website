@@ -1,0 +1,32 @@
+---
+title: "BRM: Bayesian Regression Model"
+output: 
+  html_document:
+    css: "prepare.css"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+### Related Tutorial
+
+-   [An Introduction to Bayesian Thinking](https://statswithr.github.io/book/)(Ch 1,2,6)
+-   [Introduction to Bayesian Regression](https://biostat.app.vumc.org/wiki/pub/Main/StatisticalComputingSeries/bayes_reg_rstanarm.html)
+
+### R package
+
+-   [brms](https://paul-buerkner.github.io/brms/)
+
+-   [rstanarm](https://cran.r-project.org/web/packages/rstanarm/rstanarm.pdf)
+
+### Framework
+
+-   Brief introduction on Bayesian statistics, how it different from frequentists' view
+
+-   Introduction to Bayesian regression. Including assumption, estimation methods, most importantly, how to interpret
+
+-   Tutorial for Bayesian regression
+
+-   Bayesian hierarchical model (? Probably)
