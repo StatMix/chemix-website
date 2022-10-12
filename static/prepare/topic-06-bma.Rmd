@@ -1,0 +1,23 @@
+---
+title: "BMA: Bayesian Model Averaging"
+output: 
+  html_document:
+    css: "prepare.css"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+### Related Paper
+
+-   [Bayesian Model Averaging: A Tutorial](https://www.jstor.org/stable/2676803#metadata_info_tab_contents)
+
+-   [A Conceptual Introduction to Bayesian Model Averaging](https://journals.sagepub.com/doi/full/10.1177/2515245919898657)
+
+### R package
+
+-   [BMA: An R package for Bayesian Model Averaging](https://cran.r-project.org/doc/Rnews/Rnews_2005-2.pdf)
+
+-   [BMA manual](https://cran.r-project.org/web/packages/BMA/BMA.pdf)
