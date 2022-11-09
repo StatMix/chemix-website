@@ -57,4 +57,4 @@ By the end of the semester, we will have ...
 -  Make sure you have the R project linked to the repo.
 -  Upload your .Rmd/.qmd file to the folder: static -> slides
 -  Knit your file to .html
--  Edit the . yaml file: data/schedule.yaml
+-  Edit the . yaml file: data/schedule.yaml. Put the name of your uploaded tutorial after `ae:`
