@@ -27,8 +27,8 @@ title: Description of the project
 
 |          | Day        | Time           | Location     |
 |----------|------------|----------------|--------------|
-| Meetings | Wednesdays | 9:15am-10:15am | Old Chem 208 |
-|          | Thursdays  | 3:30pm-4:30pm  | Old Chem 208 |
+| Meetings | Wednesdays | 9:15am-9:45am | Old Chem 208 |
+|          | Mondays  | 3:30pm-4:00pm  | Old Chem 208 |
 
 ## Project Description
 
@@ -52,12 +52,9 @@ By the end of the semester, we will have ...
 -   For students interested in research, we may consider a new research project focusing on developing statistical models and methods for environmental chemical mixtures
 -   A possible side project, depending on skills and interests, includes improving workflow using virtual lab notebooks for data collection and annotation.
 
-## Important Dates
+## Instructions on uploading your tutorials
 
--   **Friday, September 2 at 5:00pm** Last day to accept applications
--   **Saturday, September 3 at 12:00am** First day to agree to contracts
--   **Friday, September 9 at 5:00pm** Last day to agree to contracts
--   **09/15 11am-12pm** SuperFund meeting
--   **09/23 all day** SuperFund Symposium
--   **10/20 1pm-2pm** SuperFund meeting
--   **11/10 11am-12pm** SuperFund meeting
+-  Make sure you have the R project linked to the repo.
+-  Upload your .Rmd/.qmd file to the folder: static -> slides
+-  Knit your file to .html
+-  Edit the . yaml file: data/schedule.yaml

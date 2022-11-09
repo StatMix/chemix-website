@@ -1,0 +1,369 @@
+---
+title: "Tutorial - Bayesian Regression"
+author: "Ryan Mitchell"
+date: "2022-10-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Topics 
+
+- Get a brief introduction to Bayesian statistics and understand how it differs from the frequentist point of view. 
+- Understand the difference between a credible interval and a confidence interval, particularly in how they can be interpreted.
+- Understand how to create a Bayesian simple linear regression model with the `brms` package using different priors. 
+
+## 1. Installations and Data
+
+This tutorial will make use of the following R libraries.
+
+```{r load-libraries, warning=FALSE, message=FALSE}
+library(dplyr)
+library(brms)
+library(knitr)
+library(ggplot2)
+```
+
+This tutorial will be using the ``nhanes`` dataset where the variables are described in the file `nhanes-codebook.txt`. This data can be loaded with the `load` function, specifying the rda data file. 
+
+```{r load-data}
+load(file = 'nhanes1518.rda')
+```
+
+## 2. Introduction to Bayesian Statistics
+
+There are two schools of thought in the world of statistics: frequentist, which we have been working with up to this point, and Bayesian. In the frequentist school, probability is defined as a frequency. For example, if we roll a fair six-sided die, the probability we will roll a 1 is $P(Y = 1) = \frac{1}{6}$. The conclusions we make in frequentist statistics are based on likelihood; we retrieve data and then make an inference based on the data.
+
+In the Bayesian school, probability is defined as a belief. For example, a Bayesian statement could be "I believe the probability that it rains tomorrow is 30%." Different people obviously have different beliefs, so another statistician stating "I believe the probability that it rains tomorrow is 40%" is just as valid. Like frequentist statistics, our conclusions rely on likelihood. However, unlike frequentists statistics, our conclusions also rely on another factor: our prior knowledge. When we collect data, we then use it to update our prior knowledge. For simplicity, we can simply refer to our prior knowledge that we wish to update as the **prior**. After we see our data,  we update our prior to create the **posterior**.
+
+But how exactly do we get from the prior to the posterior?
+
+Bayesian statistics mostly deals with conditional probabilities, which can be calculated using the fittingly-named **Bayes' rule**. Given two events A and B, the probability of event A conditional on event B as stated by Bayes' rule is $P(A | B) = \frac{P(B | A)P(A)}{P(B)}$. 
+
+For example, we can use the Bayes' rule with our `nhanes` dataset to calculate the probability that a subject in the dataset is female given their reported concentration of Mono(carboxynonyl) phthalate is above 10 ng/mL. For simplicity, we will only consider subjects with data points present for both the `RIAGENDR` and `URXCNP` variables, which deal with gender and Mono(carboxynonyl) phthalate concentration, respectively.
+
+```{r filter-out-nulls}
+bayesrule_ex <- nhanes1518 %>%
+  filter(!is.na(RIAGENDR) & !is.na(URXCNP))
+```
+
+Let $F$ be the event in which a subject in the dataset is female, and let $M$ be the event in which a subject's concentration of Mono(carboxynonyl) phthalate is above 10 ng/mL. Then, to find $P(F | M)$, we need to calculate $P(F)$, $P(M)$, and $P(M | F)$.
+
+```{r bayes-components}
+female <- bayesrule_ex %>% filter(RIAGENDR == 2)
+high_concentration <- bayesrule_ex %>% filter(URXCNP > 10)
+female_and_high_concentration <- female %>% filter(URXCNP > 10)
+
+p_f = nrow(female) / nrow(bayesrule_ex)
+p_m = nrow(high_concentration) / nrow(bayesrule_ex)
+p_m_given_f = nrow(female_and_high_concentration) / nrow(female)
+```
+
+We can then calculate $P(F | M)$ using Bayes' rule; we can confirm this value is correct by also calculating $P(F | M)$ using row counts.
+
+```{r bayes-calculation}
+p_f_given_m_bayes = p_m_given_f * p_f / p_m
+p_f_given_m_bayes
+
+p_f_given_m_rowcounts = nrow(female_and_high_concentration) / nrow(high_concentration)
+p_f_given_m_rowcounts
+```
+
+We get that, given a subject's reported concentration of Mono(carboxynonyl) phthalate is above 10 ng/mL, the probability they will be female is approximately 46.7%.
+
+## 3. Credible Intervals
+
+When conducting hypothesis tests or linear regressions using the frequentist approach, we often find it useful to create a **confidence interval**. Confidence intervals help us estimate the (un)certainty of a parameter with a lower and upper bound. For example, let's say we created a 95% confidence interval for the mean age in our dataset and found the lower bound to be 32 and the upper bound to be 47. We could then interpret this confidence interval as "We are 95% confident that the true mean age is between 32 and 47 years old." If we constructed many more similar confidence intervals, we would expect 95% of them to contain the true population mean.
+
+The Bayesian equivalent to a confidence interval is known as a **credible interval**, which has a simpler interpretation. For example, a 95% credible interval is between any lower bound $L$ and any upper bound $U$ such that the posterior probability of $L < p < U = 0.95$. This means that if we found the 95% credible interval for the mean age in our dataset to have a lower bound of 32 and an upper bound of 47, then we can simply say that "There is a 95% probability that the true mean age is between 32 and 47 years old."
+
+## 4. Bayesian Simple Linear Regression
+
+```{r screenshot1, echo=FALSE}
+# knitr::include_graphics("regression-ss1.png")
+```
+
+In the previous unit, we discussed **linear regression**, which uses point estimates for parameters $\beta_0$ and $\beta_1$ in order to help predict the value of a dependent variable based on an independent variable. The formula for **Bayesian regression** may appear to be the same, but now, our parameters are drawn from probability distributions. 
+
+If we have a vague prior, we will have weak correlations between the independent and dependent variables. This explains the lack of steepness in the lines on the Bayesian graph in the visualization above. After we see the data and update our prior, we will begin to see stronger correlations between the variables. 
+
+In the previous module, we used the `nhanes` dataset to fit a linear model predicting age, or `RIDAGEYR`, based on body mass index, or `BMXBMI`, using the frequentist approach. In this section, we will use the Bayesian approach to formulate the same model. Before we begin, we will limit our analysis to adults as we did in the previous module:
+
+```{r filter-to-adults}
+nhanes1518 <- nhanes1518 %>% 
+  filter(RIDAGEYR >= 18)
+```
+
+Let's visualize the distribution of the `BMXBMI` variable in our dataset:
+
+```{r bmi-dist, fig.height = 3}
+ggplot(nhanes1518, aes(x = BMXBMI)) + 
+  geom_histogram(color = "black", fill = "white") +
+  labs(title = 'Distribution of BMI in Sample Dataset')
+```
+
+We will use the `brms` library to create our Bayesian model. An important part of creating a Bayesian regression model is establishing our priors for the parameters. Based on our prior knowledge of the data, there is a variety of priors we can set (and thus a variety of models we can create). This module will introduce multiple different priors.
+
+Firstly, assuming we have no prior knowledge of the data, we will use a noninformative prior (the default prior in `brms`). We can use the `brm` function to create our model. 
+
+```{r noninformative, echo = T, results = 'hide', warning = F, message = F}
+model1 <- brm(formula = RIDAGEYR ~ BMXBMI, 
+             data    = nhanes1518,
+             seed    = 123)
+```
+
+We can use the `summary()` function to view more detailed statistics of our model.
+
+```{r noninformative-summary}
+summary(model1, priors = TRUE)
+```
+
+From this model, we get the same estimate for the intercept (45.41) and for the $\beta_{BMI}$ (0.12) as we got in our frequentist model. However, since we are now using a Bayesian approach, we can interpret our credible interval to mean that there is a 95% chance that the true value for the intercept lies between 43.94 and 46.87, and there is a 95% chance that the true value for $\beta_{BMI}$ lies between 0.07 and 0.16. 
+
+### Beta Priors: The Normal Distribution
+
+A common prior for the coefficient (or $\beta$) in Bayesian inference deals with a **normal (Gaussian) distribution**. This is a **conjugate** prior, meaning that the posterior will also be a normal distribution, but with different parameters. This might be a good choice for our beta prior if we assume our data is normally distributed, meaning most values are situated in the middle, and there is a symmetrical decline in the frequency of values as we reach the ends. 
+
+Since we have thousands of observations in our dataset, it may be reasonable to assume that `BMXBMI` is normally distributed. We can use the `prior` parameter in the `brm` function to set our prior for $\beta$.
+
+```{r model2, echo = T, results = 'hide', warning = F, message = F}
+model2 <- brm(formula = RIDAGEYR ~ BMXBMI, 
+             data    = nhanes1518,
+             prior   = c(set_prior("normal(0, 0.3)", class = "b", coef = "BMXBMI")),
+             seed    = 123)
+```
+
+```{r model2-summ}
+summary(model2, priors = TRUE)
+```
+
+As we see from the summary, the estimates for the intercept and $\beta_{BMI}$ have changed slightly from our previous model, demonstrating how different priors can yield different results. 
+
+Let's run another model with a normally distributed Beta prior, using the same mean but inputting a much larger variance:
+
+```{r model3, echo = T, results = 'hide', warning = F, message = F}
+model3 <- brm(formula = RIDAGEYR ~ BMXBMI, 
+             data    = nhanes1518,
+             prior   = c(set_prior("normal(0, 100)", class = "b", coef = "BMXBMI")),
+             seed    = 123)
+```
+
+```{r model3-summ}
+summary(model3, priors = TRUE)
+```
+
+As you can see, we get extremely comparable results to the previous two models despite drastically changing the variance. In Bayesian regression, the impact of the prior will be rather small if we are working with a large dataset (which is the case of `nhanes`, having n = 11848). If we are using a smaller dataset, our choice of prior will have a much more considerable impact on the posterior. 
+
+Let's recap the models we've created so far with their results:
+
+```{r model-recap1, echo = F, warning = F, message = F}
+beta_dists <- c('Default', 'N(0, 0.09)', 'N(0, 10000)')
+post_means <- c('0.12', '0.11', '0.12')
+post_inters <- c('45.41', '45.43', '45.41')
+model_recap1 <- data.frame(beta_dists, post_means, post_inters)
+kable(model_recap1, col.names = c("$\\beta_{BMI}$ Distributions",
+                           "Posterior Means",
+                           "Intercepts"))
+```
+
+### Beta Priors: The T-Distribution
+
+Another common prior for the coefficient in Bayesian inference deals with the **t-distribution**. This differs from the normal distribution in that the values are less clustered in the middle, giving it heavier tails on the ends. Using the t-distribution can offer more robust estimation; it is often used on smaller, approximately normal datasets (for example, when n < 30). For the purpose of this section, we will proceed using a t-distribution to estimate $\beta_{BMI}$.
+
+We can change the shape of our t-distribution by altering the **degrees of freedom**; the more degrees of freedom we have, the more we will resemble a normal distribution (so, the less heavy the tail ends will be). Let's fit a model with a beta prior distributed as a unit t-distribution with 3 degrees of freedom:
+
+```{r model4, echo = T, results = 'hide', warning = F, message = F}
+model4 <- brm(formula = RIDAGEYR ~ BMXBMI, 
+             data    = nhanes1518,
+             prior   = c(set_prior("student_t(3, 0, 1)", class = "b", coef = "BMXBMI")),
+             seed    = 123)
+```
+
+```{r model4-summ}
+summary(model4, priors = TRUE)
+```
+
+Again, our model results resemble those we have previously calculated. For demonstrative purposes, let's also run a model with more degrees of freedom (a more Gaussian-like distribution):
+
+```{r model5, echo = T, results = 'hide', warning = F, message = F}
+model5 <- brm(formula = RIDAGEYR ~ BMXBMI, 
+             data    = nhanes1518,
+             prior   = c(set_prior("student_t(10000, 0, 1)", class = "b", coef = "BMXBMI")),
+             seed    = 123)
+```
+
+```{r model5-summ}
+summary(model5, priors = TRUE)
+```
+
+And now let's once again recap our models:
+
+```{r model-recap2, echo = F, warning = F, message = F}
+beta_dists <- c('Default', 'N(0, 0.09)', 'N(0, 10000)',
+                'StudentT(3, 0, 1)', 'StudentT(10000, 0, 1)')
+post_means <- c('0.12', '0.11', '0.12', '0.11', '0.12')
+post_inters <- c('45.41', '45.43', '45.41', '45.42', '45.38')
+model_recap2 <- data.frame(beta_dists, post_means, post_inters)
+kable(model_recap2, col.names = c("$\\beta_{BMI}$ Distributions",
+                           "Posterior Means",
+                           "Intercepts"))
+```
+
+Upon selecting our priors and running our models, we can then use our posterior information to conduct further regression. Usually, regardless of the initial choice of prior, results will end up converging to the same posterior after many iterations.
+
+### Beta Priors: A Closer Look
+
+In the previous sections, we have discovered that, regardless of our choice of prior, we get virtually identical results for the posterior means and intercepts. To get a better understanding of how prior selection can impact our regression models, let's take a small sample of our overarching `nhanes` dataset.
+
+```{r sample-subset}
+set.seed(456)
+nhanes1518_sample <- sample_n(nhanes1518, 30)
+```
+
+First, let's visualize the distribution of the `BMXBMI` variable in our new dataset:
+
+```{r bmi-dist-sample, fig.height = 3}
+ggplot(nhanes1518_sample, aes(x = BMXBMI)) + 
+  geom_boxplot(color = "black", fill = "white") +
+  labs(title = 'Distribution of BMI in Sample Dataset')
+```
+
+Now, let's rerun the five models we have examined so far with our updated dataset. We will recap our results in a summary table.
+
+```{r model6, echo = T, results = 'hide', warning = F, message = F}
+model6 <- brm(formula = RIDAGEYR ~ BMXBMI, 
+             data    = nhanes1518_sample,
+             seed    = 123)
+```
+
+```{r model7, echo = T, results = 'hide', warning = F, message = F}
+model7 <- brm(formula = RIDAGEYR ~ BMXBMI, 
+             data    = nhanes1518_sample,
+             prior   = c(set_prior("normal(0, 0.3)", class = "b", coef = "BMXBMI")),
+             seed    = 123)
+```
+
+```{r model8, echo = T, results = 'hide', warning = F, message = F}
+model8 <- brm(formula = RIDAGEYR ~ BMXBMI, 
+             data    = nhanes1518_sample,
+             prior   = c(set_prior("normal(0, 100)", class = "b", coef = "BMXBMI")),
+             seed    = 123)
+```
+
+```{r model9, echo = T, results = 'hide', warning = F, message = F}
+model9 <- brm(formula = RIDAGEYR ~ BMXBMI, 
+             data    = nhanes1518_sample,
+             prior   = c(set_prior("student_t(3, 0, 1)", class = "b", coef = "BMXBMI")),
+             seed    = 123)
+```
+
+```{r model10, echo = T, results = 'hide', warning = F, message = F}
+model10 <- brm(formula = RIDAGEYR ~ BMXBMI, 
+             data    = nhanes1518_sample,
+             prior   = c(set_prior("student_t(10000, 0, 1)", class = "b", coef = "BMXBMI")),
+             seed    = 123)
+```
+
+```{r model6-summ}
+summary(model6, priors = TRUE)
+```
+
+```{r model7-summ}
+summary(model7, priors = TRUE)
+```
+
+```{r model8-summ}
+summary(model8, priors = TRUE)
+```
+
+```{r model9-summ}
+summary(model9, priors = TRUE)
+```
+
+```{r model10-summ}
+summary(model10, priors = TRUE)
+```
+
+```{r model-recap3, echo = F, warning = F, message = F}
+beta_dists <- c('Default', 'N(0, 0.09)', 'N(0, 10000)',
+                'StudentT(3, 0, 1)', 'StudentT(10000, 0, 1)')
+post_means <- c('0.21', '0.04', '0.20', '0.16', '0.16')
+post_inters <- c('40.73', '45.70', '41.06', '42.09', '42.26')
+model_recap3 <- data.frame(beta_dists, post_means, post_inters)
+kable(model_recap3, col.names = c("$\\beta_{BMI}$ Distributions",
+                           "Posterior Means",
+                           "Intercepts"))
+```
+
+We now see notable differences in our posterior results.
+
+As we saw in the visualization of the BMI distribution in our sample, the data is heavily skewed right and ranges from under 20 to over 50. Since our sample size is now very small (n = 30), it might be more intelligent to use a student-t distribution for our $\beta_{BMI}$ parameter.  
+
+### Variance Priors: The Inverse-Gamma
+
+```{r image2, echo=FALSE}
+# knitr::include_graphics("inv_gamma.png")
+```
+
+Now let's move on to our variance (or $\sigma^2$) parameter. A common prior for the variance in Bayesian inference deals with the **inverse gamma distribution**. This particular distribution restricts the variance to only positive values (we cannot have a negative variance as it is the value of the standard deviation squared.) The inverse gamma distribution takes two parameters, $\alpha$ and $\beta$, which impact the shape (different permutations of these parameters are pictured above.)
+
+Let's run two models with inverse-gamma variance priors, using the parameters of the light blue line and the red line in the visualization above. We will use our `nhanes1518_sample` dataset that we created in the previous section.
+
+```{r model11, echo = T, results = 'hide', warning = F, message = F}
+model11 <- brm(formula = RIDAGEYR ~ BMXBMI, 
+             data    = nhanes1518_sample,
+             prior   = c(set_prior("inv_gamma(3, 0.5)", class = "sigma")),
+             seed    = 123)
+```
+
+```{r model11-summ}
+summary(model11, priors = TRUE)
+```
+
+```{r model12, echo = T, results = 'hide', warning = F, message = F}
+model12 <- brm(formula = RIDAGEYR ~ BMXBMI, 
+             data    = nhanes1518_sample,
+             prior   = c(set_prior("inv_gamma(1, 1)", class = "sigma")),
+             seed    = 123)
+```
+
+```{r model12-summ}
+summary(model12, priors = TRUE)
+```
+
+### Variance Priors: The Half-Cauchy Distribution
+
+```{r model13, echo = T, results = 'hide', warning = F, message = F}
+model13 <- brm(formula = RIDAGEYR ~ BMXBMI, 
+             data    = nhanes1518_sample,
+             prior   = c(set_prior("cauchy(0, 5)", class = "sigma")),
+             seed    = 123)
+```
+
+```{r model13-summ}
+summary(model13, priors = TRUE)
+```
+
+introduce different priors-- the prior we choose will be non-informative because we do not have any expertise yet. for conjugacy sometimes we use normal. second option is t distribution--people want this one because it has a heavy tail compared to normal, which can provide robust estimation. for sigma^2, people usually use inverse gamma distribution (also can consider uniform).
+
+figure out how brms is defining inverse gamma and figure out what the mean is 
+
+dont try uniform for variance, but try half-cauchy (t with 1 degree of freedom)
+
+let beta  be normal (0, covariance matrix) with sigma following an inverse wishart distribution [for multivariate regression]
+
+explore unit information prior? simpler prior for variance as opposed to wishart [for multivariate regression], but also question of what brms allows us to do 
+
+use uniform default prior for beta on the variance prior models
+
+MULTIPLE REGRESSION: start with a flat normal on the betas and do something basic for sigma (set prior for each beta separate); give all predictors variance 1; have separate prior for the intercept (might give this one a bigger variance)
+
+put all predictors on the same scale (scale function in r; subtracts the mean and divides by the standard deviation)  -- the priors for each beta are independent -- normal prior with mean zero and biggish variance for each predictor; center intercept on 0 and variance of 500
+
+inverse gamma: gamma where alpha*beta is the mean
+
+get function to plot the posterior (maybe find a function to plot the prior?)
+
+if cannot find in brms documentation, look in the STAN manual 

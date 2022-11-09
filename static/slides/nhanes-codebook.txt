@@ -1,0 +1,32 @@
+NHANES1518 CODEBOOK
+Combined NHANES data from the 2015-2016 and 2017-2018 cycles
+Useful link for variable look up: https://wwwn.cdc.gov/nchs/nhanes/search/default.aspx
+The weights have been adjusted according to https://wwwn.cdc.gov/nchs/nhanes/tutorials/module3.aspx
+
+SEQN: Respondent sequence number
+WTINT4YR: Full sample 4 year interview weight
+WTMEC4YR: Full sample 4 year MEC exam weight
+WTSB4YR: Environmental B 4-year weights
+RIDSTATR: Interview/Examination status
+RIAGENDR: Gender of the participant
+RIDAGEYR: Age in years of the participant at the time of screening. Individuals 80 and over are topcoded at 80 years of age.
+INDFMPIR: A ratio of family income to poverty guidelines.
+RIDRETH1: Race/Hispanic origin
+INDHHIN2: Total household income (reported as a range value in dollars)
+BMXBMI: Body Mass Index (kg/m**2)
+BMXWAIST: Waist Circumference (cm)
+BMXWT: Weight (kg)
+BMXHT: Standing Height (cm)
+URXUCR: Creatinine, urine (mg/dL)
+
+Phthalates concentrations:
+URXCNP, URXCOP, URXECP, URXHIBP, URXMBP, URXMC1, URXMCOH, URXMEP,
+URXMHBP, URXMHH, URXMHNC, URXMHP, URXMIB, URXMNP, URXMOH, URXMZP.
+
+Phthalates comment code for whether the measurement is under the limit of detection:
+URDCNPLC, URDCOPLC, URDECPLC, URDHIBLC, URDMBPLC, URDMC1LC, URDMCOLC, URDMEPLC,
+URDMHBLC, URDMHHLC, URDMCHLC, URDMHPLC, URDMIBLC, URDMNPLC, URDMOHLC, URDMZPLC.
+
+Detailed documentation of the phthalates variables can be found here: 
+- https://wwwn.cdc.gov/Nchs/Nhanes/2015-2016/PHTHTE_I.htm
+- https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/PHTHTE_J.htm

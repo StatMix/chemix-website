@@ -1,0 +1,265 @@
+---
+title: "Tutorial 07 - Bayesian Model Averaging"
+author: "Olivia Fan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    css: "./tutorials.css"
+    toc: true
+    toc_float: true
+---
+
+<!-- Setup -->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning=FALSE,
+                      message=FALSE)
+```
+
+## Background & Introduction 
+
+Traditionally, analysis often proceeds by first selecting the best model according to some criterion and then learning about the parameters given that the selected model is the underlying truth. However, from the Bayesian perspective, an alternative is to learn the parameters for *all* candidate models and then combine the estimates according to the posterior probabilities of associated model. In this module, we will investigate this method known as *Bayesian Model Averaging*, and the advantages it has over all-or-none model selection. 
+
+## Topics 
+
+- Advantages of BMA over all-or-none model selection through the examples of analysis of covariance, meta-analysis and network analysis.
+
+- Estimate the slope and intercept of the regression line using the least squares method.
+
+- Interpret the slope and intercept of the regression line.
+
+## 1. Definitions
+
+### Bayes factor
+The change from prior to posterior model odds brought about by the data; equivalently, how much more likely the observed data are under one model versus another.
+
+### Bayesian model average
+A parameter estimate (or a prediction of new observations) obtained by averaging the estimates (or predictions) of the different models under consideration, each weighted by its model probability.
+
+## 2. Libraries
+
+The R package `BMA` provides ways of carrying out BMA for linear regression, generalized linear models, and survival or event history analysis us- ing Cox proportional hazards models.
+
+```{r}
+library(BMA)
+library(tidyverse)
+```
+
+## 2. Example: Linear Regression
+
+To illustrate how BMA takes account of model uncertainty about the variables to be included in lin- ear regression, we will be using the ``nhanes`` dataset where the variables are described in the file `nhanes-codebook.txt`. Load this data with the `load` function and specify the data file. 
+
+```{r}
+load(file='nhanes1518.rda')
+```
+
+<!-- Experimentation with UScrime data: -->
+
+<!-- ```{r} -->
+<!-- UScrime<- MASS::UScrime -->
+<!-- x.crime<- UScrime[,-16] -->
+<!-- y.crime<- log(UScrime[,16]) -->
+<!-- x.crime[,-2]<- log(x.crime[,-2]) -->
+<!-- crime.bicreg <- bicreg(x.crime, y.crime) -->
+<!-- summary (crime.bicreg, digits=2) -->
+<!-- ``` -->
+
+We first subset the dataset to include only the predictors in linear regressions module, in order to filter out some NA values:
+
+```{r}
+nhanes_na_removed<-cbind(nhanes1518[1:5],nhanes1518$BMXBMI)%>%
+  rename(BMXBMI="nhanes1518$BMXBMI")%>%
+  na.omit()
+```
+
+We fit a BMA model on the dataset:
+
+```{r}
+x.nhanes <-log(nhanes_na_removed[-6])
+y.nhanes <-log(nhanes_na_removed[6])
+y.nhanes<-as.numeric(unlist(y.nhanes))
+nhanes.bicreg <- bicreg(x.nhanes, y.nhanes)
+summary(nhanes.bicreg)
+```
+
+
+The BMA posterior distributions of all the parameters are produced by the command:
+
+```{r}
+plot (nhanes.bicreg,mfrow=c(3,2))
+```
+
+
+We see that the distribution of waist circumference is asymmetric, with peaks at age of around 80 and 0 respectively.
+
+We can also add the mean line, as well as overlay with transparent density plot. The value of alpha controls the level of transparency:
+
+## Example 2: Logistic Regression
+
+Now we illustrate BMA for logistic regression using the categorical variable `income` on the response BMI
+
+```{r}
+nhanes_na_removed<-cbind(nhanes1518[1:5],nhanes1518$BMXBMI,nhanes1518$RIDAGEYR,nhanes1518$INDHHIN2)%>%
+  rename(BMXBMI="nhanes1518$BMXBMI")%>%
+  rename(income = "nhanes1518$INDHHIN2")%>%
+  rename(RIDAGEYR = "nhanes1518$RIDAGEYR")%>%
+  na.omit()
+# turn quantitative variable into categorical variable
+nhanes_income$income<-as.character(nhanes_income$income)
+```
+
+Refer to the website for encoding of income categories:
+
+https://wwwn.cdc.gov/nchs/nhanes/2011-2012/demo_g.htm#INDHHIN2
+
+We want to first drop categories with values 77 (Refused) and 99 (Don't Know) first:
+```{r}
+nhanes_income <- subset(nhanes_income, income!="77" & income!="99")
+```
+
+Then we transform the variable `RIAGENDR` to be binary:
+```{r}
+nhanes_na_removed<-nhanes_na_removed%>%
+  mutate(Gender_binary=RIAGENDR-1)
+```
+
+Then we fit the Bayesian logistic regression model on predictors including categorical variable `income`:
+
+```{r}
+nhanes.bic.glm<-bic.glm(Gender_binary~income+BMXBMI+WTINT2YR+WTMEC2YR, data=nhanes_na_removed, glm.family="binomial")
+summary(nhanes.bic.glm)
+plot (nhanes.bic.glm,mfrow=c(2,2))
+summary(nhanes.bic.glm, conditional=T, digits=3)
+```
+
+
+## Example 3: Survival Analysis
+
+```{r}
+nhanes_na_removed$WTINT2YR<-log(nhanes_na_removed$WTINT2YR)
+nhanes_na_removed$WTMEC2YR<-log(nhanes_na_removed$WTMEC2YR)
+nhanes_na_removed$BMXBMI<-log(nhanes_na_removed$BMXBMI)
+nhanes_na_removed$WTINT2YR<-log(nhanes_na_removed$WTINT2YR)
+nhanes_na_removed$WTINT2YR<-log(nhanes_na_removed$WTINT2YR)
+```
+
+
+We can use the ``residuals()`` and ``rstudent()`` functions to extract the residuals and studentized residuals, respectively, from the linear model and plot them along with the predicted values.
+
+```{r}
+plot(predict(lm.fit), residuals(lm.fit))
+plot(predict(lm.fit), rstudent(lm.fit))
+```
+
+Additionally, we can compute the influence matrix for the predictors using the ``hatvalues()`` function.
+
+```{r}
+plot(hatvalues(lm.fit))
+which.max(hatvalues(lm.fit))
+```
+
+## 4. Model Diagonostics & Interpretation
+The ``par()`` function can be used to create a grid of multiple subplots.
+
+```{r}
+par(mfrow = c(2, 2))
+plot(lm.fit)
+```
+
+The diagnostic plots show residuals in four different ways:
+
+- Residuals vs Fitted. Used to check the linear relationship assumptions. A horizontal line, without distinct patterns is an indication for a linear relationship, what is good. The model we fitted shows roughly a linear relationship, with no distinct patterns (such as a fan or funnel shape) in the residuals vs. fitted plot. 
+
+- Normal Q-Q. Used to examine whether the residuals are normally distributed. It’s good if residuals points follow the straight dashed line. The Q-Q plot generally follows the straight dashed line, with some deviations at the end towards high values of theoretical quantiles.
+
+- Scale-Location (or Spread-Location). Used to check the homogeneity of variance of the residuals (homoscedasticity). Horizontal line with equally spread points is a good indication of homoscedasticity. 
+
+- Residuals vs Leverage. Used to identify influential cases, that is extreme values that might influence the regression results when included or excluded from the analysis. Based on the residuals vs. leverage plot, there are no influential points according to Cook's distance. However, there might be some points with high standard residuals values which could be marked as outliers.
+
+Some other metrics from the model:
+
+- $R^2$: From the model above, we have an adjusted R-squared value of 0.2302, which indicates that 23.02% of the variability in the response variable BMI can be explained by the change in the predictor variable age. 
+- p value: The p value tells us how likely the data we have observed is to have occurred under the null hypothesis (more material on Null hypothesis on subsequent tutorials), i.e. that there is no correlation between the predictor variable age and the response BMI. From the model above, we have a p value of 2.2e-16, which tells us that the predictor variable age is statistically significant. 
+
+## 5. Multiple Linear Regression
+
+The ``lm()`` function can also fit multiple regression models. In this section, we will use `RIDAGEYR`, `BMXWAIST`, `BMXWT`, and `BMXHT` as predictors of the response variable ``BMXBMI``.
+
+```{r}
+lm.fit <- lm(BMXBMI ~ RIDAGEYR+ BMXWAIST + BMXWT + BMXHT, data = nhanes1518)
+summary(lm.fit)
+```
+
+### Model Interpretation:
+- Intercept: The intercept does not have interpretability since it is unrealistic to have age 0, body waist circumference of 0, height and weight of 0.
+- `BMXWT`: The coeffcient for the predictor `BMXWT` is 0.2420969, which means that for every unit increase in the participant's waist circumference, the BMI is expected to increase by 0.2420969 on average, holding all else constant (holding all other predictor variables, `BMXWAIST`, `BMXWT`, and `BMXHT` constant)
+
+In the lm() formula, a dot . can be used to include all variables in the NHANES data as predictors.
+```{r}
+nhanes_na_removed<-cbind(nhanes1518[1:5],nhanes1518$BMXBMI)
+# data clearning to ignore NA values
+lm.fit1 <- lm(nhanes1518$BMXBMI ~ ., data = nhanes_na_removed)
+summary(lm.fit1)
+```
+
+If we want to exclude specific variables from the list of predictors, we can use the ``-`` notation.  In the following example, all predictor variables but ``age`` are included in the model.
+
+```{r}
+library(dplyr)
+nhanes_na_removed<-cbind(nhanes1518[1:5],nhanes1518$BMXBMI)
+# data clearning to ignore NA values
+lm.fit1 <- lm(nhanes1518$BMXBMI ~ . - RIDSTATR, data = nhanes_na_removed)
+summary(lm.fit1)
+```
+
+Including ``-1`` excludes the intercept from the model.  
+```{r}
+lm.fit1 <- lm(nhanes1518$BMXBMI ~ .- 1, data = nhanes_na_removed)
+summary(lm.fit1)
+```
+
+The ``update()`` function can be used to specify a new formula for an existing model.
+
+```{r}
+lm.fit1 <- update(lm.fit, ~. - RIDSTATR)
+```
+
+
+## 6. Interaction Terms
+
+There are two ways to include interaction terms in the model, ``:`` and ``*``. The ``:`` symbol only includes the interaction term between the two variables, while the ``*`` symbol includes the variables themselves, as well as the interaction terms. This means that ``BMXWT*BMXWAIST`` is equivalent to ``BMXWT + BMXWAIST + BMXWT:BMXWAIST``.
+
+```{r}
+summary(lm(BMXBMI ~  BMXWT* BMXWAIST, data = nhanes1518))
+```
+
+
+A simple way to include all interaction terms is the syntax ``.^2``.
+```{r}
+library(dplyr)
+nhanes_na_removed<-cbind(nhanes1518[1:5],nhanes1518$BMXBMI)
+# data clearning to ignore NA values
+summary(lm(nhanes1518$BMXBMI ~ .^2, data = nhanes_na_removed))
+```
+
+## 7. Categorical Variable
+
+
+*Baseline*: income category 1 corresponding to a household income of 0 to 4,999 dollars.
+
+*Model Interpretation*:
+
+- Intercept: The intercept 25.6489 means that for people in the baseline income category (income category 1 corresponding to a household income of 0 to 4,999 dollars), the BMI is expected to be 25.6489 on average.
+
+- `income6`: The coeffcient for the predictor `income6` is 1.1473, which means that for participants with household income category 6 (25,000 to 34,999 dollars per ear), the BMI is expected to be 1.1473 higher than that of participants with household income in category 1 (0 to 4,999 dollars), on average.
+
+## Related Topics
+
+| **Topics** | **Concepts** |
+|-------------------------------------------------------------|:--:|
+| ANOVA | Null hypothesis |
+| Quantile factoring | use qualitative  as levels |
+| Cross-validation 	|  k-fold, LOOCV	|
+| Model section 	|  AIC, BIC, Cp	|
+
