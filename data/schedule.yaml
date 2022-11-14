@@ -34,7 +34,7 @@ lessons:
     date: ""
     title: "Bayesian Regression Model"
     prepare: "topic-04-brm.html"
-    slides: "04-brms.html"
+    slides: "03-Bayesian-Regression.html"
     ae: ""
     lab: ""
   - week: "bws"
