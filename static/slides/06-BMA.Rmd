@@ -65,29 +65,29 @@ load(file='nhanes1518.rda')
 <!-- summary (crime.bicreg, digits=2) -->
 <!-- ``` -->
 
-We first subset the dataset to include only the predictors in linear regressions module, in order to filter out some NA values:
+We first explore the URX predictors (i.e. the ones related to phthalates concentrations), subsetting subset the dataset to include only the predictors in the weighted quantile sum module, and then filter out NA values:
 
 ```{r}
-nhanes_na_removed<-cbind(nhanes1518[1:5],nhanes1518$BMXBMI)%>%
-  rename(BMXBMI="nhanes1518$BMXBMI")%>%
-  na.omit()
+nhanes_URX<-nhanes1518%>%
+  select(URXUCR, URXCNP,URXCOP,URXECP,URXHIBP,URXMBP,URXMC1,URXMEP,URXMHBP,URXMHH)%>%na.omit()
 ```
 
 We fit a BMA model on the dataset:
 
 ```{r}
-x.nhanes <-log(nhanes_na_removed[-6])
-y.nhanes <-log(nhanes_na_removed[6])
+x.nhanes <-log(nhanes_URX[-8])
+y.nhanes <-log(nhanes_URX[8])
 y.nhanes<-as.numeric(unlist(y.nhanes))
 nhanes.bicreg <- bicreg(x.nhanes, y.nhanes)
 summary(nhanes.bicreg)
+imageplot.bma(nhanes.bicreg)
 ```
 
 
 The BMA posterior distributions of all the parameters are produced by the command:
 
 ```{r}
-plot (nhanes.bicreg,mfrow=c(3,2))
+plot (nhanes.bicreg,mfrow=c(3,3))
 ```
 
 
@@ -129,10 +129,32 @@ Then we fit the Bayesian logistic regression model on predictors including categ
 ```{r}
 nhanes.bic.glm<-bic.glm(Gender_binary~income+BMXBMI+WTINT2YR+WTMEC2YR, data=nhanes_na_removed, glm.family="binomial")
 summary(nhanes.bic.glm)
-plot (nhanes.bic.glm,mfrow=c(2,2))
+plot (nhanes.bic.glm,mfrow=c(3,3))
 summary(nhanes.bic.glm, conditional=T, digits=3)
+imageplot.bma(nhanes.bic.glm)
 ```
 
+We then explore the BMI value as a categorical between 1 (denoting high BMI value) and 0 (denoting low BMI value), with BMI value of 22 as the threshold:
+
+```{r}
+BMI_category <- nhanes_na_removed %>%
+  mutate(BMI_Level = case_when(BMXBMI<22 ~ 0, BMXBMI >=22 ~ 1))
+```
+
+Then we fit the Bayesian logistic regression model on predictors including categorical variable `BMI_Level`:
+
+```{r}
+nhanes.bic.glm<-bic.glm(BMI_Level~income+WTINT2YR+WTMEC2YR, data=BMI_category, glm.family="binomial")
+summary(nhanes.bic.glm)
+```
+
+And then we graph the posterior distributions of the fitted model, as well as the image plot summarizing the BMA analysis for logistic regression of the BMI value.
+
+```{r}
+plot (nhanes.bic.glm,mfrow=c(3,3))
+summary(nhanes.bic.glm, conditional=T, digits=3)
+imageplot.bma(nhanes.bic.glm)
+```
 
 ## 5 Example: Survival Analysis
 
