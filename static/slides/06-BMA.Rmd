@@ -69,14 +69,14 @@ We first explore the URX predictors (i.e. the ones related to phthalates concent
 
 ```{r}
 nhanes_URX<-nhanes1518%>%
-  select(URXUCR, URXCNP,URXCOP,URXECP,URXHIBP,URXMBP,URXMC1,URXMEP,URXMHBP,URXMHH)%>%na.omit()
+  select(BMXBMI, URXUCR, URXCNP,URXCOP,URXECP,URXHIBP,URXMBP,URXMC1,URXMEP,URXMHBP,URXMHH)%>%na.omit()
 ```
 
 We fit a BMA model on the dataset:
 
 ```{r}
-x.nhanes <-log(nhanes_URX[-8])
-y.nhanes <-log(nhanes_URX[8])
+x.nhanes <-log(nhanes_URX[-1])
+y.nhanes <-log(nhanes_URX[1])
 y.nhanes<-as.numeric(unlist(y.nhanes))
 nhanes.bicreg <- bicreg(x.nhanes, y.nhanes)
 summary(nhanes.bicreg)
