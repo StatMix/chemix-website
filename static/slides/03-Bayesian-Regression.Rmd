@@ -1,5 +1,5 @@
 ---
-title: "Tutorial 03 - Bayesian Regression"
+title: "Tutorial 05 - Bayesian Regression"
 author: "Ryan Mitchell"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -32,6 +32,7 @@ library(brms)
 library(knitr)
 library(ggplot2)
 library(patchwork)
+library(pander)
 ```
 
 This tutorial will be using the ``nhanes`` dataset where the variables are described in the file `nhanes-codebook.txt`. This data can be loaded with the `load` function, specifying the rda data file. 
@@ -477,35 +478,107 @@ kable(model_recap5, col.names = c("Distributions",
 
 As we can see, the results of both models are very similar. This makes sense, as all of our specified priors in the second model were very unspecific (due to large variances.) If we fit sharper priors, we could expect to see a larger difference in the posterior from the default model.
 
-### Uniform Priors
 
-```{r image4, echo=FALSE}
-knitr::include_graphics("img/bayesian-regression/uniform.png")
+## 6. Model Evaluation
+
+In the prior sections, we have fit a variety of models with different priors to examine linear relationships in the `nhanes` dataset. Now, it's time to put some of our models to the test to see how they compare in performance and predictive ability.
+
+### MCMC Diagnostics & Trace Plots
+
+In order to see if our Bayesian analysis is working and performing well, we need to examine **Markov Chain Monte Carlo (MCMC) diagnostics**. In statistics, the Monte Carlo method refers to when we generate a sample of independent draws from the probability distribution of a random variable $X$ in order to estimate a feature of that distribution. The Markov Chain Monte Carlo method is similar, but in this case the items in the generated sample are serially correlated rather than independent. During model evaluation, samples from our posterior distributions will be generated using the MCMC method; we then can use **trace plots** to examine if our model meets MCMC diagnostics. Trace plots are line charts showing time on the x-axis, and values from the sample draws on the y-axis. We can use the `plot()` method in the `brms` package to display trace plots.
+
+Let's first examine a model that passes MCMC diagnostics. We will continue to use the `nhanes1518_sample` dataset, and we will focus on simple linear regression models.
+
+```{r mcmc1, echo = T, results = 'hide', warning = F, message = F}
+mcmc1 <- brm(formula = RIDAGEYR ~ BMXBMI, 
+             data    = nhanes1518_sample,
+             seed    = 123)
 ```
 
-For our next model, we will assign all of our coefficients to a **uniform distribution**. In this kind of distribution, we set a range of values (for example, 0 to 1, or a to b as illustrated above) in which every outcome is equally likely. 
+```{r mcmc1-trace}
+plot(mcmc1)
+```
 
-figure out how brms is defining inverse gamma and figure out what the mean is 
+The plots on the right side are the trace plots. We want to see something that represents a fuzzy caterpillar; this means that the generated draws have low serial correlation and that the sample space is explored many times. All three of our trace plots for this model fit the criteria. We can also do `summary(mcmc1)` and look at the values in the Rhat column; a value of 1 means our Markov chains have converged sufficiently, which is what we are looking for.
 
-let beta  be normal (0, covariance matrix) with sigma following an inverse wishart distribution [for multivariate regression]
+Now, let's examine some models that fail MCMC diagnostics. Let's run the same model as the previous example, but set the `iter` parameter to equal 100 (`brms` defaults this parameter to 2000.)
 
-explore unit information prior? simpler prior for variance as opposed to wishart [for multivariate regression], but also question of what brms allows us to do 
+```{r mcmc2, echo = T, results = 'hide', warning = F, message = F}
+mcmc2 <- brm(formula = RIDAGEYR ~ BMXBMI, 
+             data    = nhanes1518_sample,
+             seed    = 123,
+             iter    = 50)
+```
 
-use uniform default prior for beta on the variance prior models
+```{r mcmc2-trace}
+plot(mcmc2)
+```
 
-inverse gamma: gamma where alpha*beta is the mean
+Here, we see our trace plots look vastly different than the ones in the `iter = 2000` example. With plots like this, we can infer that the generated draws have high serial correlations and that the chains are failing to explore the sample space as frequently. This means that the effective size of our sample is too small; we can fix this issue by increasing the number of iterations (in this case, changing the `iter` parameter when fitting our model.)
 
-get function to plot the posterior (maybe find a function to plot the prior?)
+For this next model, we will use the same structure as the previous two models, except we will set the `iter` parameter to 400 and the `warmup` to 10 (the `warmup` parameter defaults to `iter/2`.)
 
-for the inverse gamma leave the mean in same place and increase variance
+```{r mcmc3, echo = T, results = 'hide', warning = F, message = F}
+mcmc3 <- brm(formula = RIDAGEYR ~ BMXBMI, 
+             data    = nhanes1518_sample,
+             seed    = 123,
+             iter    = 400,
+             warmup  = 10)
+```
 
+```{r mcmc3-trace}
+plot(mcmc3)
+```
 
-NEXT STEPS OUTLINE 
+Here, we see that the first portions of the trace plots look very different than the rest; this means our chains are eventually converging to the target distribution (as we get to the 'fuzzy caterpillar' portion), but our initial distributions are largely different than the target. We can fix this by increasing the `warmup` parameter, which discards a number of the initial observations.
 
-we want to see if bayesian worked: look at trace plots
-MCMC diagnostics
-look at effect of sample size
-look at model diagnostics, fit criteria, WAIC diagnostics 
-look at AIC for model comparison in choosing different priors
+### Widely Applicable Information Criterion (WAIC)
 
-AIC is just based on likelihood but doesn't include anything about the prior
+One metric we can use to compare Bayesian models is the **Widely Applicable Information Criterion (WAIC)**, which is an extension of the AIC metric. This statistic is a measurement of prediction error, and therefore we want to choose the model with the smallest WAIC.
+
+Let's compare the three models we just used to evaluate MCMC diagnostics. We can visualize their WAIC values, which are calculated using the `waic()` method in the `brms` package.
+
+```{r waic-comparisons}
+waic1 <- waic(mcmc1)$waic
+waic2 <- waic(mcmc2)$waic
+waic3 <- waic(mcmc3)$waic
+wx <- c(waic1, waic2, waic3)
+barplot(wx, ylab = "WAIC", names.arg=paste("mcmc", 1:3))
+```
+
+We see that the WAIC for mcmc1 is the lowest. This makes intuitive sense, as this was the model that passed MCMC diagnostics. If we were comparing these three models, we would proceed with mcmc1.
+
+We can also use WAIC to determine what are the best priors to select for our data. Let's take a look at the first five models we fitted in this module, using the `nhanes1518_sample` dataset. Here's a reminder of their prior distributions and their posterior statistics:
+
+```{r model-reminder, echo = F, warning = F, message = F}
+kable(model_recap3, col.names = c("$\\beta_{BMI}$ Distributions",
+                           "Posterior Means",
+                           "Intercepts"))
+```
+
+```{r waic-comparisons-2}
+waic_mod6 <- waic(model6)$waic
+waic_mod7 <- waic(model7)$waic
+waic_mod8 <- waic(model8)$waic
+waic_mod9 <- waic(model9)$waic
+waic_mod10 <- waic(model10)$waic
+wy <- c(waic_mod6, waic_mod7, waic_mod8, waic_mod9, waic_mod10)
+barplot(wy, ylab = "WAIC", ylim = c(230, 233), names.arg=paste("model", 6:10))
+```
+
+Although all of the models have very similar WAIC scores, model 7 (which uses a $N(0, 0.9)$ prior for $\beta_{BMI}$) slightly edges out the others. We would proceed with model 7. 
+
+## 7. References
+
+https://www.statlect.com/fundamentals-of-statistics/Markov-Chain-Monte-Carlo-diagnostics
+https://bookdown.org/ajkurz/Statistical_Rethinking_recoded/markov-chain-monte-carlo.html
+https://tem11010.github.io/regression_brms/
+https://cran.r-project.org/web/packages/bayesplot/vignettes/visual-mcmc-diagnostics.html
+https://www.r-bloggers.com/2019/11/creating-and-using-a-simple-bayesian-linear-model-in-brms-and-r/
+https://mc-stan.org/docs/2_21/functions-reference/inverse-gamma-distribution.html
+https://solomonkurz.netlify.app/post/2019-07-13-would-you-like-all-your-posteriors-in-one-plot/
+https://rstudio-pubs-static.s3.amazonaws.com/157909_f020eeb816364e18a75a3d866f3464e6.html
+https://michael-franke.github.io/intro-data-analysis/setting-priors.html
+https://www.rensvandeschoot.com/tutorials/r-linear-regression-bayesian-using-brms/
+https://statswithr.github.io/book/introduction-to-bayesian-regression.html#sec:Bayes-multiple-regression
+https://rpubs.com/katzkagaya/460937
