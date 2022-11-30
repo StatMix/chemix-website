@@ -39,14 +39,15 @@ A parameter estimate (or a prediction of new observations) obtained by averaging
 
 ## 2. Libraries
 
-The R package `BMA` provides ways of carrying out BMA for linear regression, generalized linear models, and survival or event history analysis us- ing Cox proportional hazards models.
+The R package `BMA` provides ways of carrying out BMA for linear regression, generalized linear models, and survival or event history analysis using Cox proportional hazards models.
+The library contains functions for plotting the BMA posterior distributions of the model parameters, as well as an image plot function that provides a way of visualizing the BMA output. The functions bicreg and bic.glm  provide fast and automatic default ways of doing this for the model classes considered. 
 
 ```{r}
 library(BMA)
 library(tidyverse)
 ```
 
-## 2. Example: Linear Regression
+## 3. Example : Linear Regression
 
 To illustrate how BMA takes account of model uncertainty about the variables to be included in lin- ear regression, we will be using the ``nhanes`` dataset where the variables are described in the file `nhanes-codebook.txt`. Load this data with the `load` function and specify the data file. 
 
@@ -65,194 +66,90 @@ load(file='nhanes1518.rda')
 <!-- summary (crime.bicreg, digits=2) -->
 <!-- ``` -->
 
-We first subset the dataset to include only the predictors in linear regressions module, in order to filter out some NA values:
+We first explore the URX predictors (i.e. the ones related to phthalates concentrations), subsetting subset the dataset to include only the predictors in the weighted quantile sum module, and then filter out `NA` values:
 
 ```{r}
-nhanes_na_removed<-cbind(nhanes1518[1:5],nhanes1518$BMXBMI)%>%
-  rename(BMXBMI="nhanes1518$BMXBMI")%>%
-  na.omit()
+nhanes_URX<-nhanes1518%>%
+  select(BMXBMI, URXUCR, URXCNP,URXCOP,URXECP,URXHIBP,URXMBP,URXMC1,URXMEP,URXMHBP,URXMHH)%>%na.omit()
 ```
 
-We fit a BMA model on the dataset:
+We fit a BMA model on the dataset using BMI as the response variable, and all of the 10 URX  variables as predictor variables, after log transforming both variables:
 
 ```{r}
-x.nhanes <-log(nhanes_na_removed[-6])
-y.nhanes <-log(nhanes_na_removed[6])
+x.nhanes <-log(nhanes_URX[-1])
+y.nhanes <-log(nhanes_URX[1])
 y.nhanes<-as.numeric(unlist(y.nhanes))
 nhanes.bicreg <- bicreg(x.nhanes, y.nhanes)
 summary(nhanes.bicreg)
 ```
 
-
-The BMA posterior distributions of all the parameters are produced by the command:
+In R, the `imageplot` function may be used to create an image of the model space that looks like a crossword puzzle:
 
 ```{r}
-plot (nhanes.bicreg,mfrow=c(3,2))
+imageplot.bma(nhanes.bicreg)
+```
+Here, the predictors, including the intercept, are on the y-axis, while the x-axis corresponds to each different model. The red color indicates when the variable estimate is positive, the blue color indicates when the variable estimate is negative, and the beige color is the color to use when the variable is not included in the model. Here the imageplot indicates that most of the URX variables are significant in predicting the BMI level, except for `URXMC1` which is not included in all of the six models produced by BMA.
+
+If we view the image by rows, we can see whether one variable is included in a particular model. For each variable, there are only 6 models in which it will appear. For example, we see that `URXUCR` and `URXMEP` appear in all the models. `URXMHH` appears in the top 2 models with larger posterior probabilities, but not the last 4 models.
+
+We can also plot the posterior distributions of these coefficients to take a closer look at the distributions:
+
+```{r}
+plot (nhanes.bicreg,mfrow=c(3,3))
 ```
 
 
-We see that the distribution of waist circumference is asymmetric, with peaks at age of around 80 and 0 respectively.
+This plot agrees with the summary table we obtained above, which shows that the posterior probability distributions of `URXMC1` and `URXCOP` have a very large point mass at 0, while the distribution of `URXUCR` and `URXMEP` have relatively small mass at 0. There is a slighly little tip at 0 for the variable `URXUCR`, indicating that the posterior inclusion probability of `URXECP` is not exactly 1. However, since the probability mass for `URXUCR` to be 0 is so small, that we are almost certain that `URXECP` should be included under Bayesian model averaging.
 
-We can also add the mean line, as well as overlay with transparent density plot. The value of alpha controls the level of transparency:
 
-## Example 2: Logistic Regression
+## 4 Example: Logistic Regression
 
-Now we illustrate BMA for logistic regression using the categorical variable `income` on the response BMI
+Now we illustrate BMA for logistic regression using the URX variables as predictors on the response BMI
+
+We explore the BMI value as a categorical between 1 (denoting high BMI value) and 0 (denoting low BMI value), with BMI value of 22 as the threshold:
 
 ```{r}
-nhanes_na_removed<-cbind(nhanes1518[1:5],nhanes1518$BMXBMI,nhanes1518$RIDAGEYR,nhanes1518$INDHHIN2)%>%
-  rename(BMXBMI="nhanes1518$BMXBMI")%>%
-  rename(income = "nhanes1518$INDHHIN2")%>%
-  rename(RIDAGEYR = "nhanes1518$RIDAGEYR")%>%
-  na.omit()
-# turn quantitative variable into categorical variable
-nhanes_income$income<-as.character(nhanes_income$income)
+BMI_category <- nhanes_URX %>%
+  mutate(BMI_Level = case_when(BMXBMI<22 ~ 0, BMXBMI >=22 ~ 1))
 ```
 
-Refer to the website for encoding of income categories:
-
-https://wwwn.cdc.gov/nchs/nhanes/2011-2012/demo_g.htm#INDHHIN2
-
-We want to first drop categories with values 77 (Refused) and 99 (Don't Know) first:
-```{r}
-nhanes_income <- subset(nhanes_income, income!="77" & income!="99")
-```
-
-Then we transform the variable `RIAGENDR` to be binary:
-```{r}
-nhanes_na_removed<-nhanes_na_removed%>%
-  mutate(Gender_binary=RIAGENDR-1)
-```
-
-Then we fit the Bayesian logistic regression model on predictors including categorical variable `income`:
+Then we fit the Bayesian logistic regression model on predictors including categorical variable `BMI_Level`:
 
 ```{r}
-nhanes.bic.glm<-bic.glm(Gender_binary~income+BMXBMI+WTINT2YR+WTMEC2YR, data=nhanes_na_removed, glm.family="binomial")
-summary(nhanes.bic.glm)
-plot (nhanes.bic.glm,mfrow=c(2,2))
+nhanes.bic.glm<-bic.glm(BMI_Level~.-BMXBMI -BMI_Level, data=BMI_category, glm.family="binomial")
 summary(nhanes.bic.glm, conditional=T, digits=3)
 ```
 
+And then we graph the posterior distributions of the fitted model, as well as the image plot summarizing the BMA analysis for logistic regression of the BMI value.
 
-## Example 3: Survival Analysis
-
-```{r}
-nhanes_na_removed$WTINT2YR<-log(nhanes_na_removed$WTINT2YR)
-nhanes_na_removed$WTMEC2YR<-log(nhanes_na_removed$WTMEC2YR)
-nhanes_na_removed$BMXBMI<-log(nhanes_na_removed$BMXBMI)
-nhanes_na_removed$WTINT2YR<-log(nhanes_na_removed$WTINT2YR)
-nhanes_na_removed$WTINT2YR<-log(nhanes_na_removed$WTINT2YR)
-```
-
-
-We can use the ``residuals()`` and ``rstudent()`` functions to extract the residuals and studentized residuals, respectively, from the linear model and plot them along with the predicted values.
+Here the imageplot indicates that most of the URX variables are significant in predicting the BMI level, except for `URXCOP` and `URXMEP` which is not included in all of the four models produced by BMA.
 
 ```{r}
-plot(predict(lm.fit), residuals(lm.fit))
-plot(predict(lm.fit), rstudent(lm.fit))
+imageplot.bma(nhanes.bic.glm)
 ```
-
-Additionally, we can compute the influence matrix for the predictors using the ``hatvalues()`` function.
+We can also plot the posterior distributions of these coefficients to take a closer look at the distributions:
 
 ```{r}
-plot(hatvalues(lm.fit))
-which.max(hatvalues(lm.fit))
+plot (nhanes.bic.glm,mfrow=c(3,3))
 ```
 
-## 4. Model Diagonostics & Interpretation
-The ``par()`` function can be used to create a grid of multiple subplots.
-
-```{r}
-par(mfrow = c(2, 2))
-plot(lm.fit)
-```
-
-The diagnostic plots show residuals in four different ways:
-
-- Residuals vs Fitted. Used to check the linear relationship assumptions. A horizontal line, without distinct patterns is an indication for a linear relationship, what is good. The model we fitted shows roughly a linear relationship, with no distinct patterns (such as a fan or funnel shape) in the residuals vs. fitted plot. 
-
-- Normal Q-Q. Used to examine whether the residuals are normally distributed. It’s good if residuals points follow the straight dashed line. The Q-Q plot generally follows the straight dashed line, with some deviations at the end towards high values of theoretical quantiles.
-
-- Scale-Location (or Spread-Location). Used to check the homogeneity of variance of the residuals (homoscedasticity). Horizontal line with equally spread points is a good indication of homoscedasticity. 
-
-- Residuals vs Leverage. Used to identify influential cases, that is extreme values that might influence the regression results when included or excluded from the analysis. Based on the residuals vs. leverage plot, there are no influential points according to Cook's distance. However, there might be some points with high standard residuals values which could be marked as outliers.
-
-Some other metrics from the model:
-
-- $R^2$: From the model above, we have an adjusted R-squared value of 0.2302, which indicates that 23.02% of the variability in the response variable BMI can be explained by the change in the predictor variable age. 
-- p value: The p value tells us how likely the data we have observed is to have occurred under the null hypothesis (more material on Null hypothesis on subsequent tutorials), i.e. that there is no correlation between the predictor variable age and the response BMI. From the model above, we have a p value of 2.2e-16, which tells us that the predictor variable age is statistically significant. 
-
-## 5. Multiple Linear Regression
-
-The ``lm()`` function can also fit multiple regression models. In this section, we will use `RIDAGEYR`, `BMXWAIST`, `BMXWT`, and `BMXHT` as predictors of the response variable ``BMXBMI``.
-
-```{r}
-lm.fit <- lm(BMXBMI ~ RIDAGEYR+ BMXWAIST + BMXWT + BMXHT, data = nhanes1518)
-summary(lm.fit)
-```
-
-### Model Interpretation:
-- Intercept: The intercept does not have interpretability since it is unrealistic to have age 0, body waist circumference of 0, height and weight of 0.
-- `BMXWT`: The coeffcient for the predictor `BMXWT` is 0.2420969, which means that for every unit increase in the participant's waist circumference, the BMI is expected to increase by 0.2420969 on average, holding all else constant (holding all other predictor variables, `BMXWAIST`, `BMXWT`, and `BMXHT` constant)
-
-In the lm() formula, a dot . can be used to include all variables in the NHANES data as predictors.
-```{r}
-nhanes_na_removed<-cbind(nhanes1518[1:5],nhanes1518$BMXBMI)
-# data clearning to ignore NA values
-lm.fit1 <- lm(nhanes1518$BMXBMI ~ ., data = nhanes_na_removed)
-summary(lm.fit1)
-```
-
-If we want to exclude specific variables from the list of predictors, we can use the ``-`` notation.  In the following example, all predictor variables but ``age`` are included in the model.
-
-```{r}
-library(dplyr)
-nhanes_na_removed<-cbind(nhanes1518[1:5],nhanes1518$BMXBMI)
-# data clearning to ignore NA values
-lm.fit1 <- lm(nhanes1518$BMXBMI ~ . - RIDSTATR, data = nhanes_na_removed)
-summary(lm.fit1)
-```
-
-Including ``-1`` excludes the intercept from the model.  
-```{r}
-lm.fit1 <- lm(nhanes1518$BMXBMI ~ .- 1, data = nhanes_na_removed)
-summary(lm.fit1)
-```
-
-The ``update()`` function can be used to specify a new formula for an existing model.
-
-```{r}
-lm.fit1 <- update(lm.fit, ~. - RIDSTATR)
-```
+This plot agrees with the summary table we obtained above, which shows that the posterior probability distributions of`URXCOP` and `URXMEP`  have a very large point mass at 0, while the distribution of `URXUCR` and `URXMHBP` have relatively small mass at 0. There is a slighly little tip at 0 for the variable `URXMHBP`, indicating that the posterior inclusion probability of `URXMHBP` is not exactly 1. However, since the probability mass for `URXUCR` to be 0 is so small, that we are almost certain that `URXMHBP` should be included under Bayesian model averaging.
 
 
-## 6. Interaction Terms
-
-There are two ways to include interaction terms in the model, ``:`` and ``*``. The ``:`` symbol only includes the interaction term between the two variables, while the ``*`` symbol includes the variables themselves, as well as the interaction terms. This means that ``BMXWT*BMXWAIST`` is equivalent to ``BMXWT + BMXWAIST + BMXWT:BMXWAIST``.
-
-```{r}
-summary(lm(BMXBMI ~  BMXWT* BMXWAIST, data = nhanes1518))
-```
+## 5. Bayesian Model Diagnostics
 
 
-A simple way to include all interaction terms is the syntax ``.^2``.
-```{r}
-library(dplyr)
-nhanes_na_removed<-cbind(nhanes1518[1:5],nhanes1518$BMXBMI)
-# data clearning to ignore NA values
-summary(lm(nhanes1518$BMXBMI ~ .^2, data = nhanes_na_removed))
-```
+## 5. Why Bayesian Model Averaging? Advantages
 
-## 7. Categorical Variable
+### Model Uncertainty
+- It is important to take account of model uncertainty about statistical structure when making inferences. Oftentimes, there is remaining uncertainty not only about parameters, but also about the underlying true model. In this case, a Bayesian analysis allows one to take into account not only uncertainty about the parameters given a particular model, but also uncertainty across all models combined.
 
+### Simultaneous Scenarios
+- Allows users to incorporate several competing models in the estimation process. In theory, BMA provides better average predictive performance than any single model that could be selected. BMA avoids the all-or-nothing mentality that is associated with classical hypothesis testing, in which a model is either accepted or rejected wholesale. In contrast, BMA retains all model uncertainty until the final inference stage, which may or may not feature a discrete decision.
 
-*Baseline*: income category 1 corresponding to a household income of 0 to 4,999 dollars.
+### Model Misspecification
+BMA is relatively robust to model misspecification. If one does select a single model, then one had better be sure of being correct. With BMA, a range of rival models contribute to estimates and predictions, and chances are that one of the models in the set is at least approximately correct.
 
-*Model Interpretation*:
-
-- Intercept: The intercept 25.6489 means that for people in the baseline income category (income category 1 corresponding to a household income of 0 to 4,999 dollars), the BMI is expected to be 25.6489 on average.
-
-- `income6`: The coeffcient for the predictor `income6` is 1.1473, which means that for participants with household income category 6 (25,000 to 34,999 dollars per ear), the BMI is expected to be 1.1473 higher than that of participants with household income in category 1 (0 to 4,999 dollars), on average.
 
 ## Related Topics
 
@@ -262,4 +159,3 @@ summary(lm(nhanes1518$BMXBMI ~ .^2, data = nhanes_na_removed))
 | Quantile factoring | use qualitative  as levels |
 | Cross-validation 	|  k-fold, LOOCV	|
 | Model section 	|  AIC, BIC, Cp	|
-
