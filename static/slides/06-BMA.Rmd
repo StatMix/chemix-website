@@ -139,7 +139,23 @@ This plot agrees with the summary table we obtained above, which shows that the 
 ## 5. Bayesian Model Diagnostics
 
 
-## 5. Why Bayesian Model Averaging? Advantages
+```{r}
+# library(coda)
+# library(bayesplot)
+# autocorr(nhanes.bic.glm)
+```
+
+## 6. Bayesian Model Predictions
+
+With the `predict` function, we can understand uncertainty besides classification, taking a look at the predictive probabilities for the two class classification problem:
+
+```{r}
+predicted<-predict(nhanes.bic.glm, newdata=BMI_category)
+```
+
+## 7. BMA vs. WQS
+
+## 8. Why Bayesian Model Averaging? Advantages
 
 ### Model Uncertainty
 - It is important to take account of model uncertainty about statistical structure when making inferences. Oftentimes, there is remaining uncertainty not only about parameters, but also about the underlying true model. In this case, a Bayesian analysis allows one to take into account not only uncertainty about the parameters given a particular model, but also uncertainty across all models combined.
