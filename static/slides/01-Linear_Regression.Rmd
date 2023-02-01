@@ -30,7 +30,7 @@ knitr::opts_chunk$set(echo = TRUE,
 The ``library()`` function is used to access functionality that is provided by R packages, but is not included in base R.  ``install.packages()`` can be used to install new packages. Run this command from the console.  
 
 ```{r}
-# install.packages("ggplot2")
+# install.packages("tidyverse")
 ```
 
 First, load the package ``ggplot2`` that will be used throughout the tutorial for data visualizations.
@@ -48,7 +48,7 @@ This tutorial will be using the ``nhanes`` dataset where the variables are descr
 load(file='nhanes1518.rda')
 ```
 
-The functions ``head()`` and ``names()`` can be used to explore the data.
+The functions ``head()`` and ``names()`` can be used to explore the data. ``head()`` can output the first several rows of the data, while ```names()`` can provide all the names of variables.
 
 ```{r}
 head(nhanes1518)
@@ -60,9 +60,10 @@ We will first explore the dataset by doing exploratory data analysts on the pred
 ```{r}
 # observations with age = 0
 nhanes1518%>%filter(RIDAGEYR==0)
+nhanes1518%>%filter(RIDAGEYR==0)%>%nrow()
 ```
 
-With the number of 0 age observations, we want to limit our attention to adults to investigate the effect of age on BMI
+We observe that there are 753 observations with age of 0, which is not the focus of our analysis if we want to focus on the adult population. With the number of 0 age observations, we want to limit our attention to adults to investigate the effect of age on BMI
 
 ```{r}
 nhanes1518 <- nhanes1518%>%filter(RIDAGEYR>=18)
@@ -79,6 +80,7 @@ p<-ggplot(nhanes1518, aes(x=RIDAGEYR)) +
   geom_histogram(color="black", fill="white")+labs(x = "Age", title = "Distribution of Age")
 ```
 
+We are interested in the relation between age and BMI. Before applying data analysis, we want to check the distributions of these variables.
 
 We see that the distribution of waist circumference is asymmetric, with peaks at age of around 80 and 0 respectively.
 
@@ -109,19 +111,7 @@ lm.fit <- lm(RIDAGEYR ~ BMXBMI, data = nhanes1518)
 ```
 
 
-There are several ways that we can examine the model results.  First, we can just call the name of the ``lm()`` model for a brief summary.
-
-```{r}
-lm.fit
-```
-
-We can also use the ``names()`` function to list all of the names of variables in the ``lm.fit`` model:
-
-```{r}
-names(lm.fit)
-```
-
-The ``summary()`` function gives a more extensive overview of the model fit:
+There are several ways that we can examine the model results. The ``summary()`` function gives a more extensive overview of the model fit:
 
 ```{r}
 summary(lm.fit)
@@ -246,7 +236,6 @@ summary(lm.fit1)
 If we want to exclude specific variables from the list of predictors, we can use the ``-`` notation.  In the following example, all predictor variables but ``age`` are included in the model.
 
 ```{r}
-library(dplyr)
 nhanes_na_removed<-cbind(nhanes1518[1:5],nhanes1518$BMXBMI)
 # data clearning to ignore NA values
 lm.fit1 <- lm(nhanes1518$BMXBMI ~ . - RIDSTATR, data = nhanes_na_removed)

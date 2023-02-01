@@ -151,6 +151,7 @@ With the `predict` function, we can understand uncertainty besides classificatio
 
 ```{r}
 predicted<-predict(nhanes.bic.glm, newdata=BMI_category)
+predicted
 ```
 
 ## 7. BMA vs. WQS
@@ -164,7 +165,7 @@ predicted<-predict(nhanes.bic.glm, newdata=BMI_category)
 - Allows users to incorporate several competing models in the estimation process. In theory, BMA provides better average predictive performance than any single model that could be selected. BMA avoids the all-or-nothing mentality that is associated with classical hypothesis testing, in which a model is either accepted or rejected wholesale. In contrast, BMA retains all model uncertainty until the final inference stage, which may or may not feature a discrete decision.
 
 ### Model Misspecification
-BMA is relatively robust to model misspecification. If one does select a single model, then one had better be sure of being correct. With BMA, a range of rival models contribute to estimates and predictions, and chances are that one of the models in the set is at least approximately correct.
+- BMA is relatively robust to model misspecification. If one does select a single model, then one had better be sure of being correct. With BMA, a range of rival models contribute to estimates and predictions, and chances are that one of the models in the set is at least approximately correct.
 
 
 ## Related Topics
