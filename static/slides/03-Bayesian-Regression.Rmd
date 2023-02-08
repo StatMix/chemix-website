@@ -43,13 +43,17 @@ load(file = 'nhanes1518.rda')
 
 ## 2. Introduction to Bayesian Statistics
 
+### Priors and Posteriors
+
 There are two schools of thought in the world of statistics: frequentist, which we have been working with up to this point, and Bayesian. In the frequentist school, probability is defined as a frequency. For example, if we roll a fair six-sided die, the probability we will roll a 1 is $P(Y = 1) = \frac{1}{6}$. The conclusions we make in frequentist statistics are based on likelihood; we retrieve data and then make an inference based on the data.
 
 In the Bayesian school, probability is defined as a belief. For example, a Bayesian statement could be "I believe the probability that it rains tomorrow is 30%." Different people obviously have different beliefs, so another statistician stating "I believe the probability that it rains tomorrow is 40%" is just as valid. Like frequentist statistics, our conclusions rely on likelihood. However, unlike frequentists statistics, our conclusions also rely on another factor: our prior knowledge. When we collect data, we then use it to update our prior knowledge. For simplicity, we can simply refer to our prior knowledge that we wish to update as the **prior**. After we see our data,  we update our prior to create the **posterior**.
 
 But how exactly do we get from the prior to the posterior?
 
-Bayesian statistics mostly deals with conditional probabilities, which can be calculated using the fittingly-named **Bayes' rule**. Given two events A and B, the probability of event A conditional on event B as stated by Bayes' rule is $P(A | B) = \frac{P(B | A)P(A)}{P(B)}$. 
+### Bayes' Rule
+
+The fundamental concept of Bayesian statistics is the fittingly-named **Bayes' rule**. Given a **likelihood function** $p(y | \theta)$ and a prior $p(\theta)$, the posterior $p(\theta | y)$ stated by Bayes' rule is $p(\theta | y) = \frac{p(y | \theta)p(\theta)}{p(y)}$. 
 
 For example, we can use the Bayes' rule with our `nhanes` dataset to calculate the probability that a subject in the dataset is female given their reported concentration of Mono(carboxynonyl) phthalate is above 10 ng/mL. For simplicity, we will only consider subjects with data points present for both the `RIAGENDR` and `URXCNP` variables, which deal with gender and Mono(carboxynonyl) phthalate concentration, respectively.
 
@@ -82,13 +86,33 @@ p_f_given_m_rowcounts
 
 We get that, given a subject's reported concentration of Mono(carboxynonyl) phthalate is above 10 ng/mL, the probability they will be female is approximately 46.7%.
 
-## 3. Credible Intervals
+### Credible Intervals
 
 When conducting hypothesis tests or linear regressions using the frequentist approach, we often find it useful to create a **confidence interval**. Confidence intervals help us estimate the (un)certainty of a parameter with a lower and upper bound. For example, let's say we created a 95% confidence interval for the mean age in our dataset and found the lower bound to be 32 and the upper bound to be 47. We could then interpret this confidence interval as "We are 95% confident that the true mean age is between 32 and 47 years old." If we constructed many more similar confidence intervals, we would expect 95% of them to contain the true population mean.
 
 The Bayesian equivalent to a confidence interval is known as a **credible interval**, which has a simpler interpretation. For example, a 95% credible interval is between any lower bound $L$ and any upper bound $U$ such that the posterior probability of $L < p < U = 0.95$. This means that if we found the 95% credible interval for the mean age in our dataset to have a lower bound of 32 and an upper bound of 47, then we can simply say that "There is a 95% probability that the true mean age is between 32 and 47 years old."
 
+## 3. Linear Regression
+
+### Notation
+
+### Assumptions
+
+### Parameters
+
 ## 4. Bayesian Simple Linear Regression
+
+### Motivation
+
+### Model
+
+### Interpretation
+
+### Inference
+
+### Prediction
+
+### Evaluation
 
 ```{r image1, echo=FALSE}
 knitr::include_graphics("img/bayesian-regression/regression-ss1.png")
@@ -131,7 +155,7 @@ summary(model1, priors = TRUE)
 
 From this model, we get the same estimate for the intercept (45.41) and for the $\beta_{BMI}$ (0.12) as we got in our frequentist model. However, since we are now using a Bayesian approach, we can interpret our credible interval to mean that there is a 95% chance that the true value for the intercept lies between 43.94 and 46.87, and there is a 95% chance that the true value for $\beta_{BMI}$ lies between 0.07 and 0.16. 
 
-### Beta Priors: The Normal Distribution
+### Coefficient Priors: The Normal Distribution
 
 A common prior for the coefficient (or $\beta$) in Bayesian inference deals with a **normal (Gaussian) distribution**. This is a **conjugate** prior, meaning that the posterior will also be a normal distribution, but with different parameters. This might be a good choice for our beta prior if we assume our data is normally distributed, meaning most values are situated in the middle, and there is a symmetrical decline in the frequency of values as we reach the ends. 
 
@@ -177,7 +201,7 @@ kable(model_recap1, col.names = c("$\\beta_{BMI}$ Distributions",
                            "Intercepts"))
 ```
 
-### Beta Priors: The T-Distribution
+### Coefficient Priors: The T-Distribution
 
 Another common prior for the coefficient in Bayesian inference deals with the **student t-distribution**. This differs from the normal distribution in that the values are less clustered in the middle, giving it heavier tails on the ends. Using the t-distribution can offer more robust estimation; it is often used on smaller, approximately normal datasets (for example, when n < 30). For the purpose of this section, we will proceed using a t-distribution to estimate $\beta_{BMI}$.
 
@@ -222,7 +246,7 @@ kable(model_recap2, col.names = c("$\\beta_{BMI}$ Distributions",
 
 Upon selecting our priors and running our models, we can then use our posterior information to conduct further regression. Usually, regardless of the initial choice of prior, results will end up converging to the same posterior after many iterations.
 
-### Beta Priors: A Closer Look
+### Coefficient Priors: A Closer Look
 
 In the previous sections, we have discovered that, regardless of our choice of prior, we get virtually identical results for the posterior means and intercepts. To get a better understanding of how prior selection can impact our regression models, let's take a small sample of our overarching `nhanes` dataset.
 
@@ -388,6 +412,18 @@ kable(model_recap4, col.names = c("$\\sigma$ Distributions",
 ```
 
 ## 5. Bayesian Multiple Linear Regression
+
+### Motivation
+
+### Model
+
+### Interpretation
+
+### Inference
+
+### Prediction
+
+### Evaluation
 
 Now that we've tackled simple linear regression, let's learn how to do **multiple linear regression** the Bayesian way. In our frequentist regression module, we fit a model with `BMXBMI` as the response and `RIDAGEYR`, `BMXWAIST`, `BMXWT`, and `BMXHT` as the predictors; we will follow that formula here.
 
