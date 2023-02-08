@@ -221,6 +221,15 @@ which.max(hatvalues(lm.fit))
 
 Multiple linear regression allows to evaluate the relationship between two variables, while controlling for the effect (i.e., removing the effect) of other variables.
 
+```{r}
+multilm.fit <- lm(RIDAGEYR ~ BMXBMI+WTINT4YR, data = nhanes1518)
+```
+
+
+```{r}
+summary(multilm.fit)
+```
+
 
 ## 5. Model Diagonostics & Interpretation
 The ``par()`` function can be used to create a grid of multiple subplots.
@@ -328,6 +337,24 @@ There are two ways to include interaction terms in the model, ``:`` and ``*``. T
 summary(lm(BMXBMI ~  BMXWT* BMXWAIST, data = nhanes1518))
 ```
 
+
+```{r}
+library(ggplot2)
+
+# Fit the linear regression model
+fit <- lm(BMXBMI ~ BMXWT * BMXWAIST, data = nhanes1518)
+
+# Plot the interaction effects
+ggplot(nhanes1518, aes(x = BMXWAIST, y = BMXBMI, color = BMXWT)) + 
+  geom_point() + 
+  stat_smooth(method = "lm", se = FALSE, fullrange = TRUE) + 
+  scale_color_gradient(low = "blue", high = "red") + 
+  labs(x = "BMXWAIST", y = "BMXBMI", color = "BMXWT") + 
+  ggtitle("Interaction effects between BMXWT, BMXWAIST, and BMXBMI")
+
+```
+
+The plot shows the relationship between BMXBMI and BMXWAIST for different levels of BMXWT, where each level is represented by a different color. The plot provides a visual representation of how the effect of BMXWAIST on BMXBMI differs for each level of BMXWT: For high levels of `BMXWT`, we notice that BMXWAIST has the most significant effect on BMXBMI, with the sharpest slope. Whereas, for low levels of `BMXWT`, we notice that BMXWAIST has far less significant effect on BMXBMI, with a very small slope at a stand still.
 
 A simple way to include all interaction terms is the syntax ``.^2``.
 ```{r}
