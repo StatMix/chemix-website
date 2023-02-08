@@ -139,7 +139,24 @@ This plot agrees with the summary table we obtained above, which shows that the 
 ## 5. Bayesian Model Diagnostics
 
 
-## 5. Why Bayesian Model Averaging? Advantages
+```{r}
+# library(coda)
+# library(bayesplot)
+# autocorr(nhanes.bic.glm)
+```
+
+## 6. Bayesian Model Predictions
+
+With the `predict` function, we can understand uncertainty besides classification, taking a look at the predictive probabilities for the two class classification problem:
+
+```{r}
+predicted<-predict(nhanes.bic.glm, newdata=BMI_category)
+predicted
+```
+
+## 7. BMA vs. WQS
+
+## 8. Why Bayesian Model Averaging? Advantages
 
 ### Model Uncertainty
 - It is important to take account of model uncertainty about statistical structure when making inferences. Oftentimes, there is remaining uncertainty not only about parameters, but also about the underlying true model. In this case, a Bayesian analysis allows one to take into account not only uncertainty about the parameters given a particular model, but also uncertainty across all models combined.
@@ -148,7 +165,7 @@ This plot agrees with the summary table we obtained above, which shows that the 
 - Allows users to incorporate several competing models in the estimation process. In theory, BMA provides better average predictive performance than any single model that could be selected. BMA avoids the all-or-nothing mentality that is associated with classical hypothesis testing, in which a model is either accepted or rejected wholesale. In contrast, BMA retains all model uncertainty until the final inference stage, which may or may not feature a discrete decision.
 
 ### Model Misspecification
-BMA is relatively robust to model misspecification. If one does select a single model, then one had better be sure of being correct. With BMA, a range of rival models contribute to estimates and predictions, and chances are that one of the models in the set is at least approximately correct.
+- BMA is relatively robust to model misspecification. If one does select a single model, then one had better be sure of being correct. With BMA, a range of rival models contribute to estimates and predictions, and chances are that one of the models in the set is at least approximately correct.
 
 
 ## Related Topics

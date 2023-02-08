@@ -247,7 +247,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Tutorial 07 - Bayesian Model Averaging</h1>
 <h4 class="author">Olivia Fan</h4>
-<h4 class="date">30 November, 2022</h4>
+<h4 class="date">08 December, 2022</h4>
 
 </div>
 
@@ -416,9 +416,20 @@ summary(nhanes.bic.glm, conditional=T, digits=3)</code></pre>
 </div>
 <div id="bayesian-model-diagnostics" class="section level2">
 <h2>5. Bayesian Model Diagnostics</h2>
+<pre class="r"><code># library(coda)
+# library(bayesplot)
+# autocorr(nhanes.bic.glm)</code></pre>
+</div>
+<div id="bayesian-model-predictions" class="section level2">
+<h2>6. Bayesian Model Predictions</h2>
+<p>With the <code>predict</code> function, we can understand uncertainty besides classification, taking a look at the predictive probabilities for the two class classification problem:</p>
+<pre class="r"><code>predicted&lt;-predict(nhanes.bic.glm, newdata=BMI_category)</code></pre>
+</div>
+<div id="bma-vs.-wqs" class="section level2">
+<h2>7. BMA vs. WQS</h2>
 </div>
 <div id="why-bayesian-model-averaging-advantages" class="section level2">
-<h2>5. Why Bayesian Model Averaging? Advantages</h2>
+<h2>8. Why Bayesian Model Averaging? Advantages</h2>
 <div id="model-uncertainty" class="section level3">
 <h3>Model Uncertainty</h3>
 <ul>
