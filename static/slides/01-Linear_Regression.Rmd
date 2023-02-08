@@ -113,7 +113,9 @@ Violations of these assumptions can affect the accuracy and interpretability of 
 
 We will verify that our data meets all the assumptions above in Section 5. Model Diagnostics.
 
-## 4. Simple Linear Regression
+## 4. Linear Regression
+
+### Simple Linear Regression
 
 Simple linear regressions take the form
 
@@ -137,6 +139,11 @@ There are several ways that we can examine the model results. The ``summary()`` 
 ```{r}
 summary(lm.fit)
 ```
+
+### Model Interpretation
+
+$\beta_0$: Not interpretable in our case. For a person with 0 BMI (which is unrealistic), his or her expected age is -2.241 (unrealistic again).
+$\beta_1$: For every unit increase in the BMI of a person, his or her age is expected to increase by 1.432 on average.
 
 The coefficients of the linear regression model can be extracted using the ``coef()`` function and the confidence interval(s) with the ``confint()`` function.
 
@@ -209,6 +216,10 @@ Additionally, we can compute the influence matrix for the predictors using the `
 plot(hatvalues(lm.fit))
 which.max(hatvalues(lm.fit))
 ```
+
+### Multilinear Regression
+
+Multiple linear regression allows to evaluate the relationship between two variables, while controlling for the effect (i.e., removing the effect) of other variables.
 
 
 ## 5. Model Diagonostics & Interpretation
@@ -327,9 +338,6 @@ summary(lm(nhanes1518$BMXBMI ~ .^2, data = nhanes_na_removed))
 ```
 
 
-## 9. Why Multilinear Regressions
-
-Multiple linear regression allows to evaluate the relationship between two variables, while controlling for the effect (i.e., removing the effect) of other variables.
 
 ## Related Topics
 
