@@ -230,6 +230,19 @@ multilm.fit <- lm(RIDAGEYR ~ BMXBMI+WTINT4YR, data = nhanes1518)
 summary(multilm.fit)
 ```
 
+### Multicollinearity Diagnostics
+
+```{r}
+library(car)
+# Calculate VIFs
+vifs <- vif(multilm.fit)
+
+# Print VIFs
+print(vifs)
+
+```
+
+Variance Inflation Factor (VIF): The VIF is a measure of the increase in the variance of the estimated coefficients due to multicollinearity. A VIF value greater than 5 indicates that there is strong multicollinearity in the model. Here the multicollinearity issue is not significant.
 
 ## 5. Model Diagonostics & Interpretation
 The ``par()`` function can be used to create a grid of multiple subplots.
