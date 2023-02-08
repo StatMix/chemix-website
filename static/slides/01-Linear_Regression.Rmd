@@ -25,7 +25,9 @@ knitr::opts_chunk$set(echo = TRUE,
 
 - Interpret the slope and intercept of the regression line.
 
-## 1. Libraries
+## 1. Motivation & Library
+
+In this chapter, we introduce linear regression which aims to model the relationship between a response variable and one or more predictor variables by fitting a linear equation to observed data. The goal of linear regression is to find the best-fitting line (or hyperplane) that minimizes the sum of the squared differences between the observed responses and the values predicted by the equation. The resulting equation can then be used to make predictions about the response for new inputs. In essence, linear regression aims to answer the question of how changes in the independent variables relate to changes in the dependent variable.
 
 The ``library()`` function is used to access functionality that is provided by R packages, but is not included in base R.  ``install.packages()`` can be used to install new packages. Run this command from the console.  
 
@@ -97,12 +99,31 @@ ggplot(nhanes1518, aes(x=RIDAGEYR)) +
 ```
 
 
-## 3. Simple Linear Regression
+## 3. Model Assumptions
+
+The assumptions of linear regression model are as follows:
+
+- *Linearity*: The relationship between the independent and dependent variables is linear.
+- *Independence*: The observations are independent of each other, meaning that the value of the dependent variable for one observation is not influenced by the values of the independent variables for other observations.
+- *Homoscedasticity*: The variance of the errors is constant for all values of the independent variables.
+- *Normality*: The errors are normally distributed.
+- *No multicollinearity*: The independent variables are not highly correlated with each other.
+- *No Autocorrelation*: The errors are not correlated with each other.
+Violations of these assumptions can affect the accuracy and interpretability of the regression results. It is important to check for these assumptions before applying linear regression and consider alternative models if necessary.
+
+We will verify that our data meets all the assumptions above in Section 5. Model Diagnostics.
+
+## 4. Simple Linear Regression
 
 Simple linear regressions take the form
 
 $$Y_i = \beta_0 +\beta_1 X_i +\epsilon_i$$
 Where $Y_i$ is the dependent variable, $X_i$ is the independent variable and $\epsilon_i$ is the random error term.
+
+
+- $\beta_1$: True sloe pf the relationship between X and Y
+- $\beta_0$: True intercept of the relationship between X and Y
+- $\epsilon$: Error (residual)
 
 We'll start with a fitting a simple linear model using the ``lm()`` function.  Instead of attaching the ``nhanes1518`` dataset, we also can specify the data from the ``lm()`` function. In the ``lm()`` function, the first variable is the response variable and the variables to the right of the ``~`` symbol are the predictor variable(s). Here we use age as the response, and BMI as the predictor variables.
 
@@ -189,7 +210,8 @@ plot(hatvalues(lm.fit))
 which.max(hatvalues(lm.fit))
 ```
 
-## 4. Model Diagonostics & Interpretation
+
+## 5. Model Diagonostics & Interpretation
 The ``par()`` function can be used to create a grid of multiple subplots.
 
 ```{r}
@@ -212,7 +234,7 @@ Some other metrics from the model:
 - $R^2$: From the model above, we have an adjusted R-squared value of 0.2302, which indicates that 23.02% of the variability in the response variable BMI can be explained by the change in the predictor variable age. 
 - p value: The p value tells us how likely the data we have observed is to have occurred under the null hypothesis (more material on Null hypothesis on subsequent tutorials), i.e. that there is no correlation between the predictor variable age and the response BMI. From the model above, we have a p value of 2.2e-16, which tells us that the predictor variable age is statistically significant. 
 
-## 5. Multiple Linear Regression
+## 6. Multiple Linear Regression
 
 The ``lm()`` function can also fit multiple regression models. In this section, we will use `RIDAGEYR`, `BMXWAIST`, `BMXWT`, and `BMXHT` as predictors of the response variable ``BMXBMI``.
 
@@ -255,23 +277,6 @@ lm.fit1 <- update(lm.fit, ~. - RIDSTATR)
 ```
 
 
-## 6. Interaction Terms
-
-There are two ways to include interaction terms in the model, ``:`` and ``*``. The ``:`` symbol only includes the interaction term between the two variables, while the ``*`` symbol includes the variables themselves, as well as the interaction terms. This means that ``BMXWT*BMXWAIST`` is equivalent to ``BMXWT + BMXWAIST + BMXWT:BMXWAIST``.
-
-```{r}
-summary(lm(BMXBMI ~  BMXWT* BMXWAIST, data = nhanes1518))
-```
-
-
-A simple way to include all interaction terms is the syntax ``.^2``.
-```{r}
-library(dplyr)
-nhanes_na_removed<-cbind(nhanes1518[1:5],nhanes1518$BMXBMI)
-# data clearning to ignore NA values
-summary(lm(nhanes1518$BMXBMI ~ .^2, data = nhanes_na_removed))
-```
-
 ## 7. Categorical Variable
 
 ```{r}
@@ -304,7 +309,25 @@ summary(lm(BMI ~ income, data = nhanes_income))
 
 - `income6`: The coeffcient for the predictor `income6` is 1.1473, which means that for participants with household income category 6 (25,000 to 34,999 dollars per ear), the BMI is expected to be 1.1473 higher than that of participants with household income in category 1 (0 to 4,999 dollars), on average.
 
-## 8. Why Multilinear Regressions
+## 8. Interaction Terms
+
+There are two ways to include interaction terms in the model, ``:`` and ``*``. The ``:`` symbol only includes the interaction term between the two variables, while the ``*`` symbol includes the variables themselves, as well as the interaction terms. This means that ``BMXWT*BMXWAIST`` is equivalent to ``BMXWT + BMXWAIST + BMXWT:BMXWAIST``.
+
+```{r}
+summary(lm(BMXBMI ~  BMXWT* BMXWAIST, data = nhanes1518))
+```
+
+
+A simple way to include all interaction terms is the syntax ``.^2``.
+```{r}
+library(dplyr)
+nhanes_na_removed<-cbind(nhanes1518[1:5],nhanes1518$BMXBMI)
+# data clearning to ignore NA values
+summary(lm(nhanes1518$BMXBMI ~ .^2, data = nhanes_na_removed))
+```
+
+
+## 9. Why Multilinear Regressions
 
 Multiple linear regression allows to evaluate the relationship between two variables, while controlling for the effect (i.e., removing the effect) of other variables.
 
