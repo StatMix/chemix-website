@@ -22,7 +22,7 @@ knitr::opts_chunk$set(echo = TRUE,
 - Understand how to create a Bayesian simple linear regression model with the `brms` package using different priors. 
 - Understand how to create a Bayesian multiple linear regression model with the `brms` package using different priors.
 
-## 1. Installations and Data
+## Installations and Data
 
 This tutorial will make use of the following R libraries.
 
@@ -33,6 +33,8 @@ library(knitr)
 library(ggplot2)
 library(patchwork)
 library(pander)
+library(tidyr)
+library(broom.mixed)
 ```
 
 This tutorial will be using the ``nhanes`` dataset where the variables are described in the file `nhanes-codebook.txt`. This data can be loaded with the `load` function, specifying the rda data file. 
@@ -41,7 +43,9 @@ This tutorial will be using the ``nhanes`` dataset where the variables are descr
 load(file = 'nhanes1518.rda')
 ```
 
-## 2. Introduction to Bayesian Statistics
+## Introduction to Bayesian Statistics
+
+### Priors and Posteriors
 
 There are two schools of thought in the world of statistics: frequentist, which we have been working with up to this point, and Bayesian. In the frequentist school, probability is defined as a frequency. For example, if we roll a fair six-sided die, the probability we will roll a 1 is $P(Y = 1) = \frac{1}{6}$. The conclusions we make in frequentist statistics are based on likelihood; we retrieve data and then make an inference based on the data.
 
@@ -49,7 +53,9 @@ In the Bayesian school, probability is defined as a belief. For example, a Bayes
 
 But how exactly do we get from the prior to the posterior?
 
-Bayesian statistics mostly deals with conditional probabilities, which can be calculated using the fittingly-named **Bayes' rule**. Given two events A and B, the probability of event A conditional on event B as stated by Bayes' rule is $P(A | B) = \frac{P(B | A)P(A)}{P(B)}$. 
+### Bayes' Rule
+
+The fundamental concept of Bayesian statistics is the fittingly-named **Bayes' rule**. Given a **likelihood function** $p(y | \theta)$ and a prior $p(\theta)$, the posterior $p(\theta | y)$ stated by Bayes' rule is $p(\theta | y) = \frac{p(y | \theta)p(\theta)}{p(y)}$. 
 
 For example, we can use the Bayes' rule with our `nhanes` dataset to calculate the probability that a subject in the dataset is female given their reported concentration of Mono(carboxynonyl) phthalate is above 10 ng/mL. For simplicity, we will only consider subjects with data points present for both the `RIAGENDR` and `URXCNP` variables, which deal with gender and Mono(carboxynonyl) phthalate concentration, respectively.
 
@@ -82,40 +88,50 @@ p_f_given_m_rowcounts
 
 We get that, given a subject's reported concentration of Mono(carboxynonyl) phthalate is above 10 ng/mL, the probability they will be female is approximately 46.7%.
 
-## 3. Credible Intervals
+### Credible Intervals
 
 When conducting hypothesis tests or linear regressions using the frequentist approach, we often find it useful to create a **confidence interval**. Confidence intervals help us estimate the (un)certainty of a parameter with a lower and upper bound. For example, let's say we created a 95% confidence interval for the mean age in our dataset and found the lower bound to be 32 and the upper bound to be 47. We could then interpret this confidence interval as "We are 95% confident that the true mean age is between 32 and 47 years old." If we constructed many more similar confidence intervals, we would expect 95% of them to contain the true population mean.
 
 The Bayesian equivalent to a confidence interval is known as a **credible interval**, which has a simpler interpretation. For example, a 95% credible interval is between any lower bound $L$ and any upper bound $U$ such that the posterior probability of $L < p < U = 0.95$. This means that if we found the 95% credible interval for the mean age in our dataset to have a lower bound of 32 and an upper bound of 47, then we can simply say that "There is a 95% probability that the true mean age is between 32 and 47 years old."
 
-## 4. Bayesian Simple Linear Regression
+## Bayesian Simple Linear Regression
+
+### Notation, Parameters, and Assumptions
+
+In statistics, we use **linear regression** to model the relationship between a **response variable** and one or more **explanatory variables**. Linear regression is done differently in frequentist statistics and Bayesian statistics.
+
+In **simple linear regression**, we have one explanatory variable. Simple linear regression takes the form $y = \beta_0 +\beta_1 x +\epsilon$, where $y$ is the response variable, $x$ is the explanatory variable, $\beta_1$ is the true slope of the relationship between $x$ and $y$, $\beta_0$ is the true intercept of the relationship between $x$ and $y$, and $\epsilon$ is the random error term.
 
 ```{r image1, echo=FALSE}
 knitr::include_graphics("img/bayesian-regression/regression-ss1.png")
 ```
 
-In the previous unit, we discussed **linear regression**, which uses point estimates for parameters $\beta_0$ and $\beta_1$ in order to help predict the value of a dependent variable based on an independent variable. The formula for **Bayesian regression** may appear to be the same, but now, our parameters are drawn from probability distributions. 
+In frequentist statistics, linear regression uses point estimates for parameters $\beta_0$ and $\beta_1$ in order to help predict the value of the response variable based on the explanatory variable. The formula for **Bayesian regression** may appear to be the same, but now, our parameters are drawn from probability distributions. If we have a vague prior, we will have weak correlations between the independent and dependent variables. This explains the lack of steepness in the lines on the Bayesian graph in the visualization above. After we see the data and update our prior, we will begin to see stronger correlations between the variables. 
 
-If we have a vague prior, we will have weak correlations between the independent and dependent variables. This explains the lack of steepness in the lines on the Bayesian graph in the visualization above. After we see the data and update our prior, we will begin to see stronger correlations between the variables. 
+The assumptions for Bayesian linear regression are the same for the frequentist method, being as follows:
+ -**linearity**: The relationship between the response and explanatory variables is linear.
+ -**independence**: The observations are independent of each other, meaning that the results for one observation are not influenced by the results of any other observation.
+ -**homoscedasticity**: The variance of the errors is constant for all values of the explanatory variables.
+ -**normality**: The errors are normally distributed.
+ -no **multicollinearity**: The explanatory variables are not highly correlated with each other.
+ -no **autocorrelation**: The errors are not correlated with each other.
+ 
+It is important that these assumptions are not violated to preserve the validity of the regression model. Later, we will learn how to verify that our model fits these assumptions.
 
-In the previous module, we used the `nhanes` dataset to fit a linear model predicting age, or `RIDAGEYR`, based on body mass index, or `BMXBMI`, using the frequentist approach. In this section, we will use the Bayesian approach to formulate the same model. Before we begin, we will limit our analysis to adults as we did in the previous module:
+### Motivation
+
+As discussed earlier, we perform simple linear regression when we want to explore the relationship between one explanatory variable and one response variable. For example, we might want to better understand the relationship between body mass index and age for a variety of reasons--perhaps we want to know if different age groups are more prone to obesity. We can help answer this question with a simple linear regression model using the `nhanes` dataset. 
+
+For this linear model, we want to predict age based on body mass index; therefore, we will use `RIDAGEYR` as our response variable and `BMXBMI` as our explanatory variable. We will limit our analysis to adults.
 
 ```{r filter-to-adults}
 nhanes1518 <- nhanes1518 %>% 
   filter(RIDAGEYR >= 18)
 ```
 
-Let's visualize the distribution of the `BMXBMI` variable in our dataset:
+### Model
 
-```{r bmi-dist, fig.height = 3}
-ggplot(nhanes1518, aes(x = BMXBMI)) + 
-  geom_histogram(color = "black", fill = "white") +
-  labs(title = 'Distribution of BMI in Dataset')
-```
-
-We will use the `brms` library to create our Bayesian model. An important part of creating a Bayesian regression model is establishing our priors for the parameters. Based on our prior knowledge of the data, there is a variety of priors we can set (and thus a variety of models we can create). This module will introduce multiple different priors.
-
-Firstly, assuming we have no prior knowledge of the data, we will use a noninformative prior (the default prior in `brms`). We can use the `brm` function to create our model. 
+We will use the `brms` library to create our Bayesian model. An important part of creating a Bayesian regression model is establishing our priors for the parameters. Based on our prior knowledge of the data, there is a variety of priors we can set (and thus a variety of models we can create). Later, we will discuss strategies for selecting model priors. For now, we will assume that we have no prior knowledge of the dataset, using a noninformative prior (the default prior in `brms`). We can use the `brm` function to create our model. The `formula` argument of this function follows the format `y ~ x`, with `y` being the response variable and `x` being the explanatory variable. We will save our model in a variable named `model1`.
 
 ```{r noninformative, echo = T, results = 'hide', warning = F, message = F}
 model1 <- brm(formula = RIDAGEYR ~ BMXBMI, 
@@ -123,15 +139,41 @@ model1 <- brm(formula = RIDAGEYR ~ BMXBMI,
              seed    = 123)
 ```
 
-We can use the `summary()` function to view more detailed statistics of our model.
+### Interpretation
+
+Once we have created our model, we will then interpret its results. We can use the `summary` function to view more detailed statistics of our model. We will set the `priors` argument to `TRUE` so that the summary includes the prior distributions we used for our model.
 
 ```{r noninformative-summary}
 summary(model1, priors = TRUE)
 ```
 
-From this model, we get the same estimate for the intercept (45.41) and for the $\beta_{BMI}$ (0.12) as we got in our frequentist model. However, since we are now using a Bayesian approach, we can interpret our credible interval to mean that there is a 95% chance that the true value for the intercept lies between 43.94 and 46.87, and there is a 95% chance that the true value for $\beta_{BMI}$ lies between 0.07 and 0.16. 
+The main areas we want to examine are the `Intercept` and `BMXBMI` columns. These tell us that our estimate for the intercept is 45.41, and the estimate for our slope is 0.12. With these statistics, let's now fill in our model:
 
-### Beta Priors: The Normal Distribution
+$$\hat{\beta_{Age}} = 45.41 + 0.12(\hat{\beta_{BMI}}) + \epsilon$$
+
+We can interpret the estimate of the slope to mean that for every 1 point increase in BMI, we expect age to increase by 0.12 years on average. The intercept does not have a meaningful interpretation in this case as it assumed a person with a BMI of 0, which is unrealistic. 
+
+### Inference
+
+Now that we have an estimate for our slope, we might want to conclude whether there is a statistically significant relationship between age and BMI. To do so, we can examine whether or not $\hat{\beta_{BMI}}$ is statistically different from 0. Our **null hypothesis** in this case is that the slope is equal to 0, while our **alternative hypothesis** is that the slope is not equal to 0 (which implies a linear relationship between age and BMI). We can answer this question with credible intervals. 
+
+Going back to our model summary, we can look at the `l-95% CI` and `u-95% CI` columns to obtain 95% credible intervals for our intercept and estimates: we can thus state that there is a 95% chance that the true value for the intercept lies between 43.94 and 46.87, and there is a 95% chance that the true value for $\beta_{BMI}$ lies between 0.07 and 0.16. Since the confidence interval for `BMXBMI` does not include 0, we can reject our null hypothesis and conclude that there is likely a linear relationship between body mass index and age.
+
+### Prediction
+
+Suppose we want to guess an individual's age using our model. We can do this with a **prediction interval**; it differs from using normal confidence intervals as confidence intervals only express sampling uncertainty from our data. On the other hand, prediction intervals express sampling uncertainty from our data and from the single value with which we want to predict. As a result, prediction intervals are wider than confidence intervals.
+
+We can use the `predict` function with our model to predict individual's ages given a BMI of 20, 25, and 30.
+
+```{r predict}
+predict(model1, data.frame(BMXBMI = (c(20, 25, 30))), interval = "prediction")
+```
+
+Our prediction interval estimates that an individual with a BMI of 20 is likely between 11.39 and 83.98 years old. As we can see, the interval is extremely wide, limiting our ability to make meaningful conclusions; this is likely because the relationship between age and BMI is weak.
+
+### Evaluation
+
+### Coefficient Priors: The Normal Distribution
 
 A common prior for the coefficient (or $\beta$) in Bayesian inference deals with a **normal (Gaussian) distribution**. This is a **conjugate** prior, meaning that the posterior will also be a normal distribution, but with different parameters. This might be a good choice for our beta prior if we assume our data is normally distributed, meaning most values are situated in the middle, and there is a symmetrical decline in the frequency of values as we reach the ends. 
 
@@ -177,7 +219,7 @@ kable(model_recap1, col.names = c("$\\beta_{BMI}$ Distributions",
                            "Intercepts"))
 ```
 
-### Beta Priors: The T-Distribution
+### Coefficient Priors: The T-Distribution
 
 Another common prior for the coefficient in Bayesian inference deals with the **student t-distribution**. This differs from the normal distribution in that the values are less clustered in the middle, giving it heavier tails on the ends. Using the t-distribution can offer more robust estimation; it is often used on smaller, approximately normal datasets (for example, when n < 30). For the purpose of this section, we will proceed using a t-distribution to estimate $\beta_{BMI}$.
 
@@ -222,7 +264,7 @@ kable(model_recap2, col.names = c("$\\beta_{BMI}$ Distributions",
 
 Upon selecting our priors and running our models, we can then use our posterior information to conduct further regression. Usually, regardless of the initial choice of prior, results will end up converging to the same posterior after many iterations.
 
-### Beta Priors: A Closer Look
+### Coefficient Priors: A Closer Look
 
 In the previous sections, we have discovered that, regardless of our choice of prior, we get virtually identical results for the posterior means and intercepts. To get a better understanding of how prior selection can impact our regression models, let's take a small sample of our overarching `nhanes` dataset.
 
@@ -387,7 +429,19 @@ kable(model_recap4, col.names = c("$\\sigma$ Distributions",
                            "Intercepts"))
 ```
 
-## 5. Bayesian Multiple Linear Regression
+## Bayesian Multiple Linear Regression
+
+### Motivation
+
+### Model
+
+### Interpretation
+
+### Inference
+
+### Prediction
+
+### Evaluation
 
 Now that we've tackled simple linear regression, let's learn how to do **multiple linear regression** the Bayesian way. In our frequentist regression module, we fit a model with `BMXBMI` as the response and `RIDAGEYR`, `BMXWAIST`, `BMXWT`, and `BMXHT` as the predictors; we will follow that formula here.
 
@@ -478,8 +532,12 @@ kable(model_recap5, col.names = c("Distributions",
 
 As we can see, the results of both models are very similar. This makes sense, as all of our specified priors in the second model were very unspecific (due to large variances.) If we fit sharper priors, we could expect to see a larger difference in the posterior from the default model.
 
+## Prior Selection
 
-## 6. Model Evaluation
+
+
+
+## Model Evaluation
 
 In the prior sections, we have fit a variety of models with different priors to examine linear relationships in the `nhanes` dataset. Now, it's time to put some of our models to the test to see how they compare in performance and predictive ability.
 
@@ -568,7 +626,7 @@ barplot(wy, ylab = "WAIC", ylim = c(230, 233), names.arg=paste("model", 6:10))
 
 Although all of the models have very similar WAIC scores, model 7 (which uses a $N(0, 0.9)$ prior for $\beta_{BMI}$) slightly edges out the others. We would proceed with model 7. 
 
-## 7. References
+## References
 
 https://www.statlect.com/fundamentals-of-statistics/Markov-Chain-Monte-Carlo-diagnostics
 https://bookdown.org/ajkurz/Statistical_Rethinking_recoded/markov-chain-monte-carlo.html
@@ -582,3 +640,4 @@ https://michael-franke.github.io/intro-data-analysis/setting-priors.html
 https://www.rensvandeschoot.com/tutorials/r-linear-regression-bayesian-using-brms/
 https://statswithr.github.io/book/introduction-to-bayesian-regression.html#sec:Bayes-multiple-regression
 https://rpubs.com/katzkagaya/460937
+https://gregorygundersen.com/blog/2020/02/04/bayesian-linear-regression/
