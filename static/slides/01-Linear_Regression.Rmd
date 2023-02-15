@@ -320,13 +320,15 @@ Now we explore the effect of income on the response BMI. Income is stored as `1`
 We want to first drop categories with values 77 (Refused) and 99 (Don't Know) first:
 
 ```{r}
-nhanes_income <- subset(nhanes_income, income!="77" & income!="99")
+nhanes_income <- nhanes1518%>%select(BMXBMI, RIDAGEYR,INDHHIN2)%>%rename(income=INDHHIN2)%>%
+  filter(!income %in%c("77","99"))
+nhanes_income$income<-as.factor(nhanes_income$income)
 ```
 
 Then we fit the linear regression on categorical variable `income`:
 
 ```{r}
-summary(lm(BMI ~ income, data = nhanes_income))
+summary(lm(BMXBMI ~ income, data = nhanes_income))
 ```
 
 *Baseline*: income category 1 corresponding to a household income of 0 to 4,999 dollars.
@@ -342,31 +344,28 @@ summary(lm(BMI ~ income, data = nhanes_income))
 There are two ways to include interaction terms in the model, `:` and `*`. The `:` symbol only includes the interaction term between the two variables, while the `*` symbol includes the variables themselves, as well as the interaction terms. This means that `BMXWT*BMXWAIST` is equivalent to `BMXWT + BMXWAIST + BMXWT:BMXWAIST`.
 
 ```{r}
-summary(lm(BMXBMI ~  BMXWT* BMXWAIST, data = nhanes1518))
+summary(lm(BMXBMI ~ income+RIDAGEYR+income*RIDAGEYR, data = nhanes_income))
 ```
 
 ```{r}
-# Fit the linear regression model
-fit <- lm(BMXBMI ~ BMXWT * BMXWAIST, data = nhanes1518)
-
 # Plot the interaction effects
-ggplot(nhanes1518, aes(x = BMXWAIST, y = BMXBMI, color = BMXWT)) + 
+df<-nhanes_income%>%
+  filter(income %in%c("1", "10"))
+ggplot(df, aes(x = RIDAGEYR, y = BMXBMI, color = income, alpha=0.5)) + 
   geom_point() + 
-  stat_smooth(method = "lm", se = FALSE, fullrange = TRUE) + 
-  scale_color_gradient(low = "blue", high = "red") + 
-  labs(x = "BMXWAIST", y = "BMXBMI", color = "BMXWT") + 
+  stat_smooth(method = "lm", se = FALSE, fullrange = TRUE)+
+  labs(x = "BMXWAIST", y = "BMXBMI") + 
   ggtitle("Interaction effects between BMXWT, BMXWAIST, and BMXBMI")
 
 ```
 
 The plot shows the relationship between BMXBMI and BMXWAIST for different levels of BMXWT, where each level is represented by a different color. The plot provides a visual representation of how the effect of BMXWAIST on BMXBMI differs for each level of BMXWT: For high levels of `BMXWT`, we notice that BMXWAIST has the most significant effect on BMXBMI, with the sharpest slope. Whereas, for low levels of `BMXWT`, we notice that BMXWAIST has far less significant effect on BMXBMI, with a very small slope at a stand still.
 
-A simple way to include all interaction terms is the syntax `.^2`.
-
 ```{r}
 library(dplyr)
 nhanes_na_removed<-cbind(nhanes1518[1:5],nhanes1518$BMXBMI)
 # data clearning to ignore NA values
+# A simple way to include all interaction terms is the syntax `.^2`
 summary(lm(nhanes1518$BMXBMI ~ .^2, data = nhanes_na_removed))
 ```
 
