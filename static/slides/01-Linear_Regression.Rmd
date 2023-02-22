@@ -67,7 +67,7 @@ This tutorial will be using the `nhanes` dataset where the variables are describ
 ```{r}
 # Basic histogram
 ggplot(nhanes1518, aes(x=RIDAGEYR)) + 
-  geom_histogram(binwidth=1, color="black", fill="white")+ # Change the width of bins as well as the color
+  geom_histogram(binwidth=2, color="black", fill="white")+ # Change the width of bins as well as the color
   labs(x = "Age", title = "Distribution of Age") # legend of the plot
 ```
 
@@ -80,11 +80,30 @@ We can also add the mean line, as well as overlay with transparent density plot.
 ```{r}
 # Histogram with density plot
 ggplot(nhanes1518, aes(x=RIDAGEYR)) + 
- geom_histogram(aes(y=..density..), colour="black", fill="white")+
+ geom_histogram(binwidth=2, aes(y=..density..), colour="black", fill="white")+
  geom_density(alpha=.2, fill="#FF6666")+ # add a layer of density
   labs(x = "Age", title = "Density of Age") +
   geom_vline(aes(xintercept=mean(RIDAGEYR)),
             color="blue", linetype="dashed", size=1) # Add mean line
+```
+
+Similarly, we can explore the distribution of BMI, which we found to be right-skewed:
+
+```{r}
+# Basic histogram
+ggplot(nhanes1518, aes(x=BMXBMI)) + 
+  geom_histogram(binwidth=2, color="black", fill="white")+ # Change the width of bins as well as the color
+  labs(x = "BMI", title = "Distribution of BMI") # legend of the plot
+```
+
+We can also explore the scatterplot of the relationship between age and BMI:
+
+```{r}
+# Here the dollar sign specifies that we retrieve the predictor columns `BMXBMI` and `BMXWAIST` from the dataset `nhanes1518`
+# We can experiment with different options for `abline()` by changing the line width and color in `abline()`.
+ggplot(nhanes1518, aes(x = RIDAGEYR, y = BMXBMI)) + 
+    geom_point(size=1, color="dark blue", pch = 20) + # size adjust point size; pch (plotting character) adjusts shape of the points 
+  labs(title="Age vs. BMI for the nhanes data", x="Body Mass Index (kg/m**2)",y="Waist Circumference (cm)")
 ```
 
 ## 3. Model Assumptions
@@ -144,8 +163,8 @@ confint(lm.fit)
 We can use the `predict()` function to obtain prediction intervals or confidence intervals for a given value of the predictor variable, `BMXWAIST`. Note that when using the predict function, the column names and format of the new points at which to predict needs to be the same as the original data frame used to fit the `lm()` model. If you encounter errors using the `predict()` function, this is a good first thing to check.
 
 ```{r}
-predict(lm.fit, data.frame(BMXBMI = (c(70, 80, 90))), interval = "confidence")
-predict(lm.fit, data.frame(BMXBMI = (c(70, 80, 90))), interval = "prediction")
+predict(lm.fit, data.frame(RIDAGEYR = (c(18, 30, 60))), interval = "confidence")
+predict(lm.fit, data.frame(RIDAGEYR = (c(18, 30, 60))), interval = "prediction")
 ```
 
 ### Prediction Interval vs Confidence Interval
@@ -156,49 +175,20 @@ Prediction and confidence interval are both statistical concepts that are used t
 
 - Prediction: An estimate of a specific value or outcome based on the statistical model. For example, in our case when we use a linear regression model to predict the age of a person based on their BMI, a prediction would be the estimated age for a person of a specific BMI Predictions are usually accompanied by a measure of how accurate the estimate is, such as the mean squared error or the root mean squared error. Unlike a confidence interval which provides a range of values for the parameter, a prediction interval provides a range of values for the actual observation or outcome.
 
-We can plot the variables `BMXBMI` and `BMXWAIST` using the `plot()` function and overlay the regression line found using `lm()` with the `abline()` function.
+We can plot the variables `BMXBMI` and `BMXWAIST` using the `ggplot` function and overlay the regression line found using `lm` with the `geom_smooth()` function.
 
 ```{r}
-plot(x=nhanes1518$RIDAGEYR,y=nhanes1518$BMXBMI, xlab="Age",ylab="Body Mass Index (kg/m**2)")
-abline(lm.fit)
-```
-
-Here the dollar sign specifies that we retrieve the predictor columns `BMXBMI` and `BMXWAIST` from the dataset `nhanes1518`
-
-We can experiment with different options for `abline()` by changing the line width and color in `abline()`.
-
-```{r}
-plot(x=nhanes1518$RIDAGEYR,y=nhanes1518$BMXBMI, xlab="Body Mass Index (kg/m**2)",ylab="Waist Circumference (cm)")
-abline(lm.fit, lwd = 3, col = "red")
-```
-
-```{r}
-plot(x=nhanes1518$RIDAGEYR,y=nhanes1518$BMXBMI, xlab="Body Mass Index (kg/m**2)",ylab="Waist Circumference (cm)", col = "red")
-```
-
-The `pch` argument in `plot()` changes the shape/type of the points that are plotted.
-
-```{r}
-plot(x=nhanes1518$RIDAGEYR,y=nhanes1518$BMXBMI, xlab="Body Mass Index (kg/m**2)",ylab="Waist Circumference (cm)",pch = 20)
-```
-
-```{r}
-plot(x=nhanes1518$RIDAGEYR,y=nhanes1518$BMXBMI, xlab="Body Mass Index (kg/m**2)",ylab="Waist Circumference (cm)",pch = "+")
-```
-
-Optional: We can make a similar plot using `ggplot`, where we fit the linear regression model using `ggplot()`.
-
-```{r}
+# Here the dollar sign specifies that we retrieve the predictor columns `BMXBMI` and `BMXWAIST` from the dataset `nhanes1518`
+# We can experiment with different options for `abline()` by changing the line width and color in `abline()`.
 ggplot(nhanes1518, aes(x = RIDAGEYR, y = BMXBMI)) + 
-    geom_smooth(method = "lm", formula = y ~ x, colour = "blue") + 
-    geom_point() +
-  ggtitle("Age vs. BMI for the nhanes data")
-
+    geom_smooth(method = "lm", formula = y ~ x, colour = "red") + 
+    geom_point(size=1, color="dark blue", pch = 20) + # size adjust point size; pch (plotting character) adjusts shape of the points 
+  labs(title="Age vs. BMI for the nhanes data", x="Body Mass Index (kg/m**2)",y="Waist Circumference (cm)")
 ```
 
 ## 5. Model Diagonostics & Interpretation
 
-The `par()` function can be used to create a grid of multiple subplots.
+The `par()` function can be used to create a grid of multiple subplots. While the `plot()` function provides a convenient way to create the diagnostic plots, they can also be manually created. We use the `plot()` function below to demonstrate its usage:
 
 ```{r}
 par(mfrow = c(2, 2))
@@ -224,14 +214,6 @@ We can use the `residuals()` and `rstudent()` functions to extract the residuals
 
 ```{r}
 plot(predict(lm.fit), residuals(lm.fit))
-plot(predict(lm.fit), rstudent(lm.fit))
-```
-
-Additionally, we can compute the influence matrix for the predictors using the `hatvalues()` function.
-
-```{r}
-plot(hatvalues(lm.fit))
-which.max(hatvalues(lm.fit))
 ```
 
 
@@ -349,15 +331,13 @@ df<-nhanes_income%>%
 ggplot(df, aes(x = RIDAGEYR, y = BMXBMI, color = income, alpha=0.5)) + 
   geom_point() + 
   stat_smooth(method = "lm", se = FALSE, fullrange = TRUE)+
-  labs(x = "BMXWAIST", y = "BMXBMI") + 
-  ggtitle("Interaction effects between BMXWT, BMXWAIST, and BMXBMI")
-
+  labs(x = "Waist Circumference", y = "BMI") + 
+  ggtitle("Interaction effects between income and age on BMI")
 ```
 
-The plot shows the relationship between BMXBMI and BMXWAIST for different levels of BMXWT, where each level is represented by a different color. The plot provides a visual representation of how the effect of BMXWAIST on BMXBMI differs for each level of BMXWT: For high levels of `BMXWT`, we notice that BMXWAIST has the most significant effect on BMXBMI, with the sharpest slope. Whereas, for low levels of `BMXWT`, we notice that BMXWAIST has far less significant effect on BMXBMI, with a very small slope at a stand still.
+The plot shows the relationship between BMI and waist circumference for two levels of income, level 1 (annual income of 0-4999 USD) and level 10 (annual income of 65,000 to 74,999 USD), where each level is represented by a different color. The plot provides a visual representation of how the effect of waist circumference on BMI differs for each level of income: For income category 1 with annual income of 0-4999 USD, we observe a steeper slope, which suggests that for each unit increase in BMI, we expect a higher rise in waist circumference if the individual is in income category 1, compared to if the individual is in income category 10. Conversely, for income category 10 with annual income of 65,000 to 74,999 USD, we observe a flatter slope, which suggests that for each unit increase in BMI, we expect a lower rise in waist circumference if the individual is in income category 10, compared to if the individual is in income category 1.
 
 ```{r}
-library(dplyr)
 nhanes_na_removed<-cbind(nhanes1518[1:5],nhanes1518$BMXBMI)
 # data clearning to ignore NA values
 # A simple way to include all interaction terms is the syntax `.^2`
