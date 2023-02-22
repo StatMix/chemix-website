@@ -119,7 +119,7 @@ $$Y_i = \beta_0 +\beta_1 X_i +\epsilon_i$$ Where $Y_i$ is the dependent variable
 We'll start with a fitting a simple linear model using the `lm()` function. In the `lm()` function, the first variable is the response variable and the variables to the right of the `~` symbol are the predictor variable(s). Here we use age as the response, and BMI as the predictor variables.
 
 ```{r}
-lm.fit <- lm(RIDAGEYR ~ BMXBMI, data = nhanes1518)
+lm.fit <- lm(BMXBMI ~ RIDAGEYR, data = nhanes1518)
 ```
 
 There are several ways that we can examine the model results. The `summary()` function gives a more extensive overview of the model fit:
@@ -131,7 +131,7 @@ summary(lm.fit)
 
 ### Model Interpretation
 
-- $\beta_0$: Not interpretable in our case. For a person with 0 BMI (which is unrealistic), his or her expected age is -2.241 (unrealistic again). $\beta_1$: For every unit increase in the BMI of a person, his or her age is expected to increase by 1.432 on average.
+- $\beta_0$: Not interpretable in our case. For a person with 0 age (which falls outside of the domain of our model since we only consider adults), his or her expected age is 0.161 (which we refer to as extrapolation since the value of the predictor variable falls outside of our domain of concern). $\beta_1$: For every unit increase in the BMI of a person, his or her age is expected to increase by 1.432 on average.
 
 -   p value: The p value tells us how likely the data we have observed is to have occurred under the null hypothesis (more material on Null hypothesis on subsequent tutorials), i.e. that there is no correlation between the predictor variable age and the response BMI. From the model above, we have a p value of less than 2e-16, which tells us that the predictor variable age is statistically significant.
 
@@ -163,7 +163,6 @@ Prediction and confidence interval are both statistical concepts that are used t
 We can plot the variables `BMXBMI` and `BMXWAIST` using the `plot()` function and overlay the regression line found using `lm()` with the `abline()` function.
 
 ```{r}
-
 plot(x=nhanes1518$RIDAGEYR,y=nhanes1518$BMXBMI, xlab="Age",ylab="Body Mass Index (kg/m**2)")
 abline(lm.fit)
 ```
