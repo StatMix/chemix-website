@@ -328,8 +328,8 @@ summary(lm(BMXBMI ~ income+RIDAGEYR+income*RIDAGEYR, data = nhanes_income))
 # Plot the interaction effects
 df<-nhanes_income%>%
   filter(income %in%c("1", "10"))
-ggplot(df, aes(x = RIDAGEYR, y = BMXBMI, color = income, alpha=0.5)) + 
-  geom_point() + 
+ggplot(df, aes(x = RIDAGEYR, y = BMXBMI, color = income)) + 
+  geom_point(alpha=0.5) + 
   stat_smooth(method = "lm", se = FALSE, fullrange = TRUE)+
   labs(x = "Waist Circumference", y = "BMI") + 
   ggtitle("Interaction effects between income and age on BMI")
@@ -338,10 +338,13 @@ ggplot(df, aes(x = RIDAGEYR, y = BMXBMI, color = income, alpha=0.5)) +
 The plot shows the relationship between BMI and waist circumference for two levels of income, level 1 (annual income of 0-4999 USD) and level 10 (annual income of 65,000 to 74,999 USD), where each level is represented by a different color. The plot provides a visual representation of how the effect of waist circumference on BMI differs for each level of income: For income category 1 with annual income of 0-4999 USD, we observe a steeper slope, which suggests that for each unit increase in BMI, we expect a higher rise in waist circumference if the individual is in income category 1, compared to if the individual is in income category 10. Conversely, for income category 10 with annual income of 65,000 to 74,999 USD, we observe a flatter slope, which suggests that for each unit increase in BMI, we expect a lower rise in waist circumference if the individual is in income category 10, compared to if the individual is in income category 1.
 
 ```{r}
-nhanes_na_removed<-cbind(nhanes1518[1:5],nhanes1518$BMXBMI)
+# select our variables of interest
+df<-nhanes1518%>%
+  select(SEQN, WTINT2YR, WTMEC2YR, RIDSTATR, RIAGENDR, BMXBMI)
 # data clearning to ignore NA values
+nhanes_na_removed<-df%>%na.omit()
 # A simple way to include all interaction terms is the syntax `.^2`
-summary(lm(nhanes1518$BMXBMI ~ .^2, data = nhanes_na_removed))
+summary(lm(BMXBMI ~ .^2, data = nhanes_na_removed))
 ```
 
 ## Related Topics
