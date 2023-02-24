@@ -1,0 +1,25 @@
+---
+title: "BKMR: Bayesian Kernel Machine Regression"
+output: 
+  html_document:
+    css: "prepare.css"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+### Related Paper
+
+-   [Bayesian Model Machine Regression: Paper](https://pubmed.ncbi.nlm.nih.gov/25532525/)
+
+-   [Bayesian Kernel Machine Regression: A Tutorial](https://bookdown.org/andreabellavia/mixtures/bayesian-kernel-machine-regression.html)
+
+### R package
+
+-   [BKMR: Software](https://ehjournal.biomedcentral.com/articles/10.1186/s12940-018-0413-y)
+
+-   [BKMR manual](https://cran.r-project.org/web/packages/bkmr/bkmr.pdf)
+
+-   [BKMR overview](https://jenfb.github.io/bkmr/overview.html)
