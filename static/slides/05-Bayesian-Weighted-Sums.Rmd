@@ -1,0 +1,21 @@
+---
+title: "Tutorial 06 - Bayesian Weighted Sums"
+author: "Ryan Mitchell & Bradley Bowen"
+date: "Last Updated `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    css: "./tutorials.css"
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning=FALSE,
+                      message=FALSE)
+```
+
+## Topics 
+
+
+## Installations and Data

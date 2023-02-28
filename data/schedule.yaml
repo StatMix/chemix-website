@@ -41,7 +41,7 @@ lessons:
     date: ""
     title: "Bayesian Weighted Sums"
     prepare: "topic-05-bws.html"
-    slides: ""
+    slides: "05-Bayesian-Weighted-Sums.html"
     ae: ""
     lab: ""
   - week: "bma"
