@@ -20,7 +20,7 @@ lessons:
     date: ""
     title: "Weighted Quantile Sum Regression"
     prepare: "topic-02-wqs.html"
-    slides: "WQS_Tutorial-7.html"
+    slides: "02-WQS.html"
     ae: ""
     lab: ""
   - week: "qgcomp"
