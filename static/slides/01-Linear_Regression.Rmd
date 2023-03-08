@@ -330,8 +330,14 @@ Based on the exploratory data analysis, we learn that the impacts of age and inc
 
 There are two ways to include interaction terms in the model, `:` and `*`. The `:` symbol only includes the interaction term between the two variables, while the `*` symbol includes the variables themselves, as well as the interaction terms. This means that `BMXWT*BMXWAIST` is equivalent to `BMXWT + BMXWAIST + BMXWT:BMXWAIST`.
 
+For the interaction term to be interpretable, we mean center the term `income` involved in the interaction. In R, mean centering variables involves subtracting the mean value of each variable from all the observations in that variable. This can be useful in various statistical analyses, such as regression analysis, where mean centering can improve the interpretation and accuracy of the results.
+
+To interpret the categorical variables, we use (n-1) variables to encode, and we noticed that category 1 does not appear in the model thus is the baseline.
+
 ```{r}
-lm(BMXBMI ~ income + RIDAGEYR + income:RIDAGEYR, data = nhanes_income)%>%
+nhanes_income$RIDAGEYR_centered <- scale(nhanes_income$RIDAGEYR, center = TRUE, scale = FALSE)
+
+lm(BMXBMI ~ income + RIDAGEYR_centered + income:RIDAGEYR_centered, data = nhanes_income)%>%
   summary()
 # alternative representation.
 lm_int1=lm(BMXBMI ~ income*RIDAGEYR, data = nhanes_income)
@@ -340,7 +346,9 @@ lm_int2=lm(BMXBMI ~ .^2, data = nhanes_income)
 ```
 
 *Model Interpretation*
-(Add interpretation here)
+
+Take income category 2 as an example, at the mean value of year 
+`r round(mean(nhanes_income$RIDAGEYR),3)`, the BMI of an individual in income category 2 is expected to be 0.72331 higher than the BMI of an individual in income category 1 (baseline category).
 
 ## References
 
