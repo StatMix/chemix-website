@@ -42,11 +42,15 @@ load(file = 'nhanes1518.rda')
 
 ## Introduction to Bayesian Statistics
 
-### Priors and Posteriors
+### Beliefs and Priors
 
 There are two schools of thought in the world of statistics: frequentist, which we have been working with up to this point, and Bayesian. In the frequentist school, probability is defined as a frequency. For example, if we roll a fair six-sided die, the probability we will roll a 1 is $P(Y = 1) = \frac{1}{6}$. The conclusions we make in frequentist statistics are based on likelihood; we retrieve data and then make an inference based on the data.
 
 In the Bayesian school, probability is defined as a belief. For example, a Bayesian statement could be "I believe the probability that it rains tomorrow is 30%." Different people obviously have different beliefs, so another statistician stating "I believe the probability that it rains tomorrow is 40%" is just as valid. Like frequentist statistics, our conclusions rely on likelihood. However, unlike frequentist statistics, our conclusions combine the likelihood with another factor: our prior knowledge. When we collect data, we then combine our prior knowledge and our likelihood to *update* our prior knowledge. For simplicity, we can simply refer to our prior knowledge that we wish to update as the **prior**. After we see our data,  we combine our likelihood with our prior to create the **posterior**.
+
+It is important to understand that different statisticians can have different priors for the same data. For example, a statistician who lives in the desert may believe that the probability that it rains tomorrow is 5%. However, if they move to the rainforest, their belief on future rain chances will change dramatically. This example analogizes how we combine our prior knowledge (living in the desert leads to a low chance for rain) with our data (the amount of rain after we move to the rainforest) to obtain our posterior (living in the rainforest leads to a high chance for rain). 
+
+A statistician can also have no prior. Suppose, unrealistically, that a statistician has never heard of rain, and therefore has no knowledge on how likely it is to occur. When that statistician is asked for the probability that it will rain tomorrow, they have no prior knowledge to go off of. Thus, they will have to use data (examining whether or not in rains for the next number of days) to form some beliefs. 
 
 But how exactly do we get from the prior and the likelihood to the posterior?
 
@@ -54,42 +58,24 @@ But how exactly do we get from the prior and the likelihood to the posterior?
 
 The fundamental concept of Bayesian statistics is the fittingly-named **Bayes' rule**. Given a **likelihood function** $p(y | \theta)$ and a prior $p(\theta)$, the posterior $p(\theta | y)$ stated by Bayes' rule is $p(\theta | y) = \frac{p(y | \theta)p(\theta)}{p(y)}$. 
 
-For example, we can use the Bayes' rule with our `nhanes` dataset to calculate the probability that a subject in the dataset is female given their reported concentration of Mono(carboxynonyl) phthalate is above 10 ng/mL. For simplicity, we will only consider subjects with data points present for both the `RIAGENDR` and `URXCNP` variables, which deal with gender and Mono(carboxynonyl) phthalate concentration, respectively.
+For example, we can use the Bayes' rule with our `nhanes` dataset to estimate the proportion of subjects in the dataset with a concentration of Mono(carboxynonyl) phthalate above 10 ng/mL that are female. For simplicity, we will only consider subjects with data points present for both the `RIAGENDR` variable, which deals with gender.
 
 ```{r filter-out-nulls}
 bayesrule_ex <- nhanes1518 %>%
-  filter(!is.na(RIAGENDR) & !is.na(URXCNP))
+  filter(!is.na(RIAGENDR) & URXCNP > 10)
 ```
 
-Let $F$ be the event in which a subject in the dataset is female, and let $M$ be the event in which a subject's concentration of Mono(carboxynonyl) phthalate is above 10 ng/mL. Then, to find $P(F | M)$, we need to calculate $P(F)$, $P(M)$, and $P(M | F)$.
+In this example, $\theta$ is the parameter we are interested in (the proportion of subjects in this subsetted dataset that are female). $y$ is our data, or `bayesrule_ex`. Let's assume we have no prior knowledge on whether men or women are more likely to have high Mono(carboxynonyl) phthalate concentrations. Thus, we would set our prior at 0.5 (we believe that it is equally likely for men and women to have concentrations above 10 ng/mL). In a complete Bayesian analysis, we would then combine this with our data (in which the proportion is 0.467) to obtain a posterior. It is important to note that the posterior we will obtain will not be the same as, for example, the posterior we would obtain if we chose a prior of 0.9. People with different priors will have different posteriors.
 
-```{r bayes-components}
-female <- bayesrule_ex %>% filter(RIAGENDR == 2)
-high_concentration <- bayesrule_ex %>% filter(URXCNP > 10)
-female_and_high_concentration <- female %>% filter(URXCNP > 10)
+Note that this is an extremely simplified example. Here, we use a point estimate for our prior (0.5), but usually our prior comes from a probability distribution. For example, again assuming we have no prior knowledge, one prior we could choose is a $Uniform(0, 1)$ distribution. This stipulates that we believe the true proportion has an equal chance of being any value between 0 and 1. 
 
-p_f = nrow(female) / nrow(bayesrule_ex)
-p_m = nrow(high_concentration) / nrow(bayesrule_ex)
-p_m_given_f = nrow(female_and_high_concentration) / nrow(female)
-```
+### Posteriors
 
-We can then calculate $P(F | M)$ using Bayes' rule; we can confirm this value is correct by also calculating $P(F | M)$ using row counts.
+Just like how our priors usually come from probability distributions, so do our posteriors. This is a key distinction from frequentist statistics, where $\theta$ is a fixed value. In Bayesian statistics, $\theta$ is a **random variable**, or a quantity that can take on different values based on different outcomes of an experiment. For example, if our posterior for $\theta$ is a $Uniform(0, 1)$ distribution, then $\theta$ will take on an array of different values from 0 to 1 if we repeatedly sampled from this distribution. The fixed-value estimate for $\theta$ in frequentist statistics usually maps to the mean of this posterior distribution in Bayesian statistics (which, in the case of a $Uniform(0, 1)$ distribution is 0.5). 
 
-```{r bayes-calculation}
-p_f_given_m_bayes = p_m_given_f * p_f / p_m
-p_f_given_m_bayes
+When conducting hypothesis tests or linear regressions using the frequentist approach, we often find it useful to create a **confidence interval** for $\theta$. Confidence intervals help us estimate the (un)certainty of a parameter with a lower and upper bound. For example, let's say we create a 95% confidence interval for $\theta =$ the mean age in our datase; we find the lower bound to be 32 and the upper bound to be 47. We could then interpret this confidence interval as "We are 95% confident that the true mean age is between 32 and 47 years old." If we constructed many more similar confidence intervals, we would expect 95% of them to contain the true population mean.
 
-p_f_given_m_rowcounts = nrow(female_and_high_concentration) / nrow(high_concentration)
-p_f_given_m_rowcounts
-```
-
-We get that, given a subject's reported concentration of Mono(carboxynonyl) phthalate is above 10 ng/mL, the probability they will be female is approximately 46.7%.
-
-### Credible Intervals
-
-When conducting hypothesis tests or linear regressions using the frequentist approach, we often find it useful to create a **confidence interval**. Confidence intervals help us estimate the (un)certainty of a parameter with a lower and upper bound. For example, let's say we created a 95% confidence interval for the mean age in our dataset and found the lower bound to be 32 and the upper bound to be 47. We could then interpret this confidence interval as "We are 95% confident that the true mean age is between 32 and 47 years old." If we constructed many more similar confidence intervals, we would expect 95% of them to contain the true population mean.
-
-The Bayesian equivalent to a confidence interval is known as a **credible interval**, which has a simpler interpretation. For example, a 95% credible interval is between any lower bound $L$ and any upper bound $U$ such that the posterior probability of $L < p < U = 0.95$. This means that if we found the 95% credible interval for the mean age in our dataset to have a lower bound of 32 and an upper bound of 47, then we can simply say that "There is a 95% probability that the true mean age is between 32 and 47 years old."
+The Bayesian equivalent to a confidence interval is known as a **credible interval**, which has a simpler interpretation. For example, a 95% credible interval is between any lower bound $L$ and any upper bound $U$ such that the posterior probability of $L < p < U = 0.95$. We use the quantiles of the posterior distribution for $\theta$ to obtain $L$ and $U$. In the case of a 95% interval, these are the 0.025 and 0.975 quantiles (the middle 95% of the data). If we find the 95% credible interval for the mean age in our dataset to have a lower bound of 32 and an upper bound of 47, then we can simply say that "There is a 95% probability that the true mean age is between 32 and 47 years old."
 
 ## Bayesian Simple Linear Regression
 
@@ -147,7 +133,7 @@ summary(model1, priors = TRUE)
 
 The main areas we want to examine are the `Intercept` and `BMXBMI` columns. These tell us that our estimate for the intercept is 28.66, and the estimate for our slope is 0.02. With these statistics, let's now fill in our model:
 
-$$\hat{BMI} = 28.66 + 0.02(\hat{\beta_{Age}})$$
+$$\hat{BMI} = 28.66 + 0.02(\hat{Age})$$
 
 We can interpret the estimate of the slope to mean that for every 1 year increase in age, we expect BMI to increase by 0.02 on average. The intercept does not have a meaningful interpretation in this case as it assumes a person with an age of 0, which is unrealistic. 
 
@@ -231,7 +217,7 @@ summary(multi_model1, priors = TRUE)
 
 With these statistics, we can now fill in our model:
 
-$$\hat{BMI} = 29.53 - 0.07(\hat{\beta_{Age\_sc}}) + 0.28(\hat{\beta_{Waist\_sc}}) - 3.49(\hat{\beta_{Height\_sc}}) + 7.70(\hat{\beta_{Weight\_sc}})$$
+$$\hat{BMI} = 29.53 - 0.07(\hat{Age\_sc}) + 0.28(\hat{Waist\_sc}) - 3.49(\hat{Height\_sc}) + 7.70(\hat{Weight\_sc})$$
 
 We can see that the $\hat{\beta_{Height}}$ and $\hat{\beta_{Weight}}$ are the largest in magnitude, meaning they have the most impact on BMI. This makes intuitive sense, as BMI is calculated from height and weight.
 
@@ -264,7 +250,7 @@ default_prior <- brm(formula = BMXBMI ~ RIDAGEYR,
 summary(default_prior, priors = TRUE)
 ```
 
-We get the model $\hat{BMI} = 36.19 - 0.12(\hat{\beta_{Age}})$. We will compare this to models using specified priors.
+We get the model $\hat{BMI} = 36.19 - 0.12(\hat{Age})$. We will compare this to models using specified priors.
 
 ### Coefficient Priors: The Normal Distribution
 
