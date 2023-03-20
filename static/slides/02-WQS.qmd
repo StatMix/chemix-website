@@ -1,0 +1,275 @@
+---
+title: "gWQS Model"
+categories: 
+  - Tutorial 2
+author: "Stats Team"
+format: html
+editor: visual
+---
+
+::: {style="color:#6495ED"}
+
+# Weighted Quantile Sum Regression
+
+:::
+
+Assume we are interested in exploring the relationship between the chemical exposures and the outcome (BMI for example). These chemical exposures are usually highly correlated with each other (known as multicolinearity phenonmenon in regression). Multicolinearity among the exposures violates the independence model assumption of multivariate linear regression, distorting statistical inference. To eliminate the issue of multicolinearity, we can consider summarizing these highly correlated chemical mixtures when putting them into a regression model. The idea of summary motivates the weighted quantile sum regression.
+
+Unlike multivariate regression, the WQS model uses quantiles and weights each chemical exposures variable based on its individual impact on the overall outcome. The exposures in the model that have a strong impact on the mixture are assigned a greater weight while others that are not as critical are given a lower weight. To test the calculated weights and verify that the model is sufficient, the WQS package in R tests these weights to ensure the model is sufficient.
+
+::: {style="color:#6495ED"}
+
+## Libraries
+
+:::
+
+In order to investigate relationships between chemical exposures using the gWQS package, there are several packages in R that must be loaded. Similar to previous tutorials where packages were introduced, we will be using tidyverse and tidymodels, but we will also use ggcorrplot and gWQS.
+
+In order to use the new packages in this tutorial, they must first be installed in R by running the following lines of code `install.packages("ggcorrplot")` and `install.packages("gWQS")`in the console.
+
+::: {.callout-warning appearance="simple"} Additional installations may be required for mac users! :::
+
+```{r}
+#| message: false
+library(gWQS)
+library(tidyverse)
+library(tidymodels)
+library(ggcorrplot)
+```
+
+::: callout-note In this tutorial, we use the new base R pipe operator "\|\>" which is equivalent to "%\>%" :::
+
+::: {style="color:#6495ED"}
+
+## Exploratory Data Analysis
+
+:::
+
+As discussed early, we want to apply Weighted Quantile Sums to a real world issue. This example uses the NHANES dataset to focuses on specific chemical exposures: Phalates and Phytoestrogens. Both of these exposures can be detected in urine samples and we want to estimate their respective impact on the outcome, body mass index. In order to predict body mass index with urine samples, we first need to reintroduce the NHANES dataset for use in this example.
+
+The NHANES dataset can be loaded into R:
+
+```{r}
+load(file='nhanes1518.rda')
+head(nhanes1518)
+```
+
+Once the data is loaded, we can proceed to understand how our chemical exposures (detected in urine samples) impact the bodymass index of participants.
+
+Similar to the previous tutorial where age is filtered, we only want to consider participants in the data that are above 18 years old and take the natural log of BMI. By filtering and using the natural log, the distribution of the ages of participants are normalized. To finish preparing the dataset, the N/A values are removed and the resulting data is saved under the name `nhanes`.
+
+```{r}
+nhanes <- nhanes1518 |>
+    filter(RIDAGEYR >= 18)|>
+    mutate(BMXBMI = log(BMXBMI))|>
+    select(BMXBMI, URXMHBP, URXMOH, URXMHP, URXMHH, URXMCOH, URXMHNC, URXMHH, URXECP, URXHIBP, URXMIB)
+
+nhanes <- drop_na(nhanes)
+
+nhanes
+```
+
+To confirm the normality of the variable BMI, we can create a histogram to view the shape of the observations:
+
+```{r}
+ nhanes|> ggplot(aes(x = BMXBMI))+ 
+   geom_histogram() 
+```
+
+::: {style="color:#6495ED"}
+
+## Key Assumptions/Constraints
+
+:::
+
+In order to use the gWQS package in an application setting, several conditions must be followed. The first condition is that the chemical exposures must ALL contribute in one direction. In order to contribute in one direction, all variables must be either positively correlated, or negatively correlated with each other. In addition to the correlation of the exposures, the dataset must be split into two sections. The first section is the training data for providing weights to the variables, while the second is used exclusively for verifying the model and ensuring that the results are reliable.
+
+***In order to use weighted quantile sum regression with the `nhanes` data, it is important to first confirm that all constraints are satisfied:***
+
+***An initial correlation model reveals that the URX predictor variables all contribute in a single direction, validating the appropriateness of the gWQS model.***
+
+```{r}
+cor_hanes <- cor(nhanes)
+
+ggcorrplot(cor_hanes)+
+  labs(title = "Corrleation of URX Variables and BMI")
+
+#Source http://www.sthda.com/english/wiki/ggcorrplot-visualization-of-a-correlation-matrix-using-ggplot2#:~:text=The%20easiest%20way%20to%20visualize,ggcorr()%20in%20ggally%20package
+```
+
+However, if we fit a normal linear regression model to these predictors, positive and negative estimates would be produced. Intuitively, the URX variables should all have positive coefficients, however, this model is not representative of this assumption. This is a demonstration of multi-collinearity, where there are there is a large uncertainty (variance) when calculating the coefficients. Therefore, the output of the model may produce unusual signs for the beta estimates.
+
+As shown below, some of the URX betas are positive, while others are negative. Instead, we want to use a gWQS model which will provide a ***unidirectional*** output, similar to a standard linear regression model.
+
+```{r}
+#large uncertanty (variance) around the coefficients and multicolinearity (including that the coeffients may be negatve) - point estimate may be negative (abnormal signs)
+linear_reg()|>
+  fit(BMXBMI~., data = nhanes)|>
+tidy()
+```
+
+Once the conditions are satisfied, a model can be produced, similarly to standard linear regression model. One difference from the linear model is that unique weights are assigned to the predictor variables.
+
+`$$
+g(\mu)= \beta_0 + \beta_0  \times (WQS) + \epsilon
+$$`
+
+Quantiles categorize each variable where qi = {0, 1, 2, 3, etc.}, which are given a corresponding weight. The weighted components are then summed and are fitted to the regression model. gWQS visualizes the assigned weights and regression fit as demonstrated in the package below:
+
+::: {style="color:#6495ED"}
+
+## Using gWQS Package
+
+:::
+
+The gWQS model model requires the explanatory mixtures to be saved to a variable. In this example, we saved them to `chem_names`.
+
+Additionally, the output of the gWQS package is saved to the variable `results`.
+
+***Key arguments in the qWQS package:***
+
+`q` - specifies the number of quantiles to be used
+
+`validation` - the percentage of the data set to be used for creating the weights/bootstrapping and the validating the model
+
+`b1_pos` - specify `TRUE` if the data has a positive correlation and
+
+`FALSE` if it has a negative correlation
+
+`family` - type of association to be tested (ex: gaussian, binomial)
+
+`data` - the data-frame containing the data to be tested
+
+`b` - number of bootstrap samples
+
+`mix_name` - a vector containing the names of the exposures
+
+`seed` - set a seed which allows the results to be replicated
+
+```{r}
+
+chem_names <- names(nhanes)[2:10]
+
+results <- gwqs(BMXBMI ~ wqs, mix_name = chem_names, data = nhanes, 
+                q = 10, validation = 0.6, b = 1, b1_pos = TRUE, 
+                b1_constr = FALSE, family = "gaussian", seed=1)
+
+```
+
+::: {.callout-warning appearance="simple"} It is important to set a seed in the gWQS model. This ensures that the results are replicated consistently when the model is rendered. :::
+
+::: {style="color:#6495ED"}
+
+## Model Diagnostics & Interpretation
+
+:::
+
+Once we have completed the model, the gWQS package provides methods for understanding and visualizing the results. One of the most helpful ways to view the output of is through visualizations of the weights assigned to each variable. The weights can demonstrate which exposures from the urine samples are impactful in predicting BMI and which are less helpful.
+
+```{r}
+gwqs_barplot(results)
+```
+
+The first visualization produced is a bar plot showing the weights assigned to each of the URX variables. The variables with greatest weights are URXCEP, URXMOH, and URHMIB while the remaining chemicals are not great predictors of BMI. Also shown in the visualization is a red line which shows the cutoff values - calculated by the inverse of the number of predictor variables.
+
+In addition to the weights assigned to the chemical exposures, it can be helpful to visualize the overall relationship of the WQS model and the predicted BMI. To visualize this relationship, a scatterplot can be utilized to see if there is a linear relationship in the model.
+
+```{r}
+gwqs_scatterplot(results)
+```
+
+The scatterplot of the WQS model and BMI demonstrate the linear relationship between the URX chemicals and log BMI.
+
+An additional method of verifying that the WQS model is effective in predicting log BMI is to examine the residuals. Residuals are the differences between the the actual data points in the NHANES dataset and the predicted values from our gWQS model. By examining the residuals on a graph, we can determine if there are any relationships, causing issues with the model.
+
+```{r}
+gwqs_fitted_vs_resid(results)
+```
+
+The final visualization shows the residuals and fitted values. As seen above, the points are distributed around zero and do not have any distinct patterns. Additional interpretations of the output models can be found HERE (link to Olivia's tutorial)
+
+Additionally, the final weights are shown numerically below:
+
+```{r}
+head(results$final_weights)
+```
+
+Using these weights, the final regression results can be obtained:
+
+```{r}
+summary(results)
+```
+
+The Regression output:
+
+`$$
+\widehat{log(BMXBMI)} = 3.31 + 0.015 \times (WQS)
+$$`
+
+Interpretation for the model:
+
+-   *When quantiles of the URX variables are 0, the estimated log BMI is approximately 3.31.*
+
+-   *As every quantile of the WQS increases by 1, the log BMI increases on average by 0.015.*
+
+Included in the regression output is the results significance tests of the coefficients. To test the significance of the model, we can use a t-distribution and t-statistic. The t-statistic for WQS is 5.214 under the t-distribution with 7 degrees of freedom. The p-value corresponding to the WQS quantiles is extremely small, therefore, there is a significant relationship between the weighted quantiles and the predicted outcome, logBMI.
+
+Another method of testing the significance of the regression model is using a Chi-Square test. In general, chi-square tests help us determine if there is a difference between the data of the predicted and actual outcome. In this example, it is appropriate to determine if the produced WQS model was due to random chance, or if there is a true relationship present.
+
+To complete the chi-square test, we need to convert the statistic of 1.4 with 1 degree of freedom to a standard p-value. When we find the p-value by using the following formula:
+
+`anova(model_name, test="Chisq")`
+
+```{r}
+#anova(model, test="Chisq")
+```
+
+Although the model is significant, it is important to acknowledge the uncertainty in the WQS output. One method of accounting for this uncertainty is through confidence intervals.A confidence interval allows us to understand between which values are the estimations from our model likely to occur in the real-world, accounting for model variations. Using the `confint(model name)` function in R, we can determine between which WQS coefficient by the model.
+
+```{r}
+confint(results)
+```
+
+We can be 95% confident that the true wqs coefficient falls within the interval 27.75 and 28.96.
+
+::: {style="color:#6495ED"}
+
+## Model Evaluation:
+
+:::
+
+```{r}
+results
+```
+
+-   AIC - This is a statistic to compare two models - the smaller the AIC, the better the model. In this example, the AIC is -164.58.
+
+-   Dispersion parameter for gaussian family taken to be 0.05409048, which corresponds to the spread of the data around zero.
+
+Null deviance can show how well the model predicts the response, solely using the regression intercept.
+
+Contrary, residual deviance demonstrates how well the model predicts the response, using the explanatory variables. The smaller the residual deviance, the better the accuracy of the regression model.
+
+Another measure of validating our model is to examine the residual plot. As demonstrated above, the residuals do not have a general pattern and seem to be evenly distributed near zero.
+
+***Additional outputs from the model which may be helpful for diagnostics:***
+
+`results$bres` - displays the p-values for each of the bootstrap samples
+
+`results$q_i` - the "cutoff" values which are used to create the quantiles
+
+In conclusion, the gWQS weighted the explanatory variables successfully as our model is considered to be statistically significant. By using the gWQS model with data where explanatory variables are all highly correlated, specific variables can be weighted according to their influence to the response variable. In the NHANES data set, chemicals URXMCOH, URXMIB, URXECP were weighted the highest by the gWQS model. In future tutorials, we will uncover additional methods to test highly correlated data through Bayesian sum regression.
+
+::: {style="color:#6495ED"}
+
+## Acknowledgements:
+
+:::
+
+-   [https://www.statology.org/null-residual-deviance/#:\\](https://www.statology.org/null-residual-deviance/#:\)\~:text=The%20residual%20deviance%20tells%20us,value%20of%20the%20response%20variable
+
+-   <https://cran.r-project.org/web/packages/gWQS/vignettes/gwqs-vignette.html>
+
+-   <http://cran.nexr.com/web/packages/gWQS/vignettes/gwqs-vignette.html>
+
+-   <http://cran.nexr.com/web/packages/gWQS/gWQS.pdf>
