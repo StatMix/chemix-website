@@ -32,6 +32,7 @@ library(patchwork)
 library(pander)
 library(broom.mixed)
 library(tidyverse)
+library(bayesplot)
 ```
 
 This tutorial will be using the ``nhanes`` dataset where the variables are described in the file `nhanes-codebook.txt`. This data can be loaded with the `load` function, specifying the rda data file. 
@@ -125,13 +126,19 @@ model1 <- brm(formula = BMXBMI ~ RIDAGEYR,
 
 ### Interpretation
 
-Once we have created our model, we will then interpret its results. We can use the `summary` function to view more detailed statistics of our model. We will set the `priors` argument to `TRUE` so that the summary includes the prior distributions we used for our model.
+Once we have created our model, we will then interpret its results. Our model gives us posterior distributions for $\beta_{Intercept}$ and $\beta_{Age}$; we can plot these with the `mcmc_dens` function of the `bayesplot` package, specifying the distributions we want to plot with the `pars` argument.
+
+We can also use the `summary` function to view more detailed statistics of our model. We will set the `priors` argument to `TRUE` so that the summary includes the prior distributions we used for our model.
+
+```{r plot-model1}
+mcmc_dens(model1, pars = c("b_Intercept", "b_RIDAGEYR"))
+```
 
 ```{r noninformative-summary}
 summary(model1, priors = TRUE)
 ```
 
-The main areas we want to examine are the `Intercept` and `BMXBMI` columns. These tell us that our estimate for the intercept is 28.66, and the estimate for our slope is 0.02. With these statistics, let's now fill in our model:
+Similar to frequentists, we have point estimates for $\beta_{Intercept}$ and $\beta_{Age}$ that we are interested in. These are the means of the posterior distributions we plotted with the `mcmc_dens` function. The estimates can be found in the `Intercept` and `BMXBMI` rows of the `summary` output. These tell us that our estimate for the intercept is 28.66, and the estimate for our slope is 0.02. With these statistics, let's now fill in our model:
 
 $$\hat{BMI} = 28.66 + 0.02(\hat{Age})$$
 
@@ -139,7 +146,7 @@ We can interpret the estimate of the slope to mean that for every 1 year increas
 
 ### Inference
 
-Going back to our model summary, we can look at the `l-95% CI` and `u-95% CI` columns to obtain 95% credible intervals for our intercept and estimates: we can thus state that there is a 95% chance that the true value for the intercept lies between 28.28 and 29.04, and there is a 95% chance that the true value for $\beta_{BMI}$ lies between 0.01 and 0.03. 
+We are also interested in the `l-95% CI` and `u-95% CI` columns of the `summary` output. These estimates are obtained from the credible intervals of the posterior distributions we plotted with `mcmc_dens`. We can thus state that there is a 95% chance that the true value for the intercept lies between 28.28 and 29.04, and there is a 95% chance that the true value for $\beta_{Age}$ lies between 0.01 and 0.03. 
 
 Now that we have a confidence interval for our slope, we might want to conclude whether there is a statistically significant relationship between BMI and age To do so, we can examine whether or not $\hat{\beta_{Age}}$ is statistically different from 0. Our **null hypothesis** in this case is that the slope is equal to 0, while our **alternative hypothesis** is that the slope is not equal to 0 (which implies a linear relationship between BMI and age). We can answer this question with our credible interval. Since the interval for `RIDAGEYR` does not include 0, we can reject our null hypothesis and conclude that there is likely a linear relationship between age and body mass index (although it appears to be very small).
 
@@ -229,9 +236,15 @@ We can again look at the `l-95% CI` and `u-95% CI` columns to obtain 95% credibl
 
 ## Prior Selection
 
-So far in this tutorial, we have used the default priors for our linear regression models. However, one of the foundations of Bayesian statistics is setting an informative prior, or one that tells us something about the data. There are many different types of priors we can choose from, and they prove handy in different cases.
+### Introduction
 
-Since we have thousands of observations in our dataset, the different priors we may set will yield similar results. To better demonstrate how choosing different priors can impact our model, let's take a sample of our dataset of size `n = 30`. 
+So far in this tutorial, we have used the default priors for our linear regression models. However, one of the foundations of Bayesian statistics is setting an informative prior, or one that tells us something about the data.
+
+Prior selection is especially important when we do not have a lot of data. In these cases, since there is not much data to go off of, much of our inference comes from the prior. This means it is vital that we select a fitting distribution, or we risk an inaccurate posterior.
+
+There are many different types of priors we can choose from, and they prove handy in different cases. This section will discuss common priors used for coefficients ($\beta$) and variances ($\sigma^2$).
+
+Since we have thousands of observations in our dataset, the different priors we may set would yield similar results. To better demonstrate how choosing different priors can impact our model, let's take a sample of our dataset of size `n = 30`. 
 
 ```{r sample-subset}
 set.seed(456)
@@ -488,13 +501,19 @@ knitr::kable(model_recap4, col.names = c("Distributions",
 
 As we can see, the results of both models are very similar. This makes sense, as all of our specified priors in the second model were very unspecific (due to large variances). If we fit sharper priors, we could expect to see a larger difference in the posterior from the default model.
 
+### Conclusion
+
+Prior selection is a pivotal step of the Bayesian process. An informative prior can help make up for a lack of available data, allowing us to still obtain a posterior from which we can make meaningful interpretations and inferences.
+
+This section goes over two common priors for both $\beta$ and $\sigma^2$ values. Using a normal distribution for $\beta$ and an inverse-gamma distribution for $\sigma^2$ can be a good choice if we believe most of our data is centered around the mean. However, Bayesian statisticians tend to use a t-distribution for $\beta$ and a Half-Cauchy distribution for $\sigma^2$ as these are insensitive to outliers. Regardless, there is no predefined "best answer" on what prior to use in any given situation; it depends on our knowledge of the information. 
+
 ## Model Evaluation
 
 In the section on single linear regression, we mentioned a list of assumptions for Bayesian linear regression that help ensure the validity of our model. Now, we will learn how to check those assumptions and detect when there might be a problem with our model. 
 
 ### MCMC Diagnostics & Trace Plots
 
-In order to see if our Bayesian analysis is working and performing well, we need to examine **Markov Chain Monte Carlo (MCMC) diagnostics**. In statistics, the Monte Carlo method refers to when we generate a sample of independent draws from the probability distribution of a random variable $X$ in order to estimate a feature of that distribution. The Markov Chain Monte Carlo method is similar, but in this case the items in the generated sample are serially correlated rather than independent. During model evaluation, samples from our posterior distributions will be generated using the MCMC method; we then can use **trace plots** to examine if our model meets MCMC diagnostics. Trace plots are line charts showing time on the x-axis, and values from the sample draws on the y-axis. We can use the `plot()` method in the `brms` package to display trace plots.
+In order to see if our Bayesian analysis is working and performing well, we need to examine **Markov Chain Monte Carlo (MCMC) diagnostics**. In statistics, the Monte Carlo method refers to when we generate a sample of independent draws from the probability distribution of a random variable $X$ in order to estimate a feature of that distribution. The Markov Chain Monte Carlo method is similar, but in this case the items in the generated sample are serially correlated rather than independent. During model evaluation, samples from our posterior distributions will be generated using the MCMC method; we then can use **trace plots** to examine if our model meets MCMC diagnostics. Trace plots are line charts showing time on the x-axis, and values from the sample draws on the y-axis. We can use the `plot()` function in the `brms` package to display trace plots.
 
 Let's first examine a model that passes MCMC diagnostics. We will continue to use the `nhanes1518_sample` dataset, and we will focus on simple linear regression models.
 
@@ -541,6 +560,48 @@ plot(mcmc3)
 
 Here, we see that the first portions of the trace plots look very different than the rest; this means our chains are eventually converging to the target distribution (as we get to the 'fuzzy caterpillar' portion), but our initial distributions are largely different than the target. We can fix this by increasing the `warmup` parameter, which discards a number of the initial observations.
 
+### Autocorrelation
+
+Trace plots allow us to examine the extent to which serial correlation exists among the draws from our model. We can look at this serial correlation more specifically by plotting the **autocorrelation function (ACF)** of our model. 
+
+Let's plot the autocorrelation for `mcmc1`, the model that we just showed passes MCMC diagnostics. We can use the `mcmc_acf` function of the `bayesplot` package to do so, using the `pars` argument to specify which ACFs we want to see. Recall that an assumption for Bayesian linear regression is the presence of no autocorrelation; thus, we want the ACFs to quickly approach zero. 
+
+```{r autocorr-mcmc1}
+mcmc_acf(mcmc1, pars = c("b_Intercept", "b_RIDAGEYR", "sigma"))
+```
+
+The ACFs for this model all quickly approach zero, meaning this is a valid model in terms of the no autocorrelation assumption.
+
+Let's compare these plots to those for the `mcmc3` model, which we just showed fails MCMC diagnostics.
+
+```{r autocorr-mcmc3}
+mcmc_acf(mcmc3, pars = c("b_Intercept", "b_RIDAGEYR", "sigma"))
+```
+
+These plots take much longer to reach zero, indicating a high degree of serial correlation. We would likely want to refit this model.
+
+### Effective Sample Size
+
+Autocorrelation is closely related to another indicator used in model evaluation: the **effective sample size**. This metric, often notated as $n_{eff}$, estimates the total number of independent draws made from sampling the posterior distribution. Autocorrelation, of course, means that some sequential draws will not be independent. Thus, $n_{eff}$ is usually smaller than the overall sample size $N$. 
+
+We can examine effective sample size using the `neff_ratio` and `mcmc_neff` functions from the `bayesplot` package. `neff_ratio` calculates the ratio $\frac{n_{eff}}{N}$ for each parameter specified in the `pars` argument. `mcmc_neff` then takes a vector of these ratios and plots them. Let's continue to use `mcmc1`, our diagnostic-passing model, and plot its effective sample sizes. We add `theme_minimal` to make the plot easier to read.
+
+```{r neff-mcmc1}
+neff_mcmc1 <- neff_ratio(mcmc1, pars = c("b_Intercept", "b_RIDAGEYR", "sigma"))
+mcmc_neff(neff_mcmc1) + theme_minimal()
+```
+
+This plot shows that the effective sample sizes for the parameters of this model are all close to the overall sample sizes. We want to see ratios closer to 1 (indicated by the lightest blue lines), as these indicate the lowest levels of autocorrelation.
+
+Let's compare these results to those for `mcmc3`, one of our diagnostic-failing models. 
+
+```{r neff-mcmc3}
+neff_mcmc3 <- neff_ratio(mcmc3, pars = c("b_Intercept", "b_RIDAGEYR", "sigma"))
+mcmc_neff(neff_mcmc3) + theme_minimal()
+```
+
+As we can see, the effective sample size ratios are much lower for this model, as indicated by darker blue lines. This means there are very little amounts of independent draws from the posterior distributions, indicating high levels of autocorrelation. As concluded earlier, we would want to refit this model. 
+
 ## Model Comparison
 
 Suppose we have multiple Bayesian linear regression models, and we desire to know which one is "better". To accomplish this, we can do **model comparison** to determine which of our models minimizes prediction error. 
@@ -559,7 +620,7 @@ wx <- c(waic1, waic2, waic3)
 barplot(wx, ylab = "WAIC", names.arg=paste("mcmc", 1:3))
 ```
 
-We see that the WAIC for mcmc1 is the lowest. This makes intuitive sense, as this was the model that passed MCMC diagnostics. If we were comparing these three models, we would proceed with mcmc1.
+We see that the WAIC for mcmc1 is the lowest. This makes intuitive sense, as this was the model that passed MCMC diagnostics. If we were comparing these three models, we would proceed with `mcmc1`.
 
 We can also use WAIC to determine what are the best priors to select for our data. Let's take a look at the first five models we fitted in this module, using the `nhanes1518_sample` dataset. Here's a reminder of their prior distributions and their posterior statistics:
 
@@ -580,7 +641,7 @@ barplot(wy, ylab = "WAIC", ylim = c(194, 196),
         names.arg = c("default", paste("model", 2:5)))
 ```
 
-Although all of the models have very similar WAIC scores, model 4 (which uses a $StudentT(3, 0, 1)$ prior for $\beta_{Age}$) slightly edges out the others. We would proceed with model 7. This makes sense as, since our sample size is very small, it is more fitting to use a student-t distribution than a normal distribution for our prior on $\beta$.
+Although all of the models have very similar WAIC scores, model 4 (which uses a $StudentT(3, 0, 1)$ prior for $\beta_{Age}$) slightly edges out the others. We would proceed with model 4. This makes sense as, since our sample size is very small, it is more fitting to use a student-t distribution than a normal distribution for our prior on $\beta$.
 
 ## References
 
