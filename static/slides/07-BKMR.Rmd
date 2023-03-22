@@ -35,7 +35,59 @@ We consider the general framework
 
 $$g(\mu_i) = h(z_{i1},...z{iM})+\beta x_i \space i=1,...,n$$
 
-Where 
+
+## 2. Exploratory Data Analysis
+
+To illustrate how BKMR empowers hierarhical modeling of highly correlated predictors, we will be using the ``nhanes`` dataset where the variables are described in the file `nhanes-codebook.txt`. Load this data with the `load` function and specify the data file. 
+
+```{r}
+load(file='nhanes1518.rda')
+```
+
+We first explore the URX predictors (i.e. the ones related to phthalates concentrations), subsetting subset the dataset to include only the predictors in the weighted quantile sum module, and then filter out `NA` values:
+
+```{r}
+library(tidyverse)
+nhanes_URX<-nhanes1518%>%
+  select(BMXBMI, URXUCR, URXCNP,URXCOP,URXECP,URXHIBP,URXMBP,URXMC1,URXMEP,URXMHBP,URXMHH)%>%na.omit()
+```
+
+```{r}
+library(corrplot)
+corr_mat=cor(nhanes_URX,method="s")
+corrplot(corr_mat) # circles
+corrplot(corr_mat, method = 'color', order = 'alphabet') # squares
+corrplot(corr_mat, # colorful number
+         addCoef.col = 1,    # Change font size of correlation coefficients
+         number.cex = 0.5) 
+corrplot.mixed(corr_mat, lower = 'shade', upper = 'pie', order = 'hclust')
+```
+
+We first start exploring the data by plotting a correlation matrix between the variables of interest. We can use the `corrplot` function within the `corrplot()` package, and adjust the style to fit our aesthetics of desire. We see that the predictors are highly correlated, especially between URXMHH and URXECP, and URXMHBP and URXMBP.  
+
+## 3. Libraries
+
+To fit the BKMR model, we use the `kmbayes` function. This function implements the Markov chain Monte Carlo (MCMC) algorithm. 
+
+```{r eval=FALSE}
+library(bkmr)
+```
+
+The argument `iter` indicates the number of iterations of the MCMC sampler; `y` is the vector of outcomes, `Z` is a matrix of exposures (each column is an exposure variable); `X` is a matrix of covariates (each column is a covariate); `verbose` indicates whether interim output summarizing the progress of the model fitting should be printed; and `varsel` indicates whether to conduct variable selection on the predictors
+
+## 4. Example: URX Modeling
+
+```{r eval=FALSE}
+set.seed(111)
+dat <- SimData(n = 50, M = 4)
+y <- dat$y
+Z <- dat$Z
+X <- dat$X
+
+fitkm <- kmbayes(y = y, Z = Z, X = X, iter = 10000, verbose = FALSE, varsel = TRUE)
+```
+
+
 
 
 
