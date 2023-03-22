@@ -55,6 +55,6 @@ lessons:
     date: ""
     title: "Bayesian Kernel Machine Regression"
     prepare: "topic-07-bkmr.html"
-    slides: ""
+    slides: "07-BKMR.html"
     ae: ""
     lab: ""

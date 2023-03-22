@@ -1,0 +1,41 @@
+---
+title: "Tutorial 07 - Bayesian Kernel Machine Regression"
+author: "Olivia Fan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    css: "./tutorials.css"
+    toc: true
+    toc_float: true
+---
+
+<!-- Setup -->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning=FALSE,
+                      message=FALSE)
+```
+
+## Background & Introduction 
+
+Bayesian kernel machine regression (BKMR) is a popular tool in machine learning literature which flexibly models the relationship between a large number of variables and a particular dependent outcome variable.
+
+## Topics 
+
+- Advantages of BKMR through flexibility of kernal function, hierarchical variable selection 
+
+- Demonstrating the ability of BKMR to model highly correlated predictors through URX variables in the chemical dataset using the Gaussian kernel
+
+- Bayesian model diagnostics through effective sample size (ESS) and autocorrelation
+
+## 1. Definitions
+
+We consider the general framework
+
+$$g(\mu_i) = h(z_{i1},...z{iM})+\beta x_i \space i=1,...,n$$
+
+Where 
+
+
+
