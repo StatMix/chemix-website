@@ -16,8 +16,18 @@ knitr::opts_chunk$set(echo = TRUE)
 
 -   [A Conceptual Introduction to Bayesian Model Averaging](https://journals.sagepub.com/doi/full/10.1177/2515245919898657)
 
+-   [Bayesian Model Averaging: Theoretical Developments and Practical Applications](https://www.cambridge.org/core/journals/political-analysis/article/bayesian-model-averaging-theoretical-developments-and-practical-applications/3179D92A3C9353DE7E4674987C33FD28)
+
+
 ### R package
+
+-   [BAS manual](http://www2.stat.duke.edu/~clyde/BAS/BAS-manual.pdf)
+
+-   [BMS tutorial](https://cran.r-project.org/web/packages/BAS/vignettes/BAS-vignette.html)
+
 
 -   [BMA: An R package for Bayesian Model Averaging](https://cran.r-project.org/doc/Rnews/Rnews_2005-2.pdf)
 
 -   [BMA manual](https://cran.r-project.org/web/packages/BMA/BMA.pdf)
+
+-   [BMS manual](https://cran.r-project.org/web/packages/BMS/vignettes/bmsmanual.pdf)
