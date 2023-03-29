@@ -25,7 +25,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 -   [BMS tutorial](https://cran.r-project.org/web/packages/BAS/vignettes/BAS-vignette.html)
 
-
 -   [BMA: An R package for Bayesian Model Averaging](https://cran.r-project.org/doc/Rnews/Rnews_2005-2.pdf)
 
 -   [BMA manual](https://cran.r-project.org/web/packages/BMA/BMA.pdf)
