@@ -51,7 +51,7 @@ In the Bayesian school, probability is defined as a belief. For example, a Bayes
 
 It is important to understand that different statisticians can have different priors for the same data. For example, a statistician who lives in the desert may believe that the probability that it rains tomorrow is 5%. However, if they move to the rainforest, their belief on future rain chances will change dramatically. This example analogizes how we combine our prior knowledge (living in the desert leads to a low chance for rain) with our data (the amount of rain after we move to the rainforest) to obtain our posterior (living in the rainforest leads to a high chance for rain). 
 
-A statistician can also have no prior. Suppose, unrealistically, that a statistician has never heard of rain, and therefore has no knowledge on how likely it is to occur. When that statistician is asked for the probability that it will rain tomorrow, they have no prior knowledge to go off of. Thus, they will have to use data (examining whether or not in rains for the next number of days) to form some beliefs. 
+A statistician can also have no prior knowledge. Suppose, unrealistically, that a statistician has no idea how likely it is to rain on any given day. When that statistician is asked for the probability that it will rain tomorrow, they have no beliefs to go off of. This statistician can then use an **uninformative prior**, or one that tells us little about the situation at hand, to describe rain chances. A common example of an uninformative prior is a $Uniform(0, 1)$ distribution, which would mean the probability that it rains tomorrow has an equal chance of being any value from 0 to 1.
 
 But how exactly do we get from the prior and the likelihood to the posterior?
 
@@ -140,7 +140,7 @@ summary(model1, priors = TRUE)
 
 Similar to frequentists, we have point estimates for $\beta_{Intercept}$ and $\beta_{Age}$ that we are interested in. These are the means of the posterior distributions we plotted with the `mcmc_dens` function. The estimates can be found in the `Intercept` and `BMXBMI` rows of the `summary` output. These tell us that our estimate for the intercept is 28.66, and the estimate for our slope is 0.02. With these statistics, let's now fill in our model:
 
-$$\hat{BMI} = 28.66 + 0.02(\hat{Age})$$
+$$\hat{BMI} = 28.66 + 0.02(Age)$$
 
 We can interpret the estimate of the slope to mean that for every 1 year increase in age, we expect BMI to increase by 0.02 on average. The intercept does not have a meaningful interpretation in this case as it assumes a person with an age of 0, which is unrealistic. 
 
@@ -224,7 +224,7 @@ summary(multi_model1, priors = TRUE)
 
 With these statistics, we can now fill in our model:
 
-$$\hat{BMI} = 29.53 - 0.07(\hat{Age\_sc}) + 0.28(\hat{Waist\_sc}) - 3.49(\hat{Height\_sc}) + 7.70(\hat{Weight\_sc})$$
+$$\hat{BMI} = 29.53 - 0.07(Age\_sc) + 0.28(Waist\_sc) - 3.49(Height\_sc) + 7.70(Weight\_sc)$$
 
 We can see that the $\hat{\beta_{Height}}$ and $\hat{\beta_{Weight}}$ are the largest in magnitude, meaning they have the most impact on BMI. This makes intuitive sense, as BMI is calculated from height and weight.
 
@@ -263,7 +263,7 @@ default_prior <- brm(formula = BMXBMI ~ RIDAGEYR,
 summary(default_prior, priors = TRUE)
 ```
 
-We get the model $\hat{BMI} = 36.19 - 0.12(\hat{Age})$. We will compare this to models using specified priors.
+We get the model $\hat{BMI} = 36.19 - 0.12(Age)$. We will compare this to models using specified priors.
 
 ### Coefficient Priors: The Normal Distribution
 

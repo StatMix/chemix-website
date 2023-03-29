@@ -1675,7 +1675,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Tutorial 05 - Bayesian Regression</h1>
 <h4 class="author">Ryan Mitchell</h4>
-<h4 class="date">22 March, 2023</h4>
+<h4 class="date">28 March, 2023</h4>
 
 </div>
 
@@ -1742,12 +1742,16 @@ how we combine our prior knowledge (living in the desert leads to a low
 chance for rain) with our data (the amount of rain after we move to the
 rainforest) to obtain our posterior (living in the rainforest leads to a
 high chance for rain).</p>
-<p>A statistician can also have no prior. Suppose, unrealistically, that
-a statistician has never heard of rain, and therefore has no knowledge
-on how likely it is to occur. When that statistician is asked for the
-probability that it will rain tomorrow, they have no prior knowledge to
-go off of. Thus, they will have to use data (examining whether or not in
-rains for the next number of days) to form some beliefs.</p>
+<p>A statistician can also have no prior knowledge. Suppose,
+unrealistically, that a statistician has no idea how likely it is to
+rain on any given day. When that statistician is asked for the
+probability that it will rain tomorrow, they have no beliefs to go off
+of. This statistician can then use an <strong>uninformative
+prior</strong>, or one that tells us little about the situation at hand,
+to describe rain chances. A common example of an uninformative prior is
+a <span class="math inline">\(Uniform(0, 1)\)</span> distribution, which
+would mean the probability that it rains tomorrow has an equal chance of
+being any value from 0 to 1.</p>
 <p>But how exactly do we get from the prior and the likelihood to the
 posterior?</p>
 </div>
@@ -1947,7 +1951,7 @@ These are the means of the posterior distributions we plotted with the
 intercept is 28.66, and the estimate for our slope is 0.02. With these
 statistics, let’s now fill in our model:</p>
 <p><span class="math display">\[\hat{BMI} = 28.66 +
-0.02(\hat{Age})\]</span></p>
+0.02(Age)\]</span></p>
 <p>We can interpret the estimate of the slope to mean that for every 1
 year increase in age, we expect BMI to increase by 0.02 on average. The
 intercept does not have a meaningful interpretation in this case as it
@@ -2121,9 +2125,8 @@ the <code>formula</code> argument here is
 ## and Tail_ESS are effective sample size measures, and Rhat is the potential
 ## scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <p>With these statistics, we can now fill in our model:</p>
-<p><span class="math display">\[\hat{BMI} = 29.53 - 0.07(\hat{Age\_sc})
-+ 0.28(\hat{Waist\_sc}) - 3.49(\hat{Height\_sc}) +
-7.70(\hat{Weight\_sc})\]</span></p>
+<p><span class="math display">\[\hat{BMI} = 29.53 - 0.07(Age\_sc) +
+0.28(Waist\_sc) - 3.49(Height\_sc) + 7.70(Weight\_sc)\]</span></p>
 <p>We can see that the <span class="math inline">\(\hat{\beta_{Height}}\)</span> and <span class="math inline">\(\hat{\beta_{Weight}}\)</span> are the largest in
 magnitude, meaning they have the most impact on BMI. This makes
 intuitive sense, as BMI is calculated from height and weight.</p>
@@ -2196,7 +2199,7 @@ default priors.</p>
 ## and Tail_ESS are effective sample size measures, and Rhat is the potential
 ## scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <p>We get the model <span class="math inline">\(\hat{BMI} = 36.19 -
-0.12(\hat{Age})\)</span>. We will compare this to models using specified
+0.12(Age)\)</span>. We will compare this to models using specified
 priors.</p>
 </div>
 <div id="coefficient-priors-the-normal-distribution" class="section level3">
