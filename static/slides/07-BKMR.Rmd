@@ -48,6 +48,8 @@ We first explore the URX predictors (i.e. the ones related to phthalates concent
 
 ```{r}
 library(tidyverse)
+df<-nhanes1518%>%
+  select(BMXBMI, URXUCR, URXCNP,URXCOP,URXECP,URXHIBP,URXMBP,URXMC1,URXMEP,URXMHBP,URXMHH,RIDAGEYR)%>%na.omit()
 nhanes_URX<-nhanes1518%>%
   select(BMXBMI, URXUCR, URXCNP,URXCOP,URXECP,URXHIBP,URXMBP,URXMC1,URXMEP,URXMHBP,URXMHH)%>%na.omit()
 ```
@@ -77,17 +79,29 @@ The argument `iter` indicates the number of iterations of the MCMC sampler; `y` 
 
 ## 4. Example: URX Modeling
 
-```{r eval=FALSE}
+```{r eval=FALSE, cache=TRUE}
 set.seed(111)
 dat <- SimData(n = 50, M = 4)
-y <- dat$y
-Z <- dat$Z
-X <- dat$X
+y <- dat$y # bmi
+Z <- dat$Z # chemical mixtures
+X <- dat$X # age
 
 fitkm <- kmbayes(y = y, Z = Z, X = X, iter = 10000, verbose = FALSE, varsel = TRUE)
 ```
 
+```{r cache=TRUE}
+# set.seed(111)
+# fitkm_corr <- kmbayes(y = d2$y, Z = d2$Z, X = d2$X, iter = 10000, varsel = TRUE, verbose = FALSE)
+# fitkm_hier <- kmbayes(y = d2$y, Z = d2$Z, X = d2$X, iter = 10000, varsel = TRUE, 
+#                       groups = c(1,2,1,3), verbose = FALSE)
+set.seed(111)
 
-
-
-
+y<-df$BMXBMI # bmi
+Z <- df%>%select(-BMXBMI) # chemical mixtures
+# group 1: URXMBP, URXMIB, URXMC1, URXMEP, URXMZP
+# group 2: URXECP, URXMHH, URXMOH, URXMHP
+X <- df%>%select(RIDAGEYR)
+fitkm_corr <- kmbayes(y = df$y, Z = df$Z, X = df$X, iter = 10000, varsel = TRUE, verbose = FALSE)
+fitkm_hier <- kmbayes(y = df$y, Z = df$Z, X = df$X, iter = 10000, varsel = TRUE, 
+                      groups = c(1,2,1,3), verbose = FALSE)
+```

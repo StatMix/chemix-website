@@ -126,11 +126,11 @@ We introduce linear regression which aims to model the relationship between a re
 
 Simple linear regressions take the form
 
-`$$Y_i = \beta_0 +\beta_1 X_i +\epsilon_i$$` Where `$Y_i$` is the dependent variable (also named as reponse variable), `$X_i$` is the independent variable (also named as predictors or explanatory variables), and `$\epsilon_i$` is the random error term.
+$$Y_i = \beta_0 +\beta_1 X_i +\epsilon_i$$ Where $Y_i$ is the dependent variable (also named as response variable), $X_i$ is the independent variable (also named as predictors or explanatory variables), and $\epsilon_i$ is the random error term.
 
--   `$\beta_1$`: True slope of the relationship between X and Y
--   `$\beta_0$`: True intercept of the relationship between X and Y
--   `$\epsilon$`: Error (residual)
+-   $\beta_1$: True slope of the relationship between X and Y
+-   $\beta_0$: True intercept of the relationship between X and Y
+-   $\epsilon$: Error (residual)
 
 ### Model Assumptions
 
@@ -283,7 +283,7 @@ Variance Inflation Factor (VIF): The VIF is a measure of the increase in the var
 
 Now we explore the effect of income on the response BMI. Income is stored as `1, 2, ..., 15, 77, 99`, a *categorical* predictor variable, in the dataset. Specially, values `77` and `99` represent `refused to answer` and `don't know the answer` in the survey. The encoding of income categories can be found in [CDC website](https://wwwn.cdc.gov/nchs/nhanes/2011-2012/demo_g.htm#INDHHIN2).
 
-For categorical variable, we need to mutate them as factors stored in the data frame first. The income category coded as the first factor level will be the baseline. (Add explanation here. saying about when modeling categorical variable, omitting one level, blah, blah. Can call back the No multicollinearity assumption. )
+For categorical variable, we need to mutate them as factors stored in the data frame first. The income category coded as the first factor level will be the baseline. When modeling categorical variables, it is common to omit one level of the categorical variable, which is known as the reference level. This is done to avoid the problem of perfect multicollinearity between the dummy variables that represent the levels of the categorical variable. Specifically, In a regression model, a categorical variable with k levels can be represented by k-1 dummy variables, with each dummy variable representing one of the levels of the categorical variable, and the omitted reference level represented by a constant term in the regression equation. By omitting one level of the categorical variable, we ensure that the sum of the k-1 dummy variables is equal to one for each observation, which eliminates the problem of perfect multicollinearity. This also allows us to interpret the coefficients of the dummy variables as the difference between the level of interest and the omitted reference level, holding all other variables in the model constant.
 
 ```{r}
 nhanes_income <- nhanes1518 %>%
@@ -297,17 +297,16 @@ head(nhanes_income)
 Then we fit the linear regression on categorical variable `income` and control the potential factor from age:
 
 ```{r}
-lm(BMXBMI ~ income + RIDAGEYR, data = nhanes_income) %>% 
-  summary()
+lm_category<-lm(BMXBMI ~ income + RIDAGEYR, data = nhanes_income)
+lm_category%>%summary()
 ```
 
 *Baseline*: income category 1 corresponding to a household income of 0 to 4,999 dollars.
 
 *Model Interpretation*:
-(try to avoid hard coding. check the example in previous regression)
--   Intercept: The intercept 25.6489 means that for people in the baseline income category (income category 1 corresponding to a household income of 0 to 4,999 dollars), the BMI is expected to be 25.6489 on average.
+-   Intercept: The intercept `r round(coef(lm_category)[1],3)` means that for people in the baseline income category (income category 1 corresponding to a household income of 0 to 4,999 dollars), the BMI is expected to be `r round(coef(lm_category)[1],3)` on average.
 
--   `income6`: The coeffcient for the predictor `income6` is 1.1473, which means that for participants with household income category 6 (25,000 to 34,999 dollars per ear), the BMI is expected to be 1.1473 higher than that of participants with household income in category 1 (0 to 4,999 dollars), on average.
+-   `income6`: The coefficient for the predictor `income6` is `r round(coef(lm_category)["income6"],3)`, which means that for participants with household income category 6 (25,000 to 34,999 dollars per ear), the BMI is expected to be `r round(coef(lm_category)["income6"],3)` higher than that of participants with household income in category 1 (0 to 4,999 dollars), on average.
 
 ## Interaction Terms
 
@@ -352,4 +351,4 @@ Take income category 2 as an example, at the mean value of year
 
 ## References
 
-(add references here)
+https://mine-cr.com/teaching/sta210/
