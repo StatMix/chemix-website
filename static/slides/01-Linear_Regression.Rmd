@@ -126,7 +126,8 @@ We introduce linear regression which aims to model the relationship between a re
 
 Simple linear regressions take the form
 
-$$Y_i = \beta_0 +\beta_1 X_i +\epsilon_i$$ Where $Y_i$ is the dependent variable (also named as response variable), $X_i$ is the independent variable (also named as predictors or explanatory variables), and $\epsilon_i$ is the random error term.
+$$Y_i = \beta_0 +\beta_1 X_i +\epsilon_i$$ 
+Where $Y_i$ is the dependent variable (also named as response variable), $X_i$ is the independent variable (also named as predictors or explanatory variables), and `$\epsilon_i$` is the random error term.
 
 -   $\beta_1$: True slope of the relationship between X and Y
 -   $\beta_0$: True intercept of the relationship between X and Y
@@ -143,7 +144,7 @@ The assumptions of linear regression model are as follows:
 -   *No multicollinearity*: The independent variables are not highly correlated with each other.
 -   *No Autocorrelation*: The errors are not correlated with each other. Violations of these assumptions can affect the accuracy and interpretability of the regression results. It is important to check for these assumptions before applying linear regression and consider alternative models if necessary.
 
-We will verify that our data meets all the assumptions above in Section: Model Diagnostics.
+We will verify that our data meets all the assumptions above in Section: [Model Diagnostics](#Model_Diagonostics_and_Evaluations).
 
 ### Model Fitting
 
@@ -161,7 +162,7 @@ summary(lm.fit)
 
 ### Model Interpretation
 
--   $\beta_0$: Not interpretable in our case. For a person with 0 age (which falls outside of the domain of our model since we only consider adults), his or her expected BMI is `r round(summary(lm.fit)$coefficient[1,1],3)` (which we refer to as *extrapolation* since the value of the predictor variable falls outside of our domain of concern). 
+-   $\beta_0$: Not interpretable in our case. For a person with 0 age (which falls outside of the domain of our model since we only consider adults), his or her expected BMI is `r round(summary(lm.fit)$coefficient[1,1],3)` (which we refer to as *extrapolation* since the value of the predictor variable falls outside of our domain of concern).
 
 -   $\beta_1$: For every unit increase (a year) in the age of a person, his or her BMI is expected to increase by `r round(summary(lm.fit)$coefficient[2,1],3)` on average.
 
@@ -196,10 +197,9 @@ predict(lm.fit, data.frame(RIDAGEYR = (c(18, 30, 60))), interval = "prediction")
 
 Prediction and confidence interval are both statistical concepts that are used to estimate or quantify uncertainty in a particular outcome or parameter. However, they have different meanings and interpretations.
 
--   Confidence interval: a range of values that is likely to contain the true value of a parameter with a certain degree of confidence. For example, if you are estimating the mean age of a population based on a sample, a 95% confidence interval would provide a range of values within which the true population mean age is expected to lie with 95% confidence. The width of the confidence interval reflects the uncertainty in the estimation, with wider intervals indicating more uncertainty.
+-   Confidence interval: a range of values that is likely to contain the true value of a parameter with a certain degree of confidence. For example, if you are estimating the **mean age of a population** based on a sample, a 95% confidence interval would provide a range of values within which the true population mean age is expected to lie with 95% confidence. The width of the confidence interval reflects the uncertainty in the estimation, with wider intervals indicating more uncertainty.
 
--   Prediction: An estimate of a specific value or outcome based on the statistical model. For example, in our case when we use a linear regression model to predict the age of a person based on their BMI, a prediction would be the estimated age for a person of a specific BMI Predictions are usually accompanied by a measure of how accurate the estimate is, such as the mean squared error or the root mean squared error. Unlike a confidence interval which provides a range of values for the parameter, a prediction interval provides a range of values for the actual observation or outcome.
-
+-   Prediction: An estimate of a specific value or outcome based on the statistical model. For example, in our case when we use a linear regression model to predict **the age of a person** based on their BMI, a prediction would be the estimated age for a person of a specific BMI Predictions are usually accompanied by a measure of how accurate the estimate is, such as the mean squared error or the root mean squared error. Unlike a confidence interval which provides a range of values for the parameter, a prediction interval provides a range of values for the actual observation or outcome.
 
 ## Model Diagonostics and Evaluations
 
@@ -218,8 +218,8 @@ The diagnostic plots show residuals in four different ways:
 
 -   Scale-Location (or Spread-Location). Used to check the homogeneity of variance of the residuals (homoscedasticity). Horizontal line with equally spread points is a good indication of homoscedasticity.
 
--   Residuals vs Leverage. Used to identify influential cases, that is extreme values that might influence the regression results when included or excluded from the analysis. Based on the residuals vs. leverage plot, there are no influential points according to Cook's distance. However, there might be some points with high standard residuals values which could be marked as outliers.
-
+-   Residuals vs Leverage. Used to identify influential cases, that is extreme values that might influence the regression results when included or excluded from the analysis. If there is any point outside of the boundary indicated by red dash line, those points will be influential points. Based on the residuals vs. leverage plot, there are no influential points according to Cook's distance. However, there might be some points with high standard residuals values which could be marked as outliers. For example, 8723th, 10070th, 11734th observations are marked as outliers.
+ 
 We can reconstruct the above four plots by ourselves. For example, we can use the `residuals()` and `rstudent()` functions to extract the residuals and studentized residuals, respectively, from the linear model and plot them along with the predicted values.
 
 ```{r}
@@ -230,8 +230,6 @@ Some metrics and hypothesis tests for model evaluations:
 
 -   $R^2$: From the model above, we have an adjusted R-squared value of 0.2302, which indicates that 23.02% of the variability in the response variable BMI can be explained by the change in the predictor variable age.
 -   p value: The p value tells us how likely the data we have observed is to have occurred under the null hypothesis (more material on Null hypothesis on subsequent tutorials), i.e. that there is no correlation between the predictor variable age and the response BMI. From the model above, we have a p value of 2.2e-16, which tells us that the predictor variable age is statistically significant.
-
-
 
 ## Multivariate Linear Regression
 
@@ -248,7 +246,7 @@ summary(lm.fit)
 -   Intercept: The intercept does not have interpretability since it is unrealistic to have age 0, body waist circumference of 0, height and weight of 0.
 -   $\beta_{age}$: The coeffcient for the predictor `RIDAGEYR` is `r round(summary(lm.fit)$coefficient[2,1],3)`, which means that for every unit increase in the participant's age, the BMI is expected to increase by `r round(summary(lm.fit)$coefficient[2,1],3)` on average, holding all else constant (holding all other predictor variables, `BMXWAIST`, `BMXWT`, and `BMXHT` constant). Notice here the impact of age is different from the one in the simple linear regression, since we control the potential factors such as `BMXWAIST`, `BMXWT`, and `BMXHT`.
 
-An alternative ways to specify the model is to create a data frame with selected variables and use a dot to include all variables in the pre-defined data frame. 
+An alternative ways to specify the model is to create a data frame with selected variables and use a dot to include all variables in the pre-defined data frame.
 
 ```{r}
 # we can use select to filter the variables of interest
@@ -264,9 +262,7 @@ lm.fit1 <- lm(BMXBMI ~ .- BMXWAIST, data = nhanes_core)
 
 ### Multicollinearity Diagnostics
 
-(Explain what is multicollinearity, why it does harm to our analysis.)
-
-Apart from diagnostics for simple linear regression, we also need to perform multicollinearity checks for multiple linear regression:
+When including multiple predictors into a regression model, some predictors may be highly correlated with each other (known as multicollinearity). Multicollinearity among the predictors impedes model inference and prediction. The standard errors for our regression coefficients will inflate, and thus we will lose precision in our estimates of the regression coefficients. Therefore, apart from diagnostics for simple linear regression, we also need to perform multicollinearity checks for multiple linear regression:
 
 ```{r}
 library(car)
@@ -281,20 +277,37 @@ Variance Inflation Factor (VIF): The VIF is a measure of the increase in the var
 
 ## Categorical Variable
 
-Now we explore the effect of income on the response BMI. Income is stored as `1, 2, ..., 15, 77, 99`, a *categorical* predictor variable, in the dataset. Specially, values `77` and `99` represent `refused to answer` and `don't know the answer` in the survey. The encoding of income categories can be found in [CDC website](https://wwwn.cdc.gov/nchs/nhanes/2011-2012/demo_g.htm#INDHHIN2).
+Apart from continuous predictors such as age, we may also have categorical variable as our predictors.
 
-For categorical variable, we need to mutate them as factors stored in the data frame first. The income category coded as the first factor level will be the baseline. When modeling categorical variables, it is common to omit one level of the categorical variable, which is known as the reference level. This is done to avoid the problem of perfect multicollinearity between the dummy variables that represent the levels of the categorical variable. Specifically, In a regression model, a categorical variable with k levels can be represented by k-1 dummy variables, with each dummy variable representing one of the levels of the categorical variable, and the omitted reference level represented by a constant term in the regression equation. By omitting one level of the categorical variable, we ensure that the sum of the k-1 dummy variables is equal to one for each observation, which eliminates the problem of perfect multicollinearity. This also allows us to interpret the coefficients of the dummy variables as the difference between the level of interest and the omitted reference level, holding all other variables in the model constant.
+For example, if we explore the effect of income on the response BMI. Income is stored as `1, 2, ..., 15, 77, 99`, a *categorical* predictor variable, in the dataset. Specially, values `77` and `99` represent `refused to answer` and `don't know the answer` in the survey. The encoding of income categories can be found in [CDC website](https://wwwn.cdc.gov/nchs/nhanes/2011-2012/demo_g.htm#INDHHIN2).
+
+In a regression model, a categorical variable with k levels can be represented by k-1 dummy variables (also called indicator variables), with each dummy variable representing one of the levels of the categorical variable, and the omitted reference level represented by a constant term in the regression equation.
+
+For example, if we want to have `bmi~income`, our model will be written as
+
+$$Y_i = \beta_0 +\beta_1 I(Income_1)_i + ... + \beta_{k-1} I(Income_{k-1})_i +\epsilon_i$$
+
+An indicator variable $I(Income_j)$ takes values 1 or 0, 
+
+-  1 if the observations belongs to that category j
+-  0 if the observation does not belong to that category j
+-  all 0s for all indicator variables if the observation belong to the reference category
+
+ 
+By omitting one level of the categorical variable (called reference level), we ensure that the sum of the k-1 dummy variables is equal to one for each observation, which eliminates the problem of perfect multicollinearity. This also allows us to interpret the coefficients of the dummy variables as the difference between the level of interest and the omitted reference level, holding all other variables in the model constant.
+
+In R, we only need to mutate categorical variables as **factors** using `as.factor()` function in the data frame. Once we put the income as factors into the `lm` model, the `lm` function in R will help us to dummy coding automatically. By default, the first factor level of the income category coded will be the baseline.
 
 ```{r}
 nhanes_income <- nhanes1518 %>%
   select(BMXBMI, RIDAGEYR,INDHHIN2) %>% # select variables of interest
   rename(income=INDHHIN2) %>% # rename the variable as `income`
   filter(!income %in%c("77","99")) %>% # first drop categories with values 77 (Refused) and 99 (Don't Know)
-  mutate(income=as.factor(income))
-head(nhanes_income)
+  mutate(income=as.factor(income)) # specify the income as factor
+head(nhanes_income) # fct indicate the type of income is factor
 ```
 
-Then we fit the linear regression on categorical variable `income` and control the potential factor from age:
+Then we fit the linear regression on categorical variable `income` and control the potential influence from age:
 
 ```{r}
 lm_category<-lm(BMXBMI ~ income + RIDAGEYR, data = nhanes_income)
@@ -304,15 +317,17 @@ lm_category%>%summary()
 *Baseline*: income category 1 corresponding to a household income of 0 to 4,999 dollars.
 
 *Model Interpretation*:
--   Intercept: The intercept `r round(coef(lm_category)[1],3)` means that for people in the baseline income category (income category 1 corresponding to a household income of 0 to 4,999 dollars), the BMI is expected to be `r round(coef(lm_category)[1],3)` on average.
 
--   `income6`: The coefficient for the predictor `income6` is `r round(coef(lm_category)["income6"],3)`, which means that for participants with household income category 6 (25,000 to 34,999 dollars per ear), the BMI is expected to be `r round(coef(lm_category)["income6"],3)` higher than that of participants with household income in category 1 (0 to 4,999 dollars), on average.
+-   Intercept: The intercept `r round(coef(lm_category)[1],3)` means that for people with 0 age and in the baseline income category (income category 1 corresponding to a household income of 0 to 4,999 dollars), the BMI is expected to be `r round(coef(lm_category)[1],3)` on average.
+-   `income6`: The coefficient for the predictor `income6` is `r round(coef(lm_category)["income6"],3)`, which means that for participants with household income category 6 (25,000 to 34,999 dollars per ear), the BMI is expected to be `r round(coef(lm_category)["income6"],3)` higher than that of participants with household income in category 1 (0 to 4,999 dollars), on average, holding the age constant.
 
 ## Interaction Terms
 
 In the regression in the previous example`lm(BMXBMI ~ income + RIDAGEYR)`, we assume the impact of age on BMI is constant across all the income groups, which seems not true.
 
-The following plot shows the relationship between BMI and age for people with two levels of income, level 1 (annual income of 0-4999 USD) and level 10 (annual income of 65,000 to 74,999 USD), where each level is represented by a different color. The plot provides a visual representation of how the effect of age on BMI differs for each level of income: For income category 1 with annual income of 0-4999 USD, we observe a steeper slope, which suggests that for each unit increase in BMI, we expect a higher rise in waist circumference if the individual is in income category 1, compared to if the individual is in income category 10. Conversely, for income category 10 with annual income of 65,000 to 74,999 USD, we observe a flatter slope, which suggests that for each unit increase in BMI, we expect a lower rise in age if the individual is in income category 10, compared to if the individual is in income category 1.
+The following plot shows the relationship between BMI and age for people with two levels of income, level 1 (annual income of 0-4999 USD) and level 10 (annual income of 65,000 to 74,999 USD), where each level is represented by a different color. 
+
+The plot provides a visual representation of how the effect of age on BMI differs for each level of income: For income category 1 with annual income of 0-4999 USD, we observe a steeper slope, which suggests that for each unit increase in BMI, we expect a higher rise in waist circumference if the individual is in income category 1, compared to if the individual is in income category 10. Conversely, for income category 10 with annual income of 65,000 to 74,999 USD, we observe a flatter slope, which suggests that for each unit increase in BMI, we expect a lower rise in age if the individual is in income category 10, compared to if the individual is in income category 1.
 
 ```{r}
 # Plot the interaction effects
@@ -329,14 +344,10 @@ Based on the exploratory data analysis, we learn that the impacts of age and inc
 
 There are two ways to include interaction terms in the model, `:` and `*`. The `:` symbol only includes the interaction term between the two variables, while the `*` symbol includes the variables themselves, as well as the interaction terms. This means that `BMXWT*BMXWAIST` is equivalent to `BMXWT + BMXWAIST + BMXWT:BMXWAIST`.
 
-For the interaction term to be interpretable, we mean center the term `income` involved in the interaction. In R, mean centering variables involves subtracting the mean value of each variable from all the observations in that variable. This can be useful in various statistical analyses, such as regression analysis, where mean centering can improve the interpretation and accuracy of the results.
-
-To interpret the categorical variables, we use (n-1) variables to encode, and we noticed that category 1 does not appear in the model thus is the baseline.
+To interpret the categorical variables, we use k-1 variables to encode, and we noticed that category 1 does not appear in the model thus is the baseline.
 
 ```{r}
-nhanes_income$RIDAGEYR_centered <- scale(nhanes_income$RIDAGEYR, center = TRUE, scale = FALSE)
-
-lm(BMXBMI ~ income + RIDAGEYR_centered + income:RIDAGEYR_centered, data = nhanes_income)%>%
+lm(BMXBMI ~ income + RIDAGEYR + income:RIDAGEYR, data = nhanes_income)%>%
   summary()
 # alternative representation.
 lm_int1=lm(BMXBMI ~ income*RIDAGEYR, data = nhanes_income)
@@ -346,9 +357,30 @@ lm_int2=lm(BMXBMI ~ .^2, data = nhanes_income)
 
 *Model Interpretation*
 
-Take income category 2 as an example, at the mean value of year 
-`r round(mean(nhanes_income$RIDAGEYR),3)`, the BMI of an individual in income category 2 is expected to be 0.72331 higher than the BMI of an individual in income category 1 (baseline category).
+- Coefficient of `income10`:  The BMI of an individual with age 0 in income category 10 is expected to be 3.678 higher than the BMI of an individual in income category 1 (baseline category). 
+
+- Coefficient of `income10:RIDAGEYR`: With one unit increase of age, the increase of BMI of an individual in income category 10 is expected to be 0.0785 lower than the increase of BMI of an individual in income category 1.
+
+- `income10 + intercept`: The BMI of an individual with age 0 in income category 10 is expected to be 29.606. This corresponds to the intercept of the blue line in the previous plot.
+
+- `RIDAGEYR_centered + income10:RIDAGEYR_centered`: With one year increase on the age, the BMI of an individual in income category 10 is expected to decrease by 0.00562(=0.07287-0.07849). This corresponds to the slope of the blue line in the previous plot.
+
+## Extrapolation and Data Centering
+
+In the previous example, the intercept is interpreted as the BMI of an individual at age 0, which does not make sense. Since in reality, it is meaningless to report the BMI of an individual at age 0. This issue is called Extrapolation. Extrapolation occurs if we use a model to make inference or prediction for predictors taking values out of the range (age = 0 in this example). 
+
+To make the intercept interpretable, a easy way is to center the age. In R, mean centering variables involves subtracting the mean value of each variable from all the observations in that variable. This can be useful in various statistical analyses, such as regression analysis, where mean centering can improve the interpretation and accuracy of the results.
+
+
+
+```{r}
+nhanes_income$RIDAGEYR_centered <- scale(nhanes_income$RIDAGEYR, center = TRUE, scale = FALSE)
+lm(BMXBMI ~ income + RIDAGEYR_centered + income:RIDAGEYR_centered, data = nhanes_income)%>%
+  summary()
+```
+
+Interpret coefficient of `income10`: At the mean value of age `r round(mean(nhanes_income$RIDAGEYR),3)`,  the BMI of an individual in income category 10 is expected to be 0.161 lower than the BMI of an individual in income category 1 (baseline category).
 
 ## References
 
-https://mine-cr.com/teaching/sta210/
+<https://mine-cr.com/teaching/sta210/>
