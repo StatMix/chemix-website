@@ -23,7 +23,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 -   [BAS manual](http://www2.stat.duke.edu/~clyde/BAS/BAS-manual.pdf)
 
--   [BMS tutorial](https://cran.r-project.org/web/packages/BAS/vignettes/BAS-vignette.html)
+-   [BAS tutorial](https://cran.r-project.org/web/packages/BAS/vignettes/BAS-vignette.html)
 
 -   [BMA: An R package for Bayesian Model Averaging](https://cran.r-project.org/doc/Rnews/Rnews_2005-2.pdf)
 

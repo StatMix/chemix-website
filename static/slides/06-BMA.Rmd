@@ -19,15 +19,19 @@ knitr::opts_chunk$set(echo = TRUE,
 
 ## Topics
 
--   Basic ideas of BMA
+-   Basic ideas of Bayesian Model Averaging
 
--   Application of BMA using R
+-   Application of Bayesian Model Averaging using R package BAS
 
--   Estimation and Interpretation
+-   Estimation, Interpretation and Prediction
 
--   Advantages of BMA over all-or-none model selection
+-   Advantages of Bayesian Model Averaging over all-or-none model selection
 
 ## Libraries
+
+> main reference can be BAS manual and BAS tutorial
+
+> Change it to `BAS`
 
 The R package `BMA` provides ways of carrying out BMA for linear regression, generalized linear models, and survival or event history analysis using Cox proportional hazards models. It contains functions for plotting the BMA posterior distributions of the model parameters, as well as an image plot function that provides a way of visualizing the BMA output. The functions `bicreg` and `bic.glm` provide fast and automatic default ways of doing this for the model classes considered.
 
@@ -74,23 +78,20 @@ corrplot(corr_mat,
 
 > Motivated from chemical mixtures, one way to deal with highly correlated predictors is to select variable, or select model. blah blah Traditionally, analysis often proceeds by first selecting the best model according to some criterion and then learning about the parameters given that the selected model is the underlying truth.potential issues: cannot quantify model uncertainty. + "There are often many modeling choices that are secondary to the main questions of interest but can still have an important effect on conclusions." An alternative is to learn the parameters for *all* candidate models and then combine the estimates according to the posterior probabilities of associated model. *Bayesian Model Averaging*(BMA) carry this model combination idea. Specifically, BMA xxxx (rephrase this "A parameter estimate (or a prediction of new observations) obtained by averaging the estimates (or predictions) of the different models under consideration, each weighted by its model probability".) The math formula below illustrate xxx.
 
-> Provide the math formula here.
-
-> Explain the math formula and say we consider Mk to be linear regression and logistic regression as examples. 
+> Provide the math formula here. First provide the generalized formula here from this [website](https://www.jstor.org/stable/2676803?seq=3#metadata_info_tab_contents)
 
 
-In this module, we will investigate this method known as *Bayesian Model Averaging*, and the advantages it has over all-or-none model selection.
 
+There are three packages available: `BAS`, `BMS`, and `BMA`. A thorough comparison are presented in this [paper](https://www.researchgate.net/profile/Christopher-Parmeter/publication/268216833_Bayesian_model_averaging_in_R/links/54ac4c040cf2479c2ee7b14e/Bayesian-model-averaging-in-R.pdf).  In this module, we will investigate this method known as *Bayesian Model Averaging* using `BAS` package. 
 
-## An Example: Linear Regression
+## Bayesian Model Averaging for Linear Regression Models
 
-> write down the math formula for BMA here (linear regression model)
+> Explain the math formula and say we consider Mk to be linear regression then provide the linear model formula here from this [website](https://cran.r-project.org/web/packages/BMS/vignettes/bmsmanual.pdf)  
 
 We fit a BMA model on the dataset using BMI as the response variable, and all of the 10 URX variables as predictor variables, after log transforming both variables: 
 
 > explain why you do the log transformation: long tail/extreme values in the original scale)
 
-> explain what the other arguments do
 
 ```{r}
 x.nhanes <-log(nhanes_URX[,-1])
@@ -100,9 +101,11 @@ nhanes.bicreg <- bicreg(x=x.nhanes, y=y.nhanes)
 summary(nhanes.bicreg)
 ```
 
-> We need to provide example on how to dig insights using the model instead of purely presenting the R coding. Read the Section 7.2 Example 2 of Bayesian Model Averaging: A Tutorial carefully. Please also read the application part of this paper carefully: [Bayesian Model Averaging: Theoretical Developments and Practical Applications](https://www.cambridge.org/core/journals/political-analysis/article/bayesian-model-averaging-theoretical-developments-and-practical-applications/3179D92A3C9353DE7E4674987C33FD28)
+> When introduce the functions, also explain what the arguments do
 
 > Explain the output of `summary()`. What does each column represent? How does r2, BIC, post prob help us to specify the important variables or the model? Also comment on what valuable information we obtain. For example, what are the important variables? What questions it help us answer?
+
+> We need to provide example on how to dig insights using the model instead of purely presenting the R coding. Read the Section 7.2 Example 2 of Bayesian Model Averaging: A Tutorial carefully. Please also read the application part of this paper carefully: [Bayesian Model Averaging: Theoretical Developments and Practical Applications](https://www.cambridge.org/core/journals/political-analysis/article/bayesian-model-averaging-theoretical-developments-and-practical-applications/3179D92A3C9353DE7E4674987C33FD28)
 
 In R, the `imageplot` function may be used to create an image of the model space that looks like a crossword puzzle:
 
@@ -122,40 +125,6 @@ plot (nhanes.bicreg,mfrow=c(3,3))
 
 This plot agrees with the summary table we obtained above, which shows that the posterior probability distributions of `URXMC1` and `URXCOP` have a very large point mass at 0, while the distribution of `URXUCR` and `URXMEP` have relatively small mass at 0. There is a slighly little tip at 0 for the variable `URXUCR`, indicating that the posterior inclusion probability of `URXECP` is not exactly 1. However, since the probability mass for `URXUCR` to be 0 is so small, that we are almost certain that `URXECP` should be included under Bayesian model averaging.
 
-## An Example: Logistic Regression
-
-Now we illustrate BMA for logistic regression using the URX variables as predictors on the response BMI
-
-We explore the BMI value as a categorical between 1 (denoting high BMI value) and 0 (denoting low BMI value), with BMI value of 22 as the threshold:
-
-```{r}
-BMI_category <- nhanes_URX %>%
-  mutate(BMI_Level = case_when(BMXBMI<22 ~ 0, BMXBMI >=22 ~ 1))
-```
-
-Then we fit the Bayesian logistic regression model on predictors including categorical variable `BMI_Level`:
-
-```{r}
-nhanes.bic.glm<-bic.glm(BMI_Level~.-BMXBMI -BMI_Level, data=BMI_category, glm.family="binomial")
-summary(nhanes.bic.glm, conditional=T, digits=3)
-```
-
-And then we graph the posterior distributions of the fitted model, as well as the image plot summarizing the BMA analysis for logistic regression of the BMI value.
-
-Here the imageplot indicates that most of the URX variables are significant in predicting the BMI level, except for `URXCOP` and `URXMEP` which is not included in all of the four models produced by BMA.
-
-```{r}
-imageplot.bma(nhanes.bic.glm)
-```
-
-We can also plot the posterior distributions of these coefficients to take a closer look at the distributions:
-
-```{r}
-plot (nhanes.bic.glm,mfrow=c(3,3))
-```
-
-This plot agrees with the summary table we obtained above, which shows that the posterior probability distributions of`URXCOP` and `URXMEP` have a very large point mass at 0, while the distribution of `URXUCR` and `URXMHBP` have relatively small mass at 0. There is a slighly little tip at 0 for the variable `URXMHBP`, indicating that the posterior inclusion probability of `URXMHBP` is not exactly 1. However, since the probability mass for `URXUCR` to be 0 is so small, that we are almost certain that `URXMHBP` should be included under Bayesian model averaging.
-
 ## Bayesian Model Diagnostics
 
 ```{r}
@@ -168,14 +137,16 @@ This plot agrees with the summary table we obtained above, which shows that the 
 
 With the `predict` function, we can understand uncertainty besides classification, taking a look at the predictive probabilities for the two class classification problem:
 
-```{r}
-predicted<-predict(nhanes.bic.glm, newdata=BMI_category)
-predicted
-```
 
-## 7. BMA vs. WQS
 
-## 8. Why Bayesian Model Averaging? Advantages
+## Bayesian Model Predictions with Model Selection
+
+> add here
+
+## Prior Selection
+
+
+## Why Bayesian Model Averaging? Advantages
 
 ### Model Uncertainty
 
