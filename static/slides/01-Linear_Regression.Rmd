@@ -144,7 +144,7 @@ The assumptions of linear regression model are as follows:
 -   *No multicollinearity*: The independent variables are not highly correlated with each other.
 -   *No Autocorrelation*: The errors are not correlated with each other. Violations of these assumptions can affect the accuracy and interpretability of the regression results. It is important to check for these assumptions before applying linear regression and consider alternative models if necessary.
 
-We will verify that our data meets all the assumptions above in Section: [Model Diagnostics](#Model_Diagonostics_and_Evaluations).
+We will verify that our data meets all the assumptions above in Section: [Model Diagonostics and Evaluations].
 
 ### Model Fitting
 
