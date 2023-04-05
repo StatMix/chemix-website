@@ -18,3 +18,10 @@ knitr::opts_chunk$set(echo = TRUE)
 -   [Assessment of Weighted Quantile Sum Regression for Modeling Chemical Mixtures and Cancer Risk](https://pubmed.ncbi.nlm.nih.gov/26005323/)
 
 -   [A Quantile-Based g-Computation Approach to Addressing the Effects of Exposure Mixtures](https://pubmed.ncbi.nlm.nih.gov/32255670/)
+
+
+### R package
+
+-   [qgcomp](https://cran.r-project.org/web/packages/qgcomp/vignettes/qgcomp-vignette.html)
+
+-   [wqs](https://cran.r-project.org/web/packages/wqs/wqs.pdf)
