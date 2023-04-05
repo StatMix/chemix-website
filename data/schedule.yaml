@@ -7,8 +7,6 @@ lessons:
     title: "Introduction of problems and methods"
     prepare: "topic-00-intro.html"
     slides: ""
-    ae: ""
-    lab: ""
   - week: "lr"
     date: ""
     title: "Intro to R and Linear Regression"
