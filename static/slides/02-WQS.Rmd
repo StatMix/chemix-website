@@ -233,6 +233,11 @@ Additional outputs from the model which may be helpful for diagnostics:
 
 `results$q_i` - the "cutoff" values which are used to create the quantiles
 
+
+An additional method used to study the effects of highly correlated exposures on an outcome is the qgcomp package. This method follows similar procedures and assumptions of gWQS; however, the computation can be more efficient and it can also work with non-linear data. Although the gWQS package is more widely used, the qgcomp package can provide a structured approach to using variables that do not follow a linear pattern. All other assumptions are similar to this tutorial and a link is included below for further exploration. 
+
+https://cran.r-project.org/web/packages/qgcomp/vignettes/qgcomp-vignette.html
+
 ## Conclusion
 
 In conclusion, the gWQS weighted the explanatory variables successfully as our model is considered to be statistically significant. By using the gWQS model with data where explanatory variables are all highly correlated, specific variables can be weighted according to their influence to the response variable. In the NHANES data set, chemicals URXMCOH, URXMIB, URXECP were weighted the highest by the gWQS model. In future tutorials, we will uncover additional methods to test highly correlated data through Bayesian sum regression.
