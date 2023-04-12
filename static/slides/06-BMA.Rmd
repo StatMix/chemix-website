@@ -79,6 +79,7 @@ ggplot(df_long, aes(x = value)) +
   geom_histogram() +
   facet_wrap(~ name, scales = "free")
 ```
+
 We also plot the distributions of our variables of interest involved in the model, and notice that the variables have a long tail in the original scale, which hints at log transformation which we will perform later on.
 
 ## Bayesian Model Averaging
@@ -107,7 +108,7 @@ nhanes_URX<-log(nhanes_URX)
 model <-bas.lm(BMXBMI ~ .,
   data = nhanes_URX,
   prior = "ZS-null",
-  modelprior = uniform(), initprobs = "eplogp",
+  modelprior = uniform(), initprobs = "eplogp", method="MCMC",
   force.heredity = FALSE, pivot = TRUE
 )
 summary(model)
@@ -142,7 +143,10 @@ This plot agrees with the summary table we obtained above, which shows that the 
 
 ```{r}
 plot(model, ask = F)
-# diagnostics(model, type = "pip", pch = 16) This doesn't work
+```
+
+```{r}
+diagnostics(model, type = "pip", pch = 16) 
 ```
 
 ```{r}
