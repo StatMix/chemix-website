@@ -102,6 +102,7 @@ We fit a BMA model on the dataset using BMI as the response variable, and all of
 
 As seen in the EDA, we perform log transformation due to the long tail and extreme values in the original scale.
 
+To get started, we will use `BAS` with the Zellner-Siow Cauchy prior on the coefficients.
 
 ```{r}
 nhanes_URX<-log(nhanes_URX)
@@ -134,7 +135,8 @@ We can also plot the posterior distributions of these coefficients to take a clo
 
 ```{r}
 coef.model <- coef(model)
-plot(coef.model, mfrow=c(3,3), ask = F)
+# plot(coef.model, mfrow=c(3,3), ask = F)
+plot(coef.model, ask = F)
 ```
 
 This plot agrees with the summary table we obtained above, which shows that the posterior probability distributions of `URXMC1` and `URXCOP` have a very large point mass at 0, while the distribution of `URXUCR` and `URXMEP` have relatively small mass at 0. There is a slighly little tip at 0 for the variable `URXUCR`, indicating that the posterior inclusion probability of `URXECP` is not exactly 1. However, since the probability mass for `URXUCR` to be 0 is so small, that we are almost certain that `URXECP` should be included under Bayesian model averaging.
@@ -160,10 +162,105 @@ With the `predict` function, we can understand uncertainty besides classificatio
 
 ## Bayesian Model Predictions with Model Selection
 
-> add here
+`BAS` has methods defined to return fitted values, namely `fitted`, using the observed design matrix and predictions at either the observed data or potentially new values, predict, as with linear regressions
+
+```{r}
+muhat.BMA <- fitted(model, estimator = "BMA")
+BMA <- predict(model, estimator = "BMA")
+
+# predict has additional slots for fitted values under BMA, predictions under each model
+names(BMA)
+```
+
+We plot the two sets of fitted values:
+
+```{r}
+par(mar = c(9, 9, 3, 3))
+plot(muhat.BMA, BMA$fit,
+  pch = 16,
+  xlab = expression(hat(mu[i])), ylab = expression(hat(Y[i]))
+)
+abline(0, 1)
+```
+
+We see that they are in perfect agreement, which is always true as the posterior mean for the regression mean function at point $x$ is the perfect expected posterior value for $Y$ at $x$.
+
+In addition to using BMA, we can use the posterior means under model selection. This corresponds to a decision rule that combines estimation and selection. `BAS` currently implements the following options:
+
+### Highest Probability Model
+
+```{r}
+HPM <- predict(model, estimator = "HPM")
+
+# show the indices of variables in the best model where 0 is the intercept
+HPM$bestmodel
+```
+
+Now we explore a little more interpretable version with names:
+
+```{r}
+variable.names(HPM)
+```
+
+### Median Probability Model
+
+```{r}
+MPM <- predict(model, estimator = "MPM")
+variable.names(MPM)
+```
+
+This is the model where all predictors have an inclusion probability greater than or equal to 0.5. This coincides with the HPM if the predictors are all mutually orthogonal, and in this case is the best predictive model under squared error loss.
+
+Note that we can also extract the best model from the attribute in the fitted values as well.
+
+### Best Predictive Model
+
+In general, the HPM or MPM are not the best predictive models, which from a Bayesian decision theory perspective would be the model that is closest to BMA predictions under squared error loss.
+
+```{r}
+BPM <- predict(model, estimator = "BPM")
+variable.names(BPM)
+```
+
+Now we use ggpairs to see how these models compare:
+
+```{r}
+library(GGally)
+GGally::ggpairs(data.frame(
+  HPM = as.vector(HPM$fit), # this used predict so we need to extract fitted values
+  MPM = as.vector(MPM$fit), # this used fitted
+  BPM = as.vector(BPM$fit), # this used fitted
+  BMA = as.vector(BMA$fit)
+)) # this used predict
+```
+Using the `se.fit = TRUE` option with `predict` we can also calculate standard deviations for prediction or for the mean and use this as input for the `confint` function for the prediction object.
+
+
+```{r}
+BPM <- predict(model, estimator = "BPM", se.fit = TRUE)
+crime.conf.fit <- confint(BPM, parm = "mean")
+crime.conf.pred <- confint(BPM, parm = "pred")
+plot(crime.conf.fit)
+```
+```{r}
+plot(crime.conf.pred)
+```
 
 ## Prior Selection
 
+BAS uses a model formula similar to lm to specify the full model with all of the potential predictors. Here we are using the shorthand . to indicate that all remaining variables in the data frame provided by the data argument. Different prior distributions on the regression coefficients may be specified using the prior argument, and include
+
+- “BIC”
+- “AIC
+- “g-prior”
+- “hyper-g”
+- “hyper-g-laplace”
+- “hyper-g-n”
+- “JZS”
+- “ZS-null”
+- “ZS-full”
+- “EB-local”
+- “EB-global”
 
 ## Why Bayesian Model Averaging? Advantages
 
