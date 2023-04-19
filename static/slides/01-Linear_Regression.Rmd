@@ -180,7 +180,7 @@ We can visualize the regression line by setting the argument `method="lm"` withi
 ```{r}
 ggplot(nhanes1518, aes(x = RIDAGEYR, y = BMXBMI)) + 
     geom_smooth(method = "lm", formula = y ~ x, colour = "red") + # specify the regression formula
-    geom_point(size=1, color="dark blue", pch = 20) + 
+    geom_point(size=1, color="dark blue", pch = 20, alpha=0.2) + 
   labs(title="BMI vs. Age for the nhanes data", y="Body Mass Index (kg/m**2)",x="Age (year)")
 ```
 
@@ -199,7 +199,7 @@ Prediction and confidence interval are both statistical concepts that are used t
 
 -   Confidence interval: a range of values that is likely to contain the true value of a parameter with a certain degree of confidence. For example, if you are estimating the **mean age of a population** based on a sample, a 95% confidence interval would provide a range of values within which the true population mean age is expected to lie with 95% confidence. The width of the confidence interval reflects the uncertainty in the estimation, with wider intervals indicating more uncertainty.
 
--   Prediction: An estimate of a specific value or outcome based on the statistical model. For example, in our case when we use a linear regression model to predict **the age of a person** based on their BMI, a prediction would be the estimated age for a person of a specific BMI Predictions are usually accompanied by a measure of how accurate the estimate is, such as the mean squared error or the root mean squared error. Unlike a confidence interval which provides a range of values for the parameter, a prediction interval provides a range of values for the actual observation or outcome.
+-   Prediction: An estimate of a specific value or outcome based on the statistical model. For example, in our case when we use a linear regression model to predict **the BMI of a person** based on their age, a prediction would be the estimated age for a person of a specific BMI Predictions are usually accompanied by a measure of how accurate the estimate is, such as the mean squared error or the root mean squared error. Unlike a confidence interval which provides a range of values for the parameter, a prediction interval provides a range of values for the actual observation or outcome.
 
 ## Model Diagonostics and Evaluations
 
@@ -371,15 +371,13 @@ In the previous example, the intercept is interpreted as the BMI of an individua
 
 To make the intercept interpretable, a easy way is to center the age. In R, mean centering variables involves subtracting the mean value of each variable from all the observations in that variable. This can be useful in various statistical analyses, such as regression analysis, where mean centering can improve the interpretation and accuracy of the results.
 
-
-
 ```{r}
-nhanes_income$RIDAGEYR_centered <- scale(nhanes_income$RIDAGEYR, center = TRUE, scale = FALSE)
+nhanes_income$RIDAGEYR_centered <- scale(nhanes_income$RIDAGEYR, center = 50, scale = FALSE)
 lm(BMXBMI ~ income + RIDAGEYR_centered + income:RIDAGEYR_centered, data = nhanes_income)%>%
   summary()
 ```
 
-Interpret coefficient of `income10`: At the mean value of age `r round(mean(nhanes_income$RIDAGEYR),3)`,  the BMI of an individual in income category 10 is expected to be 0.161 lower than the BMI of an individual in income category 1 (baseline category).
+Interpret coefficient of `income10`: At the mean value of age 50,  the BMI of an individual in income category 10 is expected to be 0.161 lower than the BMI of an individual in income category 1 (baseline category).
 
 ## References
 

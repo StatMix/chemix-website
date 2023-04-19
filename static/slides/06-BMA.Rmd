@@ -135,6 +135,7 @@ We can also plot the posterior distributions of these coefficients to take a clo
 
 ```{r}
 coef.model <- coef(model)
+par(mfrow=c(2,2))
 # plot(coef.model, mfrow=c(3,3), ask = F)
 plot(coef.model, ask = F)
 ```
@@ -233,17 +234,23 @@ GGally::ggpairs(data.frame(
   BMA = as.vector(BMA$fit)
 )) # this used predict
 ```
-Using the `se.fit = TRUE` option with `predict` we can also calculate standard deviations for prediction or for the mean and use this as input for the `confint` function for the prediction object.
-
+Using the `se.fit = TRUE` option with `predict` we can also calculate standard deviations for prediction or for the mean and use this as input for the `confint` function for the prediction object. Since there are many predictions, here we slice 15 samples and observe their confidence intervals:
 
 ```{r}
 BPM <- predict(model, estimator = "BPM", se.fit = TRUE)
-crime.conf.fit <- confint(BPM, parm = "mean")
-crime.conf.pred <- confint(BPM, parm = "pred")
-plot(crime.conf.fit)
+model.fit <- confint(BPM, parm = "mean")
+model.pred <- confint(BPM, parm = "pred")
+# take 15 samples
+sample<-model.fit[1:15,]
+class(sample) <- "confint.bas"
+plot(sample)
 ```
+
+
 ```{r}
-plot(crime.conf.pred)
+sample<-model.pred[1:15,]
+class(sample) <- "confint.bas"
+plot(sample)
 ```
 
 ## Prior Selection
