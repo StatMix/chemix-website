@@ -96,7 +96,8 @@ There are three packages available: `BAS`, `BMS`, and `BMA`. A thorough comparis
 
 ## Bayesian Model Averaging for Linear Regression Models
 
-> Explain the math formula and say we consider Mk to be linear regression then provide the linear model formula here from this [website](https://cran.r-project.org/web/packages/BMS/vignettes/bmsmanual.pdf)  
+As shown in the formula above, BMA addresses model uncertainty in a canonical regression problem, and here we consider $M_k$ to be linear regression. Suppose a linear model structure, with $y$ being the dependent variable, $\alpha_\gamma$, a constant, $\beta_\gamma$ the coefficients, and $\epsilon$ a normal IID error term with variance $\sigma^2$:
+$$y=\alpha_\gamma+X_\gamma \beta_\gamma+\epsilon \hspace{1cm}\epsilon \sim N(0, \sigma^2I)$$
 
 We fit a BMA model on the dataset using BMI as the response variable, and all of the 10 URX variables as predictor variables, after log transforming both variables: 
 
@@ -115,9 +116,11 @@ model <-bas.lm(BMXBMI ~ .,
 summary(model)
 ```
 
-> When introduce the functions, also explain what the arguments do
+Here we specify the `ZS-null` as the prior argument, and the argument `uniform()` means that the prior distribution over the models is a uniform distribution which assigns equal probabilities to all models. The  optional argument `initprobs=eplogp` provides a way to initialize the sampling algorithm and order the variables in the tree structure that represents the model space in BAS. The eplogp option uses the Bayes factor calibration of p-values $-eplog(p)$ to provide an approximation to the marginal inclusion probability that the coefficient of each predictor is zero, using the p-values from the full model. The `force.heredity = TRUE` argument means that we force levels of a factor to enter or leave together.
 
 > Explain the output of `summary()`. What does each column represent? How does r2, BIC, post prob help us to specify the important variables or the model? Also comment on what valuable information we obtain. For example, what are the important variables? What questions it help us answer?
+
+From the model summary, we see that list of the top 5 models (in terms of posterior probability) with the zero-one indicators for variable inclusion. The other columns in the summary are the Bayes factor of each model to the highest probability model (hence its Bayes factor is 1), the posterior probabilities of the models, the ordinary $R^2$ of the models, the dimension of the models as well as the log marginal likelihood under the selected prior distribution. Each column represents a binary outcome of whether the model includes the variable or not. Here we see that the `URXHIBP` and `URXECP` are included in every single model considered, thus deemed to be important by the BMA model. On the other hand, the `URXMC1` variable is considered by only one model, therefore deemed to be insignificant by the BMA model.
 
 > We need to provide example on how to dig insights using the model instead of purely presenting the R coding. Read the Section 7.2 Example 2 of Bayesian Model Averaging: A Tutorial carefully. Please also read the application part of this paper carefully: [Bayesian Model Averaging: Theoretical Developments and Practical Applications](https://www.cambridge.org/core/journals/political-analysis/article/bayesian-model-averaging-theoretical-developments-and-practical-applications/3179D92A3C9353DE7E4674987C33FD28)
 
@@ -255,7 +258,8 @@ plot(sample)
 
 ## Prior Selection
 
-BAS uses a model formula similar to lm to specify the full model with all of the potential predictors. Here we are using the shorthand . to indicate that all remaining variables in the data frame provided by the data argument. Different prior distributions on the regression coefficients may be specified using the prior argument, and include
+BAS uses a model formula similar to lm to specify the full model with all of the potential predictors. Here we are using the shorthand . to indicate that all remaining variables in the data frame provided by the data argument. Prior selection is a critical step in Bayesian model averaging (BMA) as it determines the weights assigned to each model in the model space. The choice of prior distribution for the model parameters can significantly impact the BMA results. A well-informed prior can help avoid overfitting, reduce uncertainty, and improve model selection. However, selecting an appropriate prior can be challenging as it requires balancing between being informative enough to guide the model towards plausible solutions and being uninformative enough to avoid biasing the results. Prior elicitation techniques such as expert opinion, empirical data, and sensitivity analysis can be employed to guide the choice of priors. Overall, careful prior selection is crucial for obtaining reliable and accurate BMA results.
+Different prior distributions on the regression coefficients may be specified using the prior argument, and include
 
 - “BIC”
 - “AIC
