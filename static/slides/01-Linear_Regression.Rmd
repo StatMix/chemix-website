@@ -141,8 +141,6 @@ The assumptions of linear regression model are as follows:
 -   *Independence*: The observations are independent of each other, meaning that the value of the dependent variable for one observation is not influenced by the values of the independent variables for other observations.
 -   *Homoscedasticity*: The variance of the errors is constant for all values of the independent variables.
 -   *Normality*: The errors are normally distributed.
--   *No multicollinearity*: The independent variables are not highly correlated with each other.
--   *No Autocorrelation*: The errors are not correlated with each other. Violations of these assumptions can affect the accuracy and interpretability of the regression results. It is important to check for these assumptions before applying linear regression and consider alternative models if necessary.
 
 We will verify that our data meets all the assumptions above in Section: [Model Diagonostics and Evaluations].
 
@@ -197,7 +195,7 @@ predict(lm.fit, data.frame(RIDAGEYR = (c(18, 30, 60))), interval = "prediction")
 
 Prediction and confidence interval are both statistical concepts that are used to estimate or quantify uncertainty in a particular outcome or parameter. However, they have different meanings and interpretations.
 
--   Confidence interval: a range of values that is likely to contain the true value of a parameter with a certain degree of confidence. For example, if you are estimating the **mean age of a population** based on a sample, a 95% confidence interval would provide a range of values within which the true population mean age is expected to lie with 95% confidence. The width of the confidence interval reflects the uncertainty in the estimation, with wider intervals indicating more uncertainty.
+-   Confidence interval: a range of values that is likely to contain the true value of a parameter with a certain degree of confidence. For example, if you are estimating the **mean age of a population** based on a sample, a 95% confidence interval means that if we were to repeat the sampling process many times and compute the confidence interval each time, we would expect the true population parameter to lie within the interval in 95% of the cases. The width of the confidence interval reflects the uncertainty in the estimation, with wider intervals indicating more uncertainty.
 
 -   Prediction: An estimate of a specific value or outcome based on the statistical model. For example, in our case when we use a linear regression model to predict **the BMI of a person** based on their age, a prediction would be the estimated age for a person of a specific BMI Predictions are usually accompanied by a measure of how accurate the estimate is, such as the mean squared error or the root mean squared error. Unlike a confidence interval which provides a range of values for the parameter, a prediction interval provides a range of values for the actual observation or outcome.
 
@@ -233,10 +231,10 @@ Some metrics and hypothesis tests for model evaluations:
 
 ## Multivariate Linear Regression
 
-Multiple linear regression allows to evaluate the relationship between two variables, while controlling the potential effect (i.e., removing the effect) of other variables. The `lm()` function can also fit multivariate linear regression. In this section, we will explore the relation between response variable `BMXBMI` and other predictors `RIDAGEYR`, `BMXWAIST`, `BMXWT`, and `BMXHT`.
+Multiple linear regression allows to evaluate the relationship between two variables, while controlling the potential effect (i.e., removing the effect) of other variables. The `lm()` function can also fit multivariate linear regression. In this section, we will explore the relation between response variable `BMXBMI` and other predictors `RIDAGEYR` and `BMXWAIST`
 
 ```{r}
-lm.fit <- lm(BMXBMI ~ RIDAGEYR + BMXWAIST + BMXWT + BMXHT, data = nhanes1518)
+lm.fit <- lm(BMXBMI ~ RIDAGEYR + BMXWAIST, data = nhanes1518)
 summary(lm.fit)
 
 ```
@@ -244,13 +242,13 @@ summary(lm.fit)
 ### Model Interpretation
 
 -   Intercept: The intercept does not have interpretability since it is unrealistic to have age 0, body waist circumference of 0, height and weight of 0.
--   $\beta_{age}$: The coeffcient for the predictor `RIDAGEYR` is `r round(summary(lm.fit)$coefficient[2,1],3)`, which means that for every unit increase in the participant's age, the BMI is expected to increase by `r round(summary(lm.fit)$coefficient[2,1],3)` on average, holding all else constant (holding all other predictor variables, `BMXWAIST`, `BMXWT`, and `BMXHT` constant). Notice here the impact of age is different from the one in the simple linear regression, since we control the potential factors such as `BMXWAIST`, `BMXWT`, and `BMXHT`.
+-   $\beta_{age}$: The coeffcient for the predictor `RIDAGEYR` is `r round(summary(lm.fit)$coefficient[2,1],3)`, which means that for every unit increase in the participant's age, the BMI is expected to increase by `r round(summary(lm.fit)$coefficient[2,1],3)` on average, holding all else constant (holding all other predictor variables, `BMXWAIST` constant). Notice here the impact of age is different from the one in the simple linear regression, since we control the potential factor, namely `BMXWAIST`.
 
 An alternative ways to specify the model is to create a data frame with selected variables and use a dot to include all variables in the pre-defined data frame.
 
 ```{r}
 # we can use select to filter the variables of interest
-nhanes_core<-nhanes1518 %>% select(BMXBMI, RIDAGEYR, BMXWAIST,BMXWT,BMXHT)
+nhanes_core<-nhanes1518 %>% select(BMXBMI, RIDAGEYR, BMXWAIST)
 # In the lm() formula, a dot . can be used to include all variables in the NHANES data as predictors.
 lm.fit1 <- lm(BMXBMI ~ ., data = nhanes_core)
 # If we want to exclude specific variables from the list of predictors, we can use the `-` notation. 
@@ -273,7 +271,7 @@ vifs <- vif(lm.fit)
 print(vifs)
 ```
 
-Variance Inflation Factor (VIF): The VIF is a measure of the increase in the variance of the estimated coefficients due to multicollinearity. A VIF value greater than 5 indicates that there is strong multicollinearity in the model. Here the multicollinearity issue is not significant.
+Variance Inflation Factor (VIF): The VIF is a measure of the increase in the variance of the estimated coefficients due to multicollinearity. A VIF value greater than 5 indicates that there is strong multicollinearity in the model. Here the multicollinearity issue is not significant since the VIF value is smaller than 5.
 
 ## Categorical Variable
 
@@ -369,7 +367,7 @@ lm_int2=lm(BMXBMI ~ .^2, data = nhanes_income)
 
 In the previous example, the intercept is interpreted as the BMI of an individual at age 0, which does not make sense. Since in reality, it is meaningless to report the BMI of an individual at age 0. This issue is called Extrapolation. Extrapolation occurs if we use a model to make inference or prediction for predictors taking values out of the range (age = 0 in this example). 
 
-To make the intercept interpretable, a easy way is to center the age. In R, mean centering variables involves subtracting the mean value of each variable from all the observations in that variable. This can be useful in various statistical analyses, such as regression analysis, where mean centering can improve the interpretation and accuracy of the results.
+To make the intercept interpretable, a easy way is to center the age. In R, mean centering variables involves subtracting the mean value of each variable from all the observations in that variable. This can be useful in various statistical analyses, such as regression analysis, where mean centering can improve the interpretation and accuracy of the results. In this case, we center age at 50 for the purpose of simplifying interpretations:
 
 ```{r}
 nhanes_income$RIDAGEYR_centered <- scale(nhanes_income$RIDAGEYR, center = 50, scale = FALSE)
