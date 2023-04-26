@@ -30,7 +30,7 @@ lessons:
   - week: "qgcomp"
     date: ""
     title: "Quantile G-Computation"
-    prepare: "topic-02-wqs.html"
+    prepare: "topic-03-qgcomp.html"
     slides:   
   - week: "bma"
     date: ""
