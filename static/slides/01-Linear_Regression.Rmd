@@ -112,7 +112,7 @@ We can also utilize the scatterplot (`geom_point`) to explore the relationship b
 
 ```{r}
 ggplot(nhanes1518, aes(x = RIDAGEYR, y = BMXBMI)) + 
-    geom_point(size=1, color="dark blue", pch = 20) + 
+    geom_point(size=1, color="dark blue", pch = 20, alpha=0.2) + 
   labs(title="BMI vs. Age for the nhanes data", 
        y="Body Mass Index (kg/m**2)", 
        x="Age (year)")
