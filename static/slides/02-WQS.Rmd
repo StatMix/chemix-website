@@ -15,7 +15,7 @@ Unlike ordinary multivariate regression, the Weighted Quantile Sum Regression (W
 
 ## Libraries
 
-In order to investigate relationships between chemical exposures using the `gWQS` package, there are several packages in R that must be loaded. Similar to previous tutorials where packages were introduced, we will be using `tidyverse` and `tidymodels` for data wrangling and model building, but we will also use `ggcorrplot` for data visualization.
+In order to investigate relationships between chemical exposures using the `gWQS` package, there are several packages that must be installed in R. Similar to previous tutorials where packages were introduced, we will be using `tidyverse` and `tidymodels` for data wrangling and model building, but we will also use `ggcorrplot` for data visualization.
 
 In order to use the new packages in this tutorial, they must first be installed in R by running the following lines of code `install.packages("ggcorrplot")` and `install.packages("gWQS")`in the console.
 
@@ -33,7 +33,7 @@ library(ggcorrplot)
 
 ## Exploratory Data Analysis
 
-As discussed early, we want to apply Weighted Quantile Sums to a real world issue. This example uses the `NHANES` dataset to focus on specific chemical exposures: Phalates and Phytoestrogens. Both of these exposures can be detected in urine samples and we want to estimate their respective impact on the outcome, body mass index. In order to predict body mass index with urine samples, we first need to reintroduce the `NHANES` dataset for use in this example.
+As discussed earlier, we want to apply Weighted Quantile Sums to a real world issue. This example uses the `NHANES` dataset to focus on specific chemical exposures: Phalates and Phytoestrogens. Both of these exposures can be detected in urine samples and we want to estimate their respective impact on the outcome, body mass index. In order to predict body mass index with urine samples, we first need to reintroduce the `NHANES` dataset for use in this example.
 
 The NHANES dataset can be loaded into R:
 
@@ -49,7 +49,8 @@ Similar to the previous tutorial where age is filtered, we only want to consider
 ```{r}
 nhanes <- nhanes1518 |>
     filter(RIDAGEYR >= 18)|>
-    mutate(BMXBMI = log(BMXBMI))|>
+    mutate(BMXBMI = log(BMXBMI),
+          RIDAGEYR = RIDAGEYR - 18)|>
     select(BMXBMI, URXMHBP, URXMOH, URXMHP, URXMHH, URXMCOH, URXMHNC, URXMHH, URXECP, URXHIBP, URXMIB)
 
 nhanes <- drop_na(nhanes)
@@ -95,14 +96,14 @@ tidy()
 
 Once the conditions are satisfied, a model can be produced, similarly to standard linear regression model. One difference from the linear model is that unique weights are assigned to the predictor variables.
 
-$$ g(\mu)= \beta_0 + \beta_0  \times (WQS) + \epsilon $$
+$$ Eg(Y)= \beta_0 + \beta_0  \times (WQS) $$
 or it can be written as an expanded model where $w_n$ corresponds the estimated weights for each X variable and $\theta_1$ is the predicted impact of the WQS method on all of the chemical exposures.
 
 $$
-E[g(\mu)]= \theta_0 + \theta_1(w_1X_1 + w_2X_2 + ... w_nX_n)
+Eg(Y)= \beta_0 + \beta_1(w_1X_1 + w_2X_2 + ... w_nX_n)
 $$
 
-Quantiles categorize each variable where qi = {0, 1, 2, 3, etc.}, which are given a corresponding weight. The weighted components are then summed and are fitted to the regression model. gWQS visualizes the assigned weights and regression fit as demonstrated in the package below:
+Each outcome variable is assigned a "score", meaning they are placed in bins using quantiles qi = {0, 1, 2, 3, etc.} For each exposure, there are cutoff points (or weights) that determine where each variable is placed. The weighted components are then summed and are fitted to the regression model. gWQS visualizes the assigned weights and regression fit as demonstrated in the package below:
 
 
 ## Model Fitting
@@ -162,11 +163,11 @@ The Regression output:
 
 $$ \widehat{log(BMXBMI)} = 3.31 + 0.015 \times (WQS) $$
 
-Interpretation for the model:
+Interpretation of the model:
 
 -   *When quantiles of the URX variables are 0, the estimated log BMI is approximately 3.31.*
 
--   *As every quantile of the WQS increases by 1, the log BMI increases on average by 0.015.*
+-   *As every quantile of the exposures increases by 1, the log BMI increases, on average, by 0.015.*
 
 It is important to acknowledge the uncertainty in the WQS output. One method of accounting for this uncertainty is through confidence intervals. A confidence interval allows us to understand between which values are the estimations from our model likely to occur in the real-world, accounting for model variations. Using the `confint(model name)` function in R, we can determine between which WQS coefficient by the model.
 
@@ -215,15 +216,51 @@ The final visualization shows the residuals and fitted values. As seen above, th
 results$fit
 ```
 
--   AIC - This is a statistic to compare two models - the smaller the AIC, the better the model. In this example, the AIC is -164.58.
-
 -   Null deviance can show how well the model predicts the response, solely using the regression intercept.
 
 -   Contrary, residual deviance demonstrates how well the model predicts the response, using the explanatory variables. The smaller the residual deviance, the better the accuracy of the regression model.
 
-Here we present an example to xxx. 
+-   AIC - This is a statistic to compare two models - the smaller the AIC, the better the model.
 
-(Add an example illustrating how to include extra predictors, such as age; How to compare these two models using AIC. Try `lrtest` in `lmtest` r pkg to conduct model comparison)
+For example, we can demonstrate AIC by adding covariates into the model. Covariates in the model are variables that we are not necessarily interested in interpreting, but may be influential to the overall model. By adding covariates (such as age), we can compare how well each gWQS model can predict BMI by examining the AIC metric. 
+
+In order to add a covariate using the gWQS package, the varible must be added to the regression equation, shown below. This ensures that age is not treated as a mixture, but a separate variable.
+```{r}
+nhanes_new <- nhanes1518 |>
+    filter(RIDAGEYR >= 18)|>
+    mutate(BMXBMI = log(BMXBMI))|>
+    select(BMXBMI, URXMHBP, URXMOH, URXMHP, URXMHH, URXMCOH, URXMHNC, URXMHH, URXECP, URXHIBP, URXMIB,RIDAGEYR)
+
+
+chem_names_new <- names(nhanes_new)[2:10]
+
+results_new <- gwqs(BMXBMI ~ wqs + RIDAGEYR, mix_name = chem_names_new, data = nhanes_new, 
+                q = 10, validation = 0.6, b = 1, b1_pos = TRUE, 
+                b1_constr = FALSE, family = "gaussian", seed=1)
+```
+
+```{r}
+summary(results_new)
+```
+Interpretation of the model:
+
+-   *When quantiles of the URX variables are 0 and age of the individual is 0, the estimated log BMI is approximately 3.25.*
+
+The coefficient for age can be interpreted, similar to a standard linear model:
+
+- *For every one unit increase in the age of the person, the log BMI is predicted to increase by, on average, 0.0014, when quantiles of the URX variables are held constant.*
+
+The interpretation for wqs changes slightly from the example listed above since there is an additional variable:
+
+- *As every quantile of the exposures increases by 1, log BMI increases, on average, by 0.015, holding age constant.*
+
+We can confirm that age is being treated as a covariate by checking the mean weights given to the mixture variables. It is critical to ensure that age is not assigned a weight or included with the URX variables. 
+```{r}
+head(results_new$final_weights)
+```
+
+In this example, the AIC from the original model was -164.58 while the new model with age as a covariate has an AIC of -183.82. Therefore, we can say that the second model with age added is a better model, more effectively predicting log BMI. 
+
 
 ## Miscellaneous
 
@@ -233,14 +270,10 @@ Additional outputs from the model which may be helpful for diagnostics:
 
 `results$q_i` - the "cutoff" values which are used to create the quantiles
 
-
-An additional method used to study the effects of highly correlated exposures on an outcome is the qgcomp package. This method follows similar procedures and assumptions of gWQS; however, the computation can be more efficient and it can also work with non-linear data. Although the gWQS package is more widely used, the qgcomp package can provide a structured approach to using variables that do not follow a linear pattern. All other assumptions are similar to this tutorial and a link is included below for further exploration. 
-
-https://cran.r-project.org/web/packages/qgcomp/vignettes/qgcomp-vignette.html
-
 ## Conclusion
 
-In conclusion, the gWQS weighted the explanatory variables successfully as our model is considered to be statistically significant. By using the gWQS model with data where explanatory variables are all highly correlated, specific variables can be weighted according to their influence to the response variable. In the NHANES data set, chemicals URXMCOH, URXMIB, URXECP were weighted the highest by the gWQS model. In future tutorials, we will uncover additional methods to test highly correlated data through Bayesian sum regression.
+In conclusion, the gWQS weighted the explanatory variables successfully as our model is considered to be statistically significant. By using the gWQS model with data where explanatory variables are all highly correlated, specific variables can be weighted according to their influence to the response variable. In the NHANES data set, chemicals URXMCOH, URXMIB, URXECP were weighted the highest by the gWQS model. It is important to note, there are additional methods and packages that use weighted quantile sums. For example, qgcomp allows us to use a similar method, but allows more flexibility in the assumptions and data that can be used in the model. However, gWQS provides a great introduction to the applications and fundamentals of highly correlated mixtures. In the following tutorials, we will introduce new methods and packages that can solve similar and more complex problems.  
+
 
 ## References:
 
