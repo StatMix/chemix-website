@@ -116,11 +116,9 @@ model <-bas.lm(BMXBMI ~ .,
 summary(model)
 ```
 
-Here we specify the `ZS-null` as the prior argument, and the argument `uniform()` means that the prior distribution over the models is a uniform distribution which assigns equal probabilities to all models. The  optional argument `initprobs=eplogp` provides a way to initialize the sampling algorithm and order the variables in the tree structure that represents the model space in BAS. The eplogp option uses the Bayes factor calibration of p-values $-eplog(p)$ to provide an approximation to the marginal inclusion probability that the coefficient of each predictor is zero, using the p-values from the full model. The `force.heredity = TRUE` argument means that we force levels of a factor to enter or leave together.
+Here we specify the `ZS-null` as the prior argument, and the argument `uniform()` means that the prior distribution over the models is a uniform distribution which assigns equal probabilities to all models. The  optional argument `initprobs=eplogp` provides a way to initialize the sampling algorithm and order the variables in the tree structure that represents the model space in BAS. The eplogp option uses the Bayes factor calibration of p-values $-eplog(p)$ to provide an approximation to the marginal inclusion probability that the coefficient of each predictor is zero, using the p-values from the full model. The `force.heredity = TRUE` argument means that we force levels of a factor to enter or leave together. Pivot is logical variable to allow pivoting of columns when obtaining the OLS estimates of a model so that models that are not full rank can be fit.
 
-> Explain the output of `summary()`. What does each column represent? How does r2, BIC, post prob help us to specify the important variables or the model? Also comment on what valuable information we obtain. For example, what are the important variables? What questions it help us answer?
-
-From the model summary, we see that list of the top 5 models (in terms of posterior probability) with the zero-one indicators for variable inclusion. The other columns in the summary are the Bayes factor of each model to the highest probability model (hence its Bayes factor is 1), the posterior probabilities of the models, the ordinary $R^2$ of the models, the dimension of the models as well as the log marginal likelihood under the selected prior distribution. Each column represents a binary outcome of whether the model includes the variable or not. Here we see that the `URXHIBP` and `URXECP` are included in every single model considered, thus deemed to be important by the BMA model. On the other hand, the `URXMC1` variable is considered by only one model, therefore deemed to be insignificant by the BMA model.
+From the model summary, we see that list of the top 5 models (in terms of posterior probability) with the zero-one indicators for variable inclusion. The other columns in the summary are the Bayes factor of each model to the highest probability model (hence its Bayes factor is 1), the posterior probabilities of the models (represented by `PostProbs`), the ordinary $R^2$ of the models, the Bayesian information criterion (BIC), the dimension of the models as well as the log marginal likelihood under the selected prior distribution. Each column represents a binary outcome of whether the model includes the variable or not. Here we see that the `URXHIBP` and `URXECP` are included in every single model considered, thus deemed to be important by the BMA model. On the other hand, the `URXMC1` variable is considered by only one model, therefore deemed to be insignificant by the BMA model. 
 
 > We need to provide example on how to dig insights using the model instead of purely presenting the R coding. Read the Section 7.2 Example 2 of Bayesian Model Averaging: A Tutorial carefully. Please also read the application part of this paper carefully: [Bayesian Model Averaging: Theoretical Developments and Practical Applications](https://www.cambridge.org/core/journals/political-analysis/article/bayesian-model-averaging-theoretical-developments-and-practical-applications/3179D92A3C9353DE7E4674987C33FD28)
 
@@ -263,15 +261,36 @@ Different prior distributions on the regression coefficients may be specified us
 
 - “BIC”
 - “AIC
-- “g-prior”
-- “hyper-g”
-- “hyper-g-laplace”
-- “hyper-g-n”
-- “JZS”
-- “ZS-null”
-- “ZS-full”
-- “EB-local”
-- “EB-global”
+- "g-prior", Zellner's g prior where 'g' is specified using the argument 'alpha'
+- "hyper-g", a mixture of g-priors where the prior on g/(1+g) is a Beta(1, alpha/2) as in Liang et al (2008). This uses the Cephes library for evaluation of the marginal likelihoods and may be numerically unstable for large n or R2 close to 1. Default choice of alpha is 3.
+- "hyper-g-laplace", Same as above but using a Laplace approximation to integrate over the prior on g.
+- "hyper-g-n", a mixture of g-priors that where u = g/n and u ~ Beta(1, alpha/2) to provide consistency when the null model is true.
+- "JZS" Jeffreys-Zellner-Siow prior which uses the Jeffreys prior on sigma and the Zellner-Siow Cauchy prior on the coefficients. The optional parameter 'alpha' can be used to control the squared scale of the prior, where the default is alpha=1. Setting 'alpha' is equal to rscale^2 in the BayesFactor package of Morey. This uses QUADMATH for numerical integration of g.
+- "ZS-null", a Laplace approximation to the 'JZS' prior for integration of g. alpha = 1 only. We recommend using 'JZS' for accuracy and compatibility with the BayesFactor package, although it is slower.
+- "ZS-full" (to be deprecated)
+- "EB-local", use the MLE of g from the marginal likelihood within each model
+- "EB-global" uses an EM algorithm to find a common or global estimate of g, averaged over all models. When it is not possible to enumerate all models, the EM algorithm uses only the models sampled under EB-local.
+
+Here we explore the model fitted under another prior, the g-prior to investigate how the prior selection affects the model output:
+
+```{r}
+g_model <-bas.lm(BMXBMI ~ .,
+  data = nhanes_URX,
+  prior = "g-prior",
+  modelprior = uniform(), initprobs = "eplogp", method="MCMC",
+  force.heredity = FALSE, pivot = TRUE
+)
+summary(g_model)
+```
+
+```{r}
+coef.gmodel <- coef(g_model)
+par(mfrow=c(2,2))
+# plot(coef.model, mfrow=c(3,3), ask = F)
+plot(coef.gmodel, ask = F)
+```
+
+Comparing this model output with the previous model output under the ZS-null prior, we notice that although the ZS-null prior model considers the `URXECP` predictor to be most important with an inclusion probability of 1.00, the g-prior model considers the `URXHIBP` predictor to be important with an inclusion probability of 0.9999. However, URXUCR, URXCNP, URXECP, URXHIBP, URXMBP and URXMEP were deemed important by both models. While the predictors have generally similar degrees of importance in both models, it is also worth noting that the posterior distributions of the URX variables have slightly different shapes under the two different priors.
 
 ## Why Bayesian Model Averaging? Advantages
 
