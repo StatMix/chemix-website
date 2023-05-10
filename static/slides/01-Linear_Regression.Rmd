@@ -166,6 +166,20 @@ summary(lm.fit)
 
 -   p value: The p value tells us how likely the data we have observed is to have occurred under the null hypothesis (more material on Null hypothesis on subsequent tutorials), i.e. that there is no correlation between the predictor variable age and the response BMI. From the model above, we have a p value of less than 1.79e-06, which tells us that the predictor variable age is statistically significant.
 
+**Extrapolation and Data Centering**
+
+In the previous example, the intercept is interpreted as the average BMI of an individual at age 0, which does not make sense. Since in reality, it is meaningless to report the BMI of an individual at age 0. This issue is called Extrapolation. Extrapolation occurs if we use a model to make inference or prediction for predictors taking values out of the range (age = 0 in this example). 
+
+To make the intercept interpretable, a easy way is to center the age. In R, mean centering variables involves subtracting the mean value of each variable from all the observations in that variable. This can be useful in various statistical analyses, such as regression analysis, where mean centering can improve the interpretation and accuracy of the results. In this case, we center age at 50 for the purpose of simplifying interpretations:
+
+```{r}
+nhanes1518$RIDAGEYR <- nhanes1518$RIDAGEYR-18
+lm.fit <- lm(BMXBMI ~ RIDAGEYR, data = nhanes1518)
+summary(lm.fit)
+```
+
+- Interpret intercept: For a person with 18 age, his or her expected BMI is `r round(summary(lm.fit)$coefficient[1,1],3)`. In the rest of the tutorial, we will utilize the age that has been centered at 18.
+
 The coefficients of the linear regression model can be extracted using the `coef()` function and the confidence interval(s) with the `confint()` function.
 
 ```{r}
@@ -186,22 +200,26 @@ ggplot(nhanes1518, aes(x = RIDAGEYR, y = BMXBMI)) +
 
 We can use the `predict()` function to obtain prediction intervals or confidence intervals for a given value of the predictor variable, `RIDAGEYR`. Note that when using the `predict()` function, the column names and format of the new points at which to predict needs to be the same as the original data frame used to fit the `lm()` model. If you encounter errors using the `predict()` function, this is a good first thing to check.
 
+Notice that we centered age at 18 in previous model fitting. Therefore, we also need to center the age at 18 when we use the model to make prediction.
+
 ```{r}
-predict(lm.fit, data.frame(RIDAGEYR = (c(18, 30, 60))), interval = "confidence")
-predict(lm.fit, data.frame(RIDAGEYR = (c(18, 30, 60))), interval = "prediction")
+predict(lm.fit, data.frame(RIDAGEYR = (c(18, 30, 60)-18)), interval = "confidence")
+predict(lm.fit, data.frame(RIDAGEYR = (c(18, 30, 60)-18)), interval = "prediction")
 ```
 
 ### Prediction Interval vs Confidence Interval
 
 Prediction and confidence interval are both statistical concepts that are used to estimate or quantify uncertainty in a particular outcome or parameter. However, they have different meanings and interpretations.
 
--   Confidence interval: a range of values that is likely to contain the true value of a parameter with a certain degree of confidence. For example, if you are estimating the **mean age of a population** based on a sample, a 95% confidence interval means that if we were to repeat the sampling process many times and compute the confidence interval each time, we would expect the true population parameter to lie within the interval in 95% of the cases. The width of the confidence interval reflects the uncertainty in the estimation, with wider intervals indicating more uncertainty.
+-   Confidence interval: a range of values that is likely to contain the true value of a parameter with a certain degree of confidence. For example, if you are estimating the **mean BMI of a population** based on their age, a 95% confidence interval means that if we were to repeat the sampling process many times and compute the confidence interval each time, we would expect the true population parameter to lie within the interval in 95% of the cases. The width of the confidence interval reflects the uncertainty in the estimation, with wider intervals indicating more uncertainty.
 
--   Prediction: An estimate of a specific value or outcome based on the statistical model. For example, in our case when we use a linear regression model to predict **the BMI of a person** based on their age, a prediction would be the estimated age for a person of a specific BMI Predictions are usually accompanied by a measure of how accurate the estimate is, such as the mean squared error or the root mean squared error. Unlike a confidence interval which provides a range of values for the parameter, a prediction interval provides a range of values for the actual observation or outcome.
+-   Prediction: An estimate of a specific value or outcome based on the statistical model. For example, in our case when we use a linear regression model to predict **the BMI of a person** based on their age, a prediction would be the estimated BMI for a person of a specific age. Unlike a confidence interval which provides a range of values for the parameter of a specific population, a prediction interval provides a range of values for the actual observation or outcome.
 
 ## Model Diagonostics and Evaluations
 
 We conduct model diagnosis mainly based on residuals. The `plot()` function provides a convenient way to create four diagnostic plots. We use the `par()` function to arrange the four plots in 2 rows and 2 columns. We will show later each plot can also be manually created. For now, we use the `plot()` function below to demonstrate its usage:
+
+(You can also use [gglm](https://graysonwhite.com/gglm/index.html) package to draw nicer plots.)
 
 ```{r}
 par(mfrow = c(2, 2))
@@ -231,17 +249,16 @@ Some metrics and hypothesis tests for model evaluations:
 
 ## Multivariate Linear Regression
 
-Multiple linear regression allows to evaluate the relationship between two variables, while controlling the potential effect (i.e., removing the effect) of other variables. The `lm()` function can also fit multivariate linear regression. In this section, we will explore the relation between response variable `BMXBMI` and other predictors `RIDAGEYR` and `BMXWAIST`
+Multiple linear regression allows to evaluate the relationship between two variables, while controlling the potential effect (i.e., removing the effect) of other variables. The `lm()` function can also fit multivariate linear regression. In this section, we will explore the relation between response variable `BMXBMI` and other predictors `RIDAGEYR` and `BMXWAIST`. 
 
 ```{r}
 lm.fit <- lm(BMXBMI ~ RIDAGEYR + BMXWAIST, data = nhanes1518)
 summary(lm.fit)
-
 ```
 
 ### Model Interpretation
 
--   Intercept: The intercept does not have interpretability since it is unrealistic to have age 0, body waist circumference of 0, height and weight of 0.
+-   Intercept: For a person with age 18 and body waist circumference of 0, his or her expected BMI is `r round(summary(lm.fit)$coefficient[1,1],3)`. (Notice that you may also want to center the BMXWAIST at pre-specified level to make the intercept interpretable.)
 -   $\beta_{age}$: The coeffcient for the predictor `RIDAGEYR` is `r round(summary(lm.fit)$coefficient[2,1],3)`, which means that for every unit increase in the participant's age, the BMI is expected to increase by `r round(summary(lm.fit)$coefficient[2,1],3)` on average, holding all else constant (holding all other predictor variables, `BMXWAIST` constant). Notice here the impact of age is different from the one in the simple linear regression, since we control the potential factor, namely `BMXWAIST`.
 
 An alternative ways to specify the model is to create a data frame with selected variables and use a dot to include all variables in the pre-defined data frame.
@@ -316,7 +333,7 @@ lm_category%>%summary()
 
 *Model Interpretation*:
 
--   Intercept: The intercept `r round(coef(lm_category)[1],3)` means that for people with 0 age and in the baseline income category (income category 1 corresponding to a household income of 0 to 4,999 dollars), the BMI is expected to be `r round(coef(lm_category)[1],3)` on average.
+-   Intercept: The intercept `r round(coef(lm_category)[1],3)` means that for people with age 18 and in the baseline income category (income category 1 corresponding to a household income of 0 to 4,999 dollars), the BMI is expected to be `r round(coef(lm_category)[1],3)` on average.
 -   `income6`: The coefficient for the predictor `income6` is `r round(coef(lm_category)["income6"],3)`, which means that for participants with household income category 6 (25,000 to 34,999 dollars per ear), the BMI is expected to be `r round(coef(lm_category)["income6"],3)` higher than that of participants with household income in category 1 (0 to 4,999 dollars), on average, holding the age constant.
 
 ## Interaction Terms
@@ -340,7 +357,7 @@ ggplot(df, aes(x = RIDAGEYR, y = BMXBMI, color = income)) +
 
 Based on the exploratory data analysis, we learn that the impacts of age and income on the BMI are interactive. Therefore, we need to include interaction terms between these two variables in our regression model.
 
-There are two ways to include interaction terms in the model, `:` and `*`. The `:` symbol only includes the interaction term between the two variables, while the `*` symbol includes the variables themselves, as well as the interaction terms. This means that `BMXWT*BMXWAIST` is equivalent to `BMXWT + BMXWAIST + BMXWT:BMXWAIST`.
+There are two ways to include interaction terms in the model, `:` and `*`. The `:` symbol only includes the interaction term between the two variables, while the `*` symbol includes the variables themselves, as well as the interaction terms. This means that `income*RIDAGEYR` is equivalent to `income + RIDAGEYR + income:RIDAGEYR`.
 
 To interpret the categorical variables, we use k-1 variables to encode, and we noticed that category 1 does not appear in the model thus is the baseline.
 
@@ -355,27 +372,14 @@ lm_int2=lm(BMXBMI ~ .^2, data = nhanes_income)
 
 *Model Interpretation*
 
-- Coefficient of `income10`:  The BMI of an individual with age 0 in income category 10 is expected to be 3.678 higher than the BMI of an individual in income category 1 (baseline category). 
+- Coefficient of `income10`:  The BMI of an individual with age 18 in income category 10 is expected to be 2.265 higher than the BMI of an individual in income category 1 (baseline category). 
 
 - Coefficient of `income10:RIDAGEYR`: With one unit increase of age, the increase of BMI of an individual in income category 10 is expected to be 0.0785 lower than the increase of BMI of an individual in income category 1.
 
-- `income10 + intercept`: The BMI of an individual with age 0 in income category 10 is expected to be 29.606. This corresponds to the intercept of the blue line in the previous plot.
+- `income10 + intercept`: The BMI of an individual with age 18 in income category 10 is expected to be 29.505. This corresponds to the intercept of the blue line in the previous plot.
 
-- `RIDAGEYR_centered + income10:RIDAGEYR_centered`: With one year increase on the age, the BMI of an individual in income category 10 is expected to decrease by 0.00562(=0.07287-0.07849). This corresponds to the slope of the blue line in the previous plot.
+- `RIDAGEYR+ income10:RIDAGEYR`: With one year increase on the age, the BMI of an individual in income category 10 is expected to decrease by 0.00562(=0.07287-0.07849). This corresponds to the slope of the blue line in the previous plot.
 
-## Extrapolation and Data Centering
-
-In the previous example, the intercept is interpreted as the BMI of an individual at age 0, which does not make sense. Since in reality, it is meaningless to report the BMI of an individual at age 0. This issue is called Extrapolation. Extrapolation occurs if we use a model to make inference or prediction for predictors taking values out of the range (age = 0 in this example). 
-
-To make the intercept interpretable, a easy way is to center the age. In R, mean centering variables involves subtracting the mean value of each variable from all the observations in that variable. This can be useful in various statistical analyses, such as regression analysis, where mean centering can improve the interpretation and accuracy of the results. In this case, we center age at 50 for the purpose of simplifying interpretations:
-
-```{r}
-nhanes_income$RIDAGEYR_centered <- scale(nhanes_income$RIDAGEYR, center = 50, scale = FALSE)
-lm(BMXBMI ~ income + RIDAGEYR_centered + income:RIDAGEYR_centered, data = nhanes_income)%>%
-  summary()
-```
-
-Interpret coefficient of `income10`: At the mean value of age 50,  the BMI of an individual in income category 10 is expected to be 0.161 lower than the BMI of an individual in income category 1 (baseline category).
 
 ## References
 
