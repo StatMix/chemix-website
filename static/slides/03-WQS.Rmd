@@ -9,9 +9,11 @@ output:
     toc_float: true
 ---
 
-Assume we are interested in exploring the relationship between the chemical exposures and the outcome (BMI for example). These chemical exposures are usually highly correlated with each other (known as multicollinearity phenomenon in regression). Multicollinearity among the exposures violates the independence model assumption of multivariate linear regression, distorting statistical inference. To eliminate the issue of multicollinearity, we can consider summarizing these highly correlated chemical mixtures when putting them into a regression model. The idea of summary motivates the weighted quantile sum regression.
+Assume we are interested in exploring the relationship between the chemical exposures and the outcome (BMI for example). These chemical exposures are usually highly correlated with each other (known as multicollinearity phenomenon in regression). Multicollinearity among the predictors impedes model inference and prediction. The standard errors for our regression coefficients will inflate, and thus we will lose precision in our estimates of the regression coefficients. To eliminate the issue of multicollinearity, we can consider summarizing these highly correlated chemical mixtures when putting them into a regression model. The idea of summary motivates the weighted quantile sum regression.
 
 Unlike ordinary multivariate regression, the Weighted Quantile Sum Regression (WQS) model uses quantiles of chemical exposures and weighs them based on their individual impacts on the overall outcome. The exposure that has a strong impact on the mixture are assigned a greater weight while others that are not as critical are given a lower weight. The weighted sum of quantiles of chemical exposures is then treated as a predictor and regress on the response variable. We utilize the r package `gWQS` to illustrate model fitting, prediction, and evaluation. 
+
+> We recommend another package [`qgcomp`](https://chem-mix.netlify.app/slides/05-qgcomp), which allows us to use a similar method, but has faster computation and allows more **flexibility** in the assumptions and data that can be used in the model.
 
 ## Libraries
 
@@ -50,7 +52,7 @@ Similar to the previous tutorial where age is filtered, we only want to consider
 nhanes <- nhanes1518 |>
     filter(RIDAGEYR >= 18)|>
     mutate(BMXBMI = log(BMXBMI),
-          RIDAGEYR = RIDAGEYR - 18)|>
+          RIDAGEYR = RIDAGEYR - 18)|> 
     select(BMXBMI, URXMHBP, URXMOH, URXMHP, URXMHH, URXMCOH, URXMHNC, URXMHH, URXECP, URXHIBP, URXMIB)
 
 nhanes <- drop_na(nhanes)
@@ -65,7 +67,7 @@ To confirm the normality of the variable BMI, we can create a histogram to view 
    geom_histogram() 
 ```
 
-## Key Assumptions/Constraints
+## Key Assumptions
 
 In order to use the gWQS package in an application setting, several conditions must be followed. The first condition is that the chemical exposures must ALL contribute in one direction. In order to contribute in one direction, all variables must be either positively correlated, or negatively correlated with each other. In addition to the correlation of the exposures, the dataset must be split into two sections. The first section is the training data for providing weights to the variables, while the second is used exclusively for verifying the model and ensuring that the results are reliable.
 
@@ -109,7 +111,7 @@ Each outcome variable is assigned a "score", meaning they are placed in bins usi
 ## Model Fitting
 
 
-The gWQS model model requires the explanatory mixtures to be saved to a variable. In this example, we saved them to `chem_names`.
+The gWQS model requires the explanatory mixtures to be saved to a variable. In this example, we saved them to `chem_names`.
 
 Additionally, the output of the `gWQS` package is saved to the variable `results`.
 
@@ -161,7 +163,7 @@ summary(results)
 
 The Regression output:
 
-$$ \widehat{log(BMXBMI)} = 3.31 + 0.015 \times (WQS) $$
+$$ \widehat{log(\text{BMXBMI})} = 3.31 + 0.015 \times (WQS) $$
 
 Interpretation of the model:
 
@@ -197,6 +199,8 @@ gwqs_scatterplot(results)
 
 The scatterplot of the WQS model and BMI demonstrate the linear relationship between the URX chemicals and log BMI.
 
+## Model Prediction
+
 ## Model Dignostics 
 
 We check the assumption that all the chemical exposures contribute in the same direction using our expertise. 
@@ -225,6 +229,7 @@ results$fit
 For example, we can demonstrate AIC by adding covariates into the model. Covariates in the model are variables that we are not necessarily interested in interpreting, but may be influential to the overall model. By adding covariates (such as age), we can compare how well each gWQS model can predict BMI by examining the AIC metric. 
 
 In order to add a covariate using the gWQS package, the varible must be added to the regression equation, shown below. This ensures that age is not treated as a mixture, but a separate variable.
+
 ```{r}
 nhanes_new <- nhanes1518 |>
     filter(RIDAGEYR >= 18)|>
@@ -242,9 +247,12 @@ results_new <- gwqs(BMXBMI ~ wqs + RIDAGEYR, mix_name = chem_names_new, data = n
 ```{r}
 summary(results_new)
 ```
+
 Interpretation of the model:
 
--   *When quantiles of the URX variables are 0 and age of the individual is 0, the estimated log BMI is approximately 3.25.*
+-   *When quantiles of the URX variables are 0 and age of the individual is 18, the estimated log BMI is approximately 3.25.*
+
+> Notice that we center our age at 18 in previous pre-processing step.
 
 The coefficient for age can be interpreted, similar to a standard linear model:
 
@@ -255,6 +263,7 @@ The interpretation for wqs changes slightly from the example listed above since 
 - *As every quantile of the exposures increases by 1, log BMI increases, on average, by 0.015, holding age constant.*
 
 We can confirm that age is being treated as a covariate by checking the mean weights given to the mixture variables. It is critical to ensure that age is not assigned a weight or included with the URX variables. 
+
 ```{r}
 head(results_new$final_weights)
 ```
@@ -272,15 +281,19 @@ Additional outputs from the model which may be helpful for diagnostics:
 
 ## Conclusion
 
-In conclusion, the gWQS weighted the explanatory variables successfully as our model is considered to be statistically significant. By using the gWQS model with data where explanatory variables are all highly correlated, specific variables can be weighted according to their influence to the response variable. In the NHANES data set, chemicals URXMCOH, URXMIB, URXECP were weighted the highest by the gWQS model. It is important to note, there are additional methods and packages that use weighted quantile sums. For example, qgcomp allows us to use a similar method, but allows more flexibility in the assumptions and data that can be used in the model. However, gWQS provides a great introduction to the applications and fundamentals of highly correlated mixtures. In the following tutorials, we will introduce new methods and packages that can solve similar and more complex problems.  
+In conclusion, the gWQS weighted the explanatory variables successfully as our model is considered to be statistically significant. By using the gWQS model with data where explanatory variables are all highly correlated, specific variables can be weighted according to their influence to the response variable. In the NHANES data set, chemicals URXMCOH, URXMIB, URXECP were weighted the highest by the gWQS model. 
+
+## Alternative package: `qgcomp`
+
+`gWQS` provides a great introduction to the applications and fundamentals of highly correlated mixtures. It is important to note, there are additional methods and packages that use weighted quantile sums. For example, `qgcomp` allows us to use a similar method, but has faster computation and allows more **flexibility** in the assumptions and data that can be used in the model. In the tutorial of [qgcomp](https://chem-mix.netlify.app/slides/05-qgcomp), we will introduce quantile g-computation (`qgcomp` package), a new method for modeling chemical mixtures, that can solve similar but more complex problems.
 
 
 ## References:
 
 -   [How to Interpret Null & Residual Deviance](https://www.statology.org/null-residual-deviance/#:~:text=The%20residual%20deviance%20tells%20us,value%20of%20the%20response%20variable.)
 
--   <https://cran.r-project.org/web/packages/gWQS/vignettes/gwqs-vignette.html>
+-   [Vignette](https://cran.r-project.org/web/packages/gWQS/vignettes/gwqs-vignette.html)
 
--   <http://cran.nexr.com/web/packages/gWQS/vignettes/gwqs-vignette.html>
+-   [Vignette](http://cran.nexr.com/web/packages/gWQS/vignettes/gwqs-vignette.html)
 
--   <http://cran.nexr.com/web/packages/gWQS/gWQS.pdf>
+-   [Manual](http://cran.nexr.com/web/packages/gWQS/gWQS.pdf)
