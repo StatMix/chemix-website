@@ -1,5 +1,5 @@
 ---
-title: "Tutorial 05 - Bayesian Regression"
+title: "Bayesian Regression"
 author: "Ryan Mitchell"
 date: "Updated `r format(Sys.time(), '%d %B, %Y')`"
 output:

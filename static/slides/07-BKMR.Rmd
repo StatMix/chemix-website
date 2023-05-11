@@ -1,5 +1,5 @@
 ---
-title: "Tutorial 07 - Bayesian Kernel Machine Regression"
+title: "Bayesian Kernel Machine Regression"
 author: "Olivia Fan"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:

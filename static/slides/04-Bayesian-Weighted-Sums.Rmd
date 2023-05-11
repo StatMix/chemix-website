@@ -1,5 +1,5 @@
 ---
-title: "Tutorial 06 - Bayesian Weighted Sums"
+title: "Bayesian Weighted Sums"
 author: "Ryan Mitchell & Bradley Bowen"
 date: "Last Updated `r format(Sys.time(), '%d %B, %Y')`"
 output:

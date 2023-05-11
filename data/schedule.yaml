@@ -31,7 +31,7 @@ lessons:
     date: ""
     title: "Quantile G-Computation"
     prepare: "topic-05-qgcomp.html"
-    slides:   
+    slides: "05-qgcomp.html"
   - week: "bma"
     date: ""
     title: "Bayesian Model Averaging"

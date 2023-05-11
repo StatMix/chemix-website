@@ -1,5 +1,5 @@
 ---
-title: "Tutorial 02 - Linear Regression"
+title: "Linear Regression"
 author: "Olivia Fan"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:

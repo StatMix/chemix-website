@@ -1,5 +1,5 @@
 ---
-title: "Tutorial 06 - Bayesian Model Averaging"
+title: "Bayesian Model Averaging"
 author: "Olivia Fan"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -27,14 +27,32 @@ knitr::opts_chunk$set(echo = TRUE,
 
 -   Advantages of Bayesian Model Averaging over all-or-none model selection
 
+## Bayesian Model Averaging
+
+Suppose we are interested in exploring the relationship between the chemical exposures and the outcome (BMI for example). These chemical exposures are usually highly correlated with each other (known as **multicollinearity**). One way is to summarize these highly correlated chemical mixtures and explore the potential influence of these chemical mixtures as a whole (See tutorials of [weighted quantile sum regression](https://chem-mix.netlify.app/slides/03-wqs), [Bayesian weighted sum regression](https://chem-mix.netlify.app/slides/04-bayesian-weighted-sums), [quantile g-computation](https://chem-mix.netlify.app/slides/05-qgcomp.html)). However, the model require a strict assumption that all exposures should contribute to the same direction which is not applicable in some situations. Another popular way is to select a subset of these chemical mixtures as representatives, which is called variable selection, or model selection. Traditionally, analysis often proceeds by first selecting the best model according to some criterion and then learning about the parameters given that the selected model is the underlying truth. However, this approach has potential issues: (1) We cannot quantify model uncertainty through these all-or-none selection methods. (2) There are often many modeling choices that are secondary to the main questions of interest but can still have an important effect on conclusions. 
+
+As an alternative, **Bayesian Model Averaging** (BMA) carry a model combination idea. Instead of choosing only one model, it learns the parameters for **all** candidate models and then combine the estimates according to the uncertainty (posterior probabilities) of associated model. Specifically, this is done through a parameter estimate obtained by averaging the predictions of the different models under consideration, each weighted by its model probability. 
+
+Given quantity of interest $\Delta$ (which can be a future observation $Y^*$, or a parameter of interest $\beta_j$), then its posterior distribution of given data $D$ is 
+
+$$Pr(\Delta|D)=\sum_{k=1}^KPr(\Delta|M_k,D)Pr(M_k|D).$$
+Let $K$ denote the number of all potential models, the model probability of model $k$ ($Pr(M_k|D)$) is calculated by
+
+$$Pr(M_k|D) = \frac{Pr(D|M_k)Pr(M_k)}{\sum_{l=1}^K Pr(D|M_l)Pr(M_l)}$$
+
+The model $M$ can take various forms, such as linear models, generalized linear model, survival analysis. Here in this tutorial, we will only focus on BMA for linear regression.
+
+There are three packages available: `BAS`, `BMS`, and `BMA`. A thorough comparison are presented in this [paper](https://www.researchgate.net/profile/Christopher-Parmeter/publication/268216833_Bayesian_model_averaging_in_R/links/54ac4c040cf2479c2ee7b14e/Bayesian-model-averaging-in-R.pdf). Here we use `BAS` package for its fast computation, flexible choice of priors, and 
+
+
 ## Libraries
 
-The R package `BAS` provides ways of carrying out BMA for linear regression, generalized linear models, and survival or event history analysis using Cox proportional hazards models. It contains functions for plotting the BMA posterior distributions of the model parameters, as well as an image plot function that provides a way of visualizing the BMA output. The functions `bas.lm` provide fast and automatic default ways of doing this for the model classes considered.
+The R package `BAS` provides ways of carrying out Bayesian Model Averaging (BMA) for linear regression, generalized linear models, and survival or event history analysis using Cox proportional hazards models. It contains functions for plotting the BMA posterior distributions of the model parameters, as well as an image plot function that provides a way of visualizing the BMA output. The functions `bas.lm` provide fast and automatic default ways of doing this for the model classes considered.
 
 ```{r}
 library(BAS)
 library(tidyverse)
-library(broom.mixed)
+#library(broom.mixed)
 ```
 
 To illustrate how BMA takes account of model uncertainty about the variables to be included in linear regression, we will be using the `nhanes` dataset where the variables are described in the file `nhanes-codebook.txt`. Load this data with the `load` function and specify the data file.
@@ -71,7 +89,7 @@ corrplot(corr_mat,
 ```
 
 ```{r}
-library(tidyverse)
+
 df_long <- nhanes_URX %>% pivot_longer(everything())
 
 # Plot histograms using ggplot
@@ -82,17 +100,6 @@ ggplot(df_long, aes(x = value)) +
 
 We also plot the distributions of our variables of interest involved in the model, and notice that the variables have a long tail in the original scale, which hints at log transformation which we will perform later on.
 
-## Bayesian Model Averaging
-
-Motivated from chemical mixtures, one way to deal with highly correlated predictors is to select variable, or select model. Traditionally, analysis often proceeds by first selecting the best model according to some criterion and then learning about the parameters given that the selected model is the underlying truth. However, this approach has potential issues: (1) We cannot quantify model uncertainty through these all-or-none selection methods. (2) There are often many modeling choices that are secondary to the main questions of interest but can still have an important effect on conclusions. An alternative is to learn the parameters for *all* candidate models and then combine the estimates according to the posterior probabilities of associated model. *Bayesian Model Averaging* (BMA) carry this model combination idea - Specifically, this is done through a parameter estimate obtained by averaging the predictions of the different models under consideration, each weighted by its model probability. The math formula below illustrate below:
-
-Given quantity of interest $\Delta$, such as an effect size, a future observation, or utility of a course of action, then its posterior distribution of given data D is 
-
-$$pr(M_k|D) = \frac{pr(D|M_k)pr(M_k)}{\Sigma_{l=1}^k pr(D|M_l)pr(M_l)}$$
-
-This is an average of the posterior distributions under each of the models considered, weighted by their posterior model probability. 
-
-There are three packages available: `BAS`, `BMS`, and `BMA`. A thorough comparison are presented in this [paper](https://www.researchgate.net/profile/Christopher-Parmeter/publication/268216833_Bayesian_model_averaging_in_R/links/54ac4c040cf2479c2ee7b14e/Bayesian-model-averaging-in-R.pdf).  In this module, we will investigate this method known as *Bayesian Model Averaging* using `BAS` package. 
 
 ## Bayesian Model Averaging for Linear Regression Models
 
@@ -143,7 +150,7 @@ plot(coef.model, ask = F)
 
 This plot agrees with the summary table we obtained above, which shows that the posterior probability distributions of `URXMC1` and `URXCOP` have a very large point mass at 0, while the distribution of `URXUCR` and `URXMEP` have relatively small mass at 0. There is a slighly little tip at 0 for the variable `URXUCR`, indicating that the posterior inclusion probability of `URXECP` is not exactly 1. However, since the probability mass for `URXUCR` to be 0 is so small, that we are almost certain that `URXECP` should be included under Bayesian model averaging.
 
-## Bayesian Model Diagnostics
+## Model Diagnostics
 
 ```{r}
 plot(model, ask = F)
@@ -157,12 +164,12 @@ diagnostics(model, type = "pip", pch = 16)
 plot(confint(coef.model),estimator = "HPM") # also look into this
 ```
 
-## Bayesian Model Predictions
+## Model Predictions
 
 With the `predict` function, we can understand uncertainty besides classification, taking a look at the predictive probabilities for the two class classification problem:
 
 
-## Bayesian Model Predictions with Model Selection
+## Model Predictions with Model Selection
 
 `BAS` has methods defined to return fitted values, namely `fitted`, using the observed design matrix and predictions at either the observed data or potentially new values, predict, as with linear regressions
 
@@ -235,6 +242,7 @@ GGally::ggpairs(data.frame(
   BMA = as.vector(BMA$fit)
 )) # this used predict
 ```
+
 Using the `se.fit = TRUE` option with `predict` we can also calculate standard deviations for prediction or for the mean and use this as input for the `confint` function for the prediction object. Since there are many predictions, here we slice 15 samples and observe their confidence intervals:
 
 ```{r}
