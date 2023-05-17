@@ -200,6 +200,25 @@ gwqs_scatterplot(results)
 The scatterplot of the WQS model and BMI demonstrate the linear relationship between the URX chemicals and log BMI.
 
 ## Model Prediction
+Most importantly, we can use the WQS regression model to predict our outcome variable (log BMI). Using our model above, we can use the predict() function to determine the corresponding result. The predict function takes our WQS model and the dataframe containing the data for our prediction respectively. Values are from a single data point in the original NHANES dataset.
+
+```{r}
+new_data <- data.frame(
+URXMHBP = 12.9,
+URXMOH = 6.3,
+URXMHP = 2.10,
+URXMHH = 26.2,
+URXMCOH = 1.40,
+URXMHNC = 2.30,
+URXECP = 9.7,
+URXHIBP = 19.9,
+URXMIB = 23.5,
+BMXBMI = 3.718438
+)
+predict(results, newdata = new_data)
+```
+
+Using our model, the predicted log(BMI) is 3.39. This method is essential for extrapolating results, an important aspect of regression models. 
 
 ## Model Dignostics 
 
