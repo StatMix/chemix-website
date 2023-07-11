@@ -46,7 +46,7 @@ head(nhanes1518)
 
 Once the data is loaded, we can proceed to understand how our chemical exposures (detected in urine samples) impact the body mass index of participants.
 
-Similar to the previous tutorial where age is filtered, we only want to consider participants in the data that are above 18 years old and take the natural log of BMI. By filtering and using the natural log, the distribution of the ages of participants are normalized. To finish preparing the dataset, the N/A values are removed and the resulting data is saved under the name `nhanes`.
+Similar to the previous tutorial where age is filtered, we only want to consider participants in the data that are above 18 years old and take the natural log of BMI. We centered the age at 18 to assure the intercept of regression model is interpretable. To finish preparing the dataset, the N/A values are removed and the resulting data is saved under the name `nhanes`.
 
 ```{r}
 nhanes <- nhanes1518 |>
@@ -60,7 +60,7 @@ nhanes <- drop_na(nhanes)
 nhanes
 ```
 
-To confirm the normality of the variable BMI, we can create a histogram to view the shape of the observations:
+To confirm the normality of the variable BMI (In our case, BMI refers to the logarithm transformation of the original BMI), we can create a histogram to view the shape of the observations:
 
 ```{r}
  nhanes|> ggplot(aes(x = BMXBMI))+ 
@@ -84,9 +84,9 @@ ggcorrplot(cor_hanes)+
 #Source http://www.sthda.com/english/wiki/ggcorrplot-visualization-of-a-correlation-matrix-using-ggplot2#:~:text=The%20easiest%20way%20to%20visualize,ggcorr()%20in%20ggally%20package
 ```
 
-However, if we fit a normal linear regression model to these predictors, positive and negative estimates would be produced. Intuitively, the URX variables should all have positive coefficients, however, this model is not representative of this assumption. This is a demonstration of multi-collinearity, where there are there is a large uncertainty (variance) when calculating the coefficients. Therefore, the output of the model may produce unusual signs for the beta estimates.
+However, if we fit a normal linear regression model to these predictors, positive and negative estimates would be produced. Intuitively, the URX variables should all have positive coefficients, however, this model is not representative of this assumption. This is a demonstration of multi-collinearity, where there is a large uncertainty (variance) when calculating the coefficients. Therefore, the output of the model may produce unusual signs for the coefficient estimates.
 
-As shown below, some of the URX betas are positive, while others are negative. Instead, we want to use a gWQS model which will provide a ***unidirectional*** output, similar to a standard linear regression model.
+As shown below, some of the URX coefficients are positive, while others are negative. Instead, we want to use a gWQS model which will provide a ***unidirectional***  output, similar to a standard linear regression model.
 
 ```{r}
 #large uncertanty (variance) around the coefficients and multicolinearity (including that the coeffients may be negatve) - point estimate may be negative (abnormal signs)
@@ -99,13 +99,13 @@ tidy()
 Once the conditions are satisfied, a model can be produced, similarly to standard linear regression model. One difference from the linear model is that unique weights are assigned to the predictor variables.
 
 $$ Eg(Y)= \beta_0 + \beta_0  \times (WQS) $$
-or it can be written as an expanded model where $w_n$ corresponds the estimated weights for each X variable and $\theta_1$ is the predicted impact of the WQS method on all of the chemical exposures.
+or it can be written as an expanded model where $w_n$ corresponds the estimated weights for each X variable and $\beta_1$ is the predicted impact of the WQS method on all of the chemical exposures.
 
 $$
 Eg(Y)= \beta_0 + \beta_1(w_1X_1 + w_2X_2 + ... w_nX_n)
 $$
 
-Each outcome variable is assigned a "score", meaning they are placed in bins using quantiles qi = {0, 1, 2, 3, etc.} For each exposure, there are cutoff points (or weights) that determine where each variable is placed. The weighted components are then summed and are fitted to the regression model. gWQS visualizes the assigned weights and regression fit as demonstrated in the package below:
+Each outcome variable is assigned a "score", meaning they are placed in bins using quantiles Xi = {0, 1, 2, 3, etc.} For each exposure, there are cutoff points (or weights) that determine where each variable is placed. The weighted components are then summed and are fitted to the regression model. gWQS visualizes the assigned weights and regression fit as demonstrated in the package below:
 
 
 ## Model Fitting
@@ -177,10 +177,10 @@ It is important to acknowledge the uncertainty in the WQS output. One method of 
 confint(results)
 ```
 
-We can be 95% confident that the true wqs coefficient falls within the interval `r round(confint(results)[2,1],3)` and `r round(confint(results)[2,2],3)`.
+If we were to repeat the sampling process many times and compute the confidence interval each time, we would expect the true wqs coefficient falls within the interval `r round(confint(results)[2,1],3)` and `r round(confint(results)[2,2],3)` in 95% of the cases. 
 
 
-We may also be interested in testing whether URX variables have significant impact on BMI. Included in the regression output is the results significance tests of the coefficients. To test the significance of the model, we can use a t-distribution and t-statistic. The t-statistic for WQS is 5.214 under the t-distribution with 9 degrees of freedom. The p-value corresponding to the WQS quantiles is extremely small (2.03e-07). Therefore, there is a significant relationship between the weighted quantiles and the predicted outcome, logBMI.
+We may also be interested in testing whether URX variables have significant impact on BMI. Included in the regression output is the results significance tests of the coefficients. To test the significance of the model, we can use a t-distribution and t-statistic. The t-statistic for WQS is 5.214 and the corresponding p-value is extremely small (2.03e-07). Therefore, there is a significant relationship between the weighted quantiles and the predicted outcome, logBMI.
 
 The gWQS package provides methods for understanding and visualizing the results. One of the most helpful ways to view the output of is through visualizations of the weights assigned to each variable. The weights can demonstrate which exposures from the urine samples are impactful in predicting BMI and which are less helpful.
 
@@ -232,7 +232,7 @@ gwqs_fitted_vs_resid(results)
 
 The final visualization shows the residuals and fitted values. As seen above, the points are distributed around zero and do not have any distinct patterns. Additional interpretations of the output models can be found [HERE](https://chem-mix.netlify.app/slides/01-linear_regression#Model_Diagonostics_and_Evaluations).
 
-## Model Comparison
+## Model Evaluation and Model Comparison
 
 
 ```{r}
@@ -243,11 +243,15 @@ results$fit
 
 -   Contrary, residual deviance demonstrates how well the model predicts the response, using the explanatory variables. The smaller the residual deviance, the better the accuracy of the regression model.
 
--   AIC - This is a statistic to compare two models - the smaller the AIC, the better the model.
+-   AIC - This is a statistic help to evaluate the model performance, taking account of model fitting and complexity. The smaller the AIC, the better the model. 
 
-For example, we can demonstrate AIC by adding covariates into the model. Covariates in the model are variables that we are not necessarily interested in interpreting, but may be influential to the overall model. By adding covariates (such as age), we can compare how well each gWQS model can predict BMI by examining the AIC metric. 
+For example, we can demonstrate AIC by comparing the current WQS model with a new WQS model (adding a covariate `age`). The AIC from the original model was -164.58 while the new model with age as a covariate has an AIC of -183.82 (see the following section). Therefore, we can say that the second model with age added is a better model, more effectively fitting the data. 
 
-In order to add a covariate using the gWQS package, the varible must be added to the regression equation, shown below. This ensures that age is not treated as a mixture, but a separate variable.
+## WQS Model with Covariates
+
+Covariates in the model are variables that we are not necessarily interested in interpreting, but may be influential to the overall model.  
+
+In order to add a covariate using the gWQS package, the variable must be added to the regression equation, shown below. This ensures that age is not treated as a mixture, but a separate variable.
 
 ```{r}
 nhanes_new <- nhanes1518 |>
@@ -287,7 +291,7 @@ We can confirm that age is being treated as a covariate by checking the mean wei
 head(results_new$final_weights)
 ```
 
-In this example, the AIC from the original model was -164.58 while the new model with age as a covariate has an AIC of -183.82. Therefore, we can say that the second model with age added is a better model, more effectively predicting log BMI. 
+Notice the coefficient of age is significantly non-zero, suggesting age has significant potential effect on log(BMI). If we use AIC metric for model comparison, the AIC from the previous model was -164.58 while the new model with age as a covariate has an AIC of -183.82. Therefore, we can say that the second model with age added is a better model, more effectively fitting the data. 
 
 
 ## Miscellaneous
