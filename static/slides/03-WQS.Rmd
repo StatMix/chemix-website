@@ -44,9 +44,9 @@ load(file='nhanes1518.rda')
 head(nhanes1518)
 ```
 
-Once the data is loaded, we can proceed to understand how our chemical exposures (detected in urine samples) impact the body mass index of participants.
+Once the datum is loaded, we can proceed to understand how our chemical exposures (detected in urine samples) impact the body mass index of participants.
 
-Similar to the previous tutorial where age is filtered, we only want to consider participants in the data that are above 18 years old and take the natural log of BMI. We centered the age at 18 to assure the intercept of regression model is interpretable. To finish preparing the dataset, the N/A values are removed and the resulting data is saved under the name `nhanes`.
+Similar to the previous tutorial where age is filtered, we only want to consider participants in the data that are above 18 years old and take the natural log of BMI. We centered the age at 18 to assure the intercept of regression model is interpretable. To finish preparing the dataset, the N/A values are removed and the resulting datum is saved under the name `nhanes`.
 
 ```{r}
 nhanes <- nhanes1518 |>
@@ -69,7 +69,7 @@ To confirm the normality of the variable BMI (In our case, BMI refers to the log
 
 ## Key Assumptions
 
-In order to use the gWQS package in an application setting, several conditions must be followed. The first condition is that the chemical exposures must ALL contribute in one direction. In order to contribute in one direction, all variables must be either positively correlated, or negatively correlated with each other. In addition to the correlation of the exposures, the dataset must be split into two sections. The first section is the training data for providing weights to the variables, while the second is used exclusively for verifying the model and ensuring that the results are reliable.
+In order to use the gWQS package in an application setting, several conditions must be followed. The first condition is that the chemical exposures must ALL contribute in one direction. In order to contribute in one direction, all variables must be either positively correlated, or negatively correlated with each other. In addition to the correlation of the exposures, the dataset must be split into two sections. The first section is the training data for providing weights to the variables, while the second is used exclusively for verifying the model and evaluating the reliability of the results.
 
 ***In order to use weighted quantile sum regression with the `nhanes` data, it is important to first confirm that all constraints are satisfied:***
 
@@ -188,7 +188,7 @@ The gWQS package provides methods for understanding and visualizing the results.
 gwqs_barplot(results)
 ```
 
-The first visualization produced is a bar plot showing the weights assigned to each of the URX variables. The variables with greatest weights are URXCEP, URXMOH, and URHMIB while the remaining chemicals are not great predictors of BMI. Also shown in the visualization is a red line which shows the cutoff values - calculated by the inverse of the number of predictor variables.
+The first visualization produced is a bar plot showing the weights assigned to each of the URX variables. The variables with greatest weights are Mono-2-ethyl-5-carboxypentyl phthalate (URXECP), Mono-(2-ethyl-5-oxohexyl) phthalate (URXMOH), and Mono-isobutyl pthalate (URXMIB) while the remaining chemicals are not great predictors of BMI. Also shown in the visualization is a red line which shows the cutoff values - calculated by the inverse of the number of predictor variables.
 
 
 In addition to the weights assigned to the chemical exposures, it can be helpful to visualize the overall relationship of the WQS model and the predicted BMI. To visualize this relationship, a scatterplot can be utilized to see if there is a linear relationship in the model.
