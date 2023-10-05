@@ -106,9 +106,10 @@ As shown in the formula above, BMA addresses model uncertainty in a regression p
 $$y=\alpha_\gamma+X_\gamma \beta_\gamma+\epsilon \hspace{1cm}\epsilon \sim N(0, \sigma^2I)$$
 
 The value of $\gamma$ determines how much weight or importance is assigned to each individual model in the model set when combining their predictions or estimating parameters.
-When γ = 0: No model averaging takes place. In this case, only the "best" model (the one with the highest posterior probability) is used for estimation or prediction.
-When γ = 1: Complete model averaging is performed. All models in the model set are given equal weight, and their predictions or parameter estimates are combined.
+- When $\gamma = 0$: No model averaging takes place. In this case, only the "best" model (the one with the highest posterior probability) is used for estimation or prediction.
+- When $\gamma = 1$: Complete model averaging is performed. All models in the model set are given equal weight, and their predictions or parameter estimates are combined.
 
+In BMA, the inclusion probability ($\pi_i$) for a model or variable i is calculated as the sum of the posterior probabilities of all models that include that model or variable.
 
 We perform log transformation to all the variables since the EDA suggests the long tail and extreme values in the original scale. We fit a BMA model on the dataset using BMI as the response variable, and all of the 10 URX variables as predictor variables. 
 
@@ -131,13 +132,13 @@ summary(model)
 ```
 
 
-
 `summary()` provides summary statistics and lists the top 5 models (in a descending order of posterior probability) with the zero-one indicators for variable inclusion. The first column presents posterior probability of inclusion (PIP) for each variable. Here we see that the `URXMEP` is included in every single model (inclusion probability equal to 1), thus deemed to be important by the BMA model. `URXUCR `, `URXCNP`, `URXECP`, `URXHIBP`, `URXMBP`, `URXMHBP`, `URXMHH` has pip greater than or roughly equal to 0.9, suggesting strong correlations with BMI. On the other hand, the inclusion probability of `URXMC1` variable is only 0.06, therefore deemed to be a weak predictor of BMI by the BMA model. The other column represents a binary outcome of whether the model includes the variable or not. The other rows in the summary table are the Bayes factor of each model to the highest probability model (hence its Bayes factor is 1), the posterior probabilities of the models (represented by `PostProbs`), the ordinary $R^2$ of the models, the Bayesian information criterion (BIC), the dimension of the models as well as the log marginal likelihood under the selected prior distribution. 
 
 > there is no BIC and dimension of the models in your summary table
 
-> explain Bayes factor and logmarg. How do we interpret them? How can we obtain insights? 
+The summary provides a list of the top 5 models (in terms of posterior probability) with the zero-one indicators for variable inclusion. The other columns in the summary are the Bayes factor of each model to the highest probability model (hence its Bayes factor is 1), the posterior probabilities of the models, the ordinary $R^2$ of the models, the dimension of the models (number of coefficients including the intercept) and the log marginal likelihood under the selected prior distribution. 
 
+Bayes Factor is a measure of the relative evidence for two competing models, typically referred to as Model 1 ($M_1$) and Model 2 ($M_2$). It quantifies how much more or less likely the data are under one model compared to the other. If $BF(M_1,M_2) > 1$: It suggests that Model 1 is more supported by the data than Model 2. If $BF(M_1,M_2) < 1$: It suggests that Model 2 is more supported by the data than Model 1.
 
 The `image` function help to visualize the potential model candidates, which looks like a crossword puzzle:
 
@@ -166,10 +167,7 @@ This plot agrees with the summary table we obtained above, which shows that the 
 confint(coef.model)
 plot(confint(coef.model),estimator = "HPM") 
 ```
-
-> You can comment on: xx does not have significant effect on BMI (CI include 0). xx significant positive effect. .. negative effect. etc. 
-
-> explain the options for estimator
+We see that URXCOP does not have significant effect on BMI since the credible interval include 0. URXUCR and URXMEP have strong positive effects on BMI since the credible interval is entirely positive, whereas URXHIBP and URXCNP have negative effects on BMI since the credible interval is negative. `HPM` stands for the highest probability model. Other choices of estimator include MPM (the median probability model of Berbieri and Berger), BPM (best predictive model) and BMA.
 
 ## Model Diagnostics
 
@@ -186,17 +184,12 @@ diagnostics(model, type = "pip", pch = 16)
 
 ## Model Predictions of BMA
 
-`BAS` has methods defined to return fitted values, namely `fitted`, using the observed design matrix and predictions at either the observed data or potentially new values, predict, as with linear regressions
-
-> `predict` provides model fitting and prediction. explain what does each output represent: fit, Ybma, Ypred, xxx
-
-> `fitted` produce the fitted values, which is equvalent to predict()$fit
+`BAS` has methods defined to return fitted values, namely `fitted`, using the observed design matrix and predictions at either the observed data or potentially new values, predict, as with linear regressions. `predict` provides model fitting and prediction. `fitted` produce the fitted values, which is equvalent to predict()$fit
 
 
 ```{r}
 BMA <- predict(model, estimator = "BMA")
 # predict has additional slots for fitted values under BMA, predictions under each model
-names(BMA)
 BMA_fitted <- fitted(model, estimator = "BMA")
 all(BMA_fitted==BMA$fit)
 ```
@@ -328,7 +321,7 @@ Comparing this model output with the previous model output under the ZS-null pri
 
 ### Model Misspecification
 
--   BMA is relatively robust to model misspecification. If one does select a single model, then one had better be sure of being correct. With BMA, a range of rival models contribute to estimates and predictions, and chances are that one of the models in the set is at least approximately correct.
+BMA is relatively robust to model misspecification. If one does select a single model, then one had better be sure of being correct. With BMA, a range of rival models contribute to estimates and predictions, and chances are that one of the models in the set is at least approximately correct.
 
 ### References
 
