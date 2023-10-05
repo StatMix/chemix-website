@@ -227,7 +227,7 @@ As we see the possibility of violation of normality assumptions in diagnostic te
 - Homoscedasticity: Log transformations can stabilize the variance of the data. When the variance of the response variable is not constant across different levels of predictors (heteroscedasticity), it can lead to problems in regression analysis. Log-transforming the response can help equalize variances, resulting in more consistent residuals and better model fit.
 - Outlier Handling: Log transformations can reduce the impact of extreme outliers, which can disproportionately influence model estimates and predictions. By compressing the range of extreme values, log transformations can make the data less sensitive to outliers.
 
-Interpretation for model coefficients: For each one year unit increase in the age, we expect the BMI to increase by $e^0.0008693$ or 1.00087.
+Interpretation for model coefficients: For each one year unit increase in the age, we expect the BMI to increase by a factor of $e^{0.0008693}$ or 1.00087.
 
 ## Model Diagonostics and Evaluations
 

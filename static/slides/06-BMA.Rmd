@@ -132,9 +132,7 @@ summary(model)
 ```
 
 
-`summary()` provides summary statistics and lists the top 5 models (in a descending order of posterior probability) with the zero-one indicators for variable inclusion. The first column presents posterior probability of inclusion (PIP) for each variable. Here we see that the `URXMEP` is included in every single model (inclusion probability equal to 1), thus deemed to be important by the BMA model. `URXUCR `, `URXCNP`, `URXECP`, `URXHIBP`, `URXMBP`, `URXMHBP`, `URXMHH` has pip greater than or roughly equal to 0.9, suggesting strong correlations with BMI. On the other hand, the inclusion probability of `URXMC1` variable is only 0.06, therefore deemed to be a weak predictor of BMI by the BMA model. The other column represents a binary outcome of whether the model includes the variable or not. The other rows in the summary table are the Bayes factor of each model to the highest probability model (hence its Bayes factor is 1), the posterior probabilities of the models (represented by `PostProbs`), the ordinary $R^2$ of the models, the Bayesian information criterion (BIC), the dimension of the models as well as the log marginal likelihood under the selected prior distribution. 
-
-> there is no BIC and dimension of the models in your summary table
+`summary()` provides summary statistics and lists the top 5 models (in a descending order of posterior probability) with the zero-one indicators for variable inclusion. The first column presents posterior probability of inclusion (PIP) for each variable. Here we see that the `URXMEP` is included in every single model (inclusion probability equal to 1), thus deemed to be important by the BMA model. `URXUCR `, `URXCNP`, `URXECP`, `URXHIBP`, `URXMBP`, `URXMHBP`, `URXMHH` has pip greater than or roughly equal to 0.9, suggesting strong correlations with BMI. On the other hand, the inclusion probability of `URXMC1` variable is only 0.06, therefore deemed to be a weak predictor of BMI by the BMA model. The other column represents a binary outcome of whether the model includes the variable or not. The other rows in the summary table are the Bayes factor of each model to the highest probability model (hence its Bayes factor is 1), the posterior probabilities of the models (represented by `PostProbs`), the ordinary $R^2$ of the models, the dimension of the models as well as the log marginal likelihood under the selected prior distribution which are measurements to evaluate performance of the model.
 
 The summary provides a list of the top 5 models (in terms of posterior probability) with the zero-one indicators for variable inclusion. The other columns in the summary are the Bayes factor of each model to the highest probability model (hence its Bayes factor is 1), the posterior probabilities of the models, the ordinary $R^2$ of the models, the dimension of the models (number of coefficients including the intercept) and the log marginal likelihood under the selected prior distribution. 
 
@@ -157,9 +155,7 @@ coef.model <- coef(model)
 par(mfrow=c(2,2))
 plot(coef.model, ask = F)
 ```
-> what does the sticks here represent? It will be confusing for people who first see these plots! Check 4.1 of that application paper.
-
-This plot agrees with the summary table we obtained above, which shows that the posterior probability distributions of `URXMC1` and `URXCOP` have a very large point mass at 0, while the distribution of `URXUCR` and `URXMEP` have relatively small mass at 0. There is a slighly little tip at 0 for the variable `URXUCR`, indicating that the posterior inclusion probability of `URXECP` is not exactly 1. However, since the probability mass for `URXUCR` to be 0 is so small, that we are almost certain that `URXECP` should be included under Bayesian model averaging.
+This plot agrees with the summary table we obtained above, which shows that the posterior probability distributions of `URXMC1` and `URXCOP` have a very large point mass at 0, while the distribution of `URXUCR` and `URXMEP` have relatively small mass at 0. There is a slighly little tip at 0 for the variable `URXUCR`, indicating that the posterior inclusion probability of `URXECP` is not exactly 1. However, since the probability mass for `URXUCR` to be 0 is so small, that we are almost certain that `URXECP` should be included under Bayesian model averaging. The sticks here represent the inclusion probabilities; if not present, then the BMA model suggests that we should not include the variable.
 
 `confint` provides the credible interval of coefficients, which can be visualized using `plot`.
 
@@ -167,7 +163,7 @@ This plot agrees with the summary table we obtained above, which shows that the 
 confint(coef.model)
 plot(confint(coef.model),estimator = "HPM") 
 ```
-We see that URXCOP does not have significant effect on BMI since the credible interval include 0. URXUCR and URXMEP have strong positive effects on BMI since the credible interval is entirely positive, whereas URXHIBP and URXCNP have negative effects on BMI since the credible interval is negative. `HPM` stands for the highest probability model. Other choices of estimator include MPM (the median probability model of Berbieri and Berger), BPM (best predictive model) and BMA.
+We see that URXCOP does not have significant effect on BMI since the credible interval include 0. URXUCR and URXMEP have strong positive effects on BMI since the credible interval is entirely positive, whereas URXHIBP and URXCNP have negative effects on BMI since the credible interval is negative. `HPM` stands for the highest probability model. Other choices of estimator include MPM (the median probability model of Berbieri and Berger), BPM (best predictive model) and BMA. Beta stands for the posterior mean.
 
 ## Model Diagnostics
 
@@ -179,7 +175,6 @@ plot(model, ask = F)
 ```{r}
 diagnostics(model, type = "pip", pch = 16) 
 ```
-
 
 
 ## Model Predictions of BMA
@@ -197,11 +192,17 @@ all(BMA_fitted==BMA$fit)
 
 ## Model Predictions with Model Selection
 
-> Can you organize this section as what you did in Prior Selection section? List all possible options, and explain each option. Then provide recommendation and comparison (pros and cons) for each choice. Can you use ggplot2 to visualize CI from all the model together so to provide a clear comparison.
-
 In addition to using BMA, we can use the posterior means under model selection. This corresponds to a decision rule that combines estimation and selection. `BAS` currently implements the following options:
 
 ### Highest Probability Model
+
+Pros:
+- Simplicity: HPM is straightforward to understand and implement. It selects the model with the highest posterior probability.
+- Interpretable: The HPM is easy to interpret because it directly represents the most probable model.
+
+Cons:
+- Overfitting: HPM can be prone to overfitting because it chooses the model that fits the data best, even if it's overly complex.
+- Ignores model uncertainty: It doesn't consider the uncertainty associated with other models, potentially leading to suboptimal decisions when multiple models are equally plausible.
 
 ```{r}
 HPM <- predict(model, estimator = "HPM")
@@ -223,13 +224,30 @@ MPM <- predict(model, estimator = "MPM")
 variable.names(MPM)
 ```
 
+
 This is the model where all predictors have an inclusion probability greater than or equal to 0.5. This coincides with the HPM if the predictors are all mutually orthogonal, and in this case is the best predictive model under squared error loss.
+
+Pros:
+- Reduces sensitivity to outliers: MPM is less affected by extreme probabilities, making it more robust in cases where a single model has an unusually high or low probability.
+- Balances between overfitting and underfitting: It often results in a model that strikes a balance between overfitting and underfitting, as it considers the entire distribution of model probabilities.
+
+Cons:
+- Complexity: Finding the MPM involves calculating the median over the model probabilities, which can be computationally intensive or challenging for complex models.
+- May not align with predictive performance: While it reduces sensitivity to outliers, the MPM may not necessarily provide the best predictive performance.
 
 Note that we can also extract the best model from the attribute in the fitted values as well.
 
 ### Best Predictive Model
 
 In general, the HPM or MPM are not the best predictive models, which from a Bayesian decision theory perspective would be the model that is closest to BMA predictions under squared error loss.
+
+Pros:
+- Emphasizes predictive accuracy: BPM selects the model that gives the best predictive performance on average, making it a suitable choice when the ultimate goal is to make accurate predictions.
+- Accounts for model uncertainty: It considers the predictive performance of all models, providing a more robust and uncertainty-aware approach.
+
+Cons:
+- Complexity: Implementing BPM can be computationally intensive, as it requires estimating predictive performance for each model in the set.
+May not be as interpretable: The selected BPM might not be as easy to interpret as the HPM.
 
 ```{r}
 BPM <- predict(model, estimator = "BPM")
@@ -284,7 +302,29 @@ Different prior distributions on the regression coefficients may be specified us
 - "EB-local", use the MLE of g from the marginal likelihood within each model
 - "EB-global" uses an EM algorithm to find a common or global estimate of g, averaged over all models. When it is not possible to enumerate all models, the EM algorithm uses only the models sampled under EB-local.
 
-> Can you find provide some recommendations for different priors under different situations? Can you find some resources talking about pros and cons for different priors? The description you provided is very clear to statiscians, but may hard for people who have little knowledge on Bayesian statistics. They need a guidance 
+Here are some recommendations for different priors under different situations, as well as pros and cons for different priors:
+
+BIC:
+- Use Case: BIC is often used for model selection in frequentist statistics. It penalizes model complexity and is appropriate when you want to balance model fit with model complexity.
+- Pros: It is simple to compute and tends to select more parsimonious models.
+- Cons: BIC may not perform well when the true model is not among the candidates, and it assumes that models are nested.
+AIC:
+- Use Case: AIC is also used for model selection and penalizes model complexity. It is useful when you want to balance model fit with model complexity.
+- Pros: Like BIC, AIC is relatively simple to compute and can be used for a wide range of models.
+- Cons: AIC can favor more complex models when the sample size is large, and it may not always be suitable for small sample sizes.
+g-Prior (Zellner's g-prior):
+- Use Case: The g-prior is commonly used when you want to specify a prior on the regression coefficients that balances between an uninformative prior (large 'g') and a more informative prior (small 'g').
+- Pros: It allows you to control the strength of the prior information using the 'alpha' parameter. It provides a flexible way to incorporate prior beliefs.
+- Cons: The choice of 'alpha' can impact results, and selecting an appropriate value may require prior knowledge.
+Jeffreys-Zellner-Siow (JZS) Prior:
+- Use Case: JZS prior combines the Jeffreys prior on the error variance and the Zellner-Siow Cauchy prior on regression coefficients. It's useful when you want a default informative prior.
+- Pros: It provides a well-structured, informative prior that is robust in many situations.
+- Cons: It may not be suitable if you have strong prior knowledge that conflicts with the default prior structure.
+Empirical Bayes (EB) Priors:
+- Use Case: EB priors are used when you want to estimate the hyperparameters (like 'g') from the data itself. EB-local estimates 'g' within each model, while EB-global estimates a common 'g' across all models.
+- Pros: EB priors can adapt to the data and provide a data-driven prior.
+- Cons: They may not perform well with very limited data, and the results can be sensitive to the choice of algorithm and prior distribution for hyperparameters.
+
 
 Here we explore the model fitted under another prior, the g-prior to investigate how the prior selection affects the model output:
 
@@ -309,7 +349,6 @@ Comparing this model output with the previous model output under the ZS-null pri
 
 ## Why Bayesian Model Averaging? Advantages
 
-> Probably we can summarise these point and write a conclusion similar to what Bradley has in WQS tutorial.
 
 ### Model Uncertainty
 
@@ -321,7 +360,7 @@ Comparing this model output with the previous model output under the ZS-null pri
 
 ### Model Misspecification
 
-BMA is relatively robust to model misspecification. If one does select a single model, then one had better be sure of being correct. With BMA, a range of rival models contribute to estimates and predictions, and chances are that one of the models in the set is at least approximately correct.
+- BMA is relatively robust to model misspecification. If one does select a single model, then one had better be sure of being correct. With BMA, a range of rival models contribute to estimates and predictions, and chances are that one of the models in the set is at least approximately correct.
 
 ### References
 
