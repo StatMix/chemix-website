@@ -104,7 +104,10 @@ We also plot the distributions of our variables of interest involved in the mode
 
 As shown in the formula above, BMA addresses model uncertainty in a regression problem, and here we consider $M_k$ to be a linear regression. Suppose a linear model structure, with $y$ being the dependent variable, $\alpha_\gamma$, an intercept, $\beta_\gamma$ the coefficients, and $\epsilon$ a normal IID error term with variance $\sigma^2$:
 $$y=\alpha_\gamma+X_\gamma \beta_\gamma+\epsilon \hspace{1cm}\epsilon \sim N(0, \sigma^2I)$$
-> Explain what is gamma. what is inclusion probability here.
+
+The value of $\gamma$ determines how much weight or importance is assigned to each individual model in the model set when combining their predictions or estimating parameters.
+When γ = 0: No model averaging takes place. In this case, only the "best" model (the one with the highest posterior probability) is used for estimation or prediction.
+When γ = 1: Complete model averaging is performed. All models in the model set are given equal weight, and their predictions or parameter estimates are combined.
 
 
 We perform log transformation to all the variables since the EDA suggests the long tail and extreme values in the original scale. We fit a BMA model on the dataset using BMI as the response variable, and all of the 10 URX variables as predictor variables. 
