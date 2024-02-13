@@ -9,3 +9,202 @@ output:
     toc_float: true
 ---
 
+## qgcomp Package
+
+```{r}
+#| message: false
+
+#| install.packages("gWQS")
+#| install.packages("qgcomp")
+#| install.packages("ggcorrplot")
+
+library(gWQS)
+library(tidyverse)
+library(tidymodels)
+library(dplyr)
+library(ggcorrplot)
+library(splines)
+```
+
+```{r}
+load(file='nhanes1518.rda')
+head(nhanes1518)
+```
+
+```{r}
+nhanes <- nhanes1518 |>
+    filter(RIDAGEYR >= 18)|>
+    mutate(BMXBMIlog = log(BMXBMI),
+          RIDAGEYR = RIDAGEYR - 18)|>
+    select(BMXBMI, BMXBMIlog, URXMHBP, URXMOH, URXMHP, URXMHH, URXMCOH, URXMHNC, URXMHH, URXECP, URXHIBP, URXMIB, RIDAGEYR)
+
+nhanes <- drop_na(nhanes)
+
+nhanes
+```
+
+An additional method used to study the effects of highly correlated exposures on an outcome is the `qgcomp` package. This method follows similar procedures and assumptions of `gWQS`; however, the computation can be more efficient and it can also work with non-linear data. Although the `gWQS` package is more widely used, the `qgcomp` package can provide a structured approach to using variables that do not follow a linear pattern. All other assumptions are similar to this tutorial and a link is included below for further exploration.
+
+The qgcomp method shares similarities to gWQS, but there are several key distinctions. Primarily, an essential assumption from the WQS model was that all predictor variables must contribute to the same direction. However, qgcomp can fit a model regardless of the contributing direction of the variables. Similarly, qgcomp uses quantiles by default (0,1,2,3) and transforms the data.
+
+Similar to WQS, qgcomp is similar to a standard regression model:
+
+$$\mathbb{E}(Y^{\mathbf{X}_q} | \mathbf{Z,\psi,\eta}) = g(\psi_0 + \psi_1 S_q + \mathbf{\eta Z})$$
+
+In the model above, $\psi_0$ represents the intercept while $S_q$ is the combined effect of the exposures (predictor variables). $\mathbf{\eta Z$ is the error term, demonstrating the uncertainty in the model. Lastly, $\mathbf{X}_q$ is the transformation of of the X variable that has been sorted into quantiles.
+
+## Linear Models
+
+```{r}
+library("qgcomp")
+```
+
+Predicting log(BMI) using the same URX from the gWQS package, a similar result can be accomplished in a shorter timeframe.
+
+```{r}
+chem_names_new <- c('URXMHBP', 'URXMOH',  'URXMHP',  'URXMHH',  'URXMCOH', 'URXMHNC', 'URXECP', 'URXHIBP', 'URXMIB')
+system.time(qc.fit <- qgcomp.noboot(BMXBMIlog~.,dat=nhanes[,c(chem_names_new, 'BMXBMIlog')], family=gaussian()))
+```
+
+The output of the linear model is demonstrated below:
+
+```{r}
+qc.fit
+```
+
+Similar to gWQS, a regression model output is provided which follows the same interpretation as above. The coefficients, standard errors, confidence intervals, t-statistics, and p-values are provided.
+
+The Regression output:
+
+$$ \widehat{log(\text{BMXBMI})} = 3.319 + 0.019 \times (WQS) $$ As demonstrated above, the standard linear output is very similar to that of the WQS model. Although the coefficients vary slightly (WQS slope: 0.015, WQS intercept: 3.318), both methods produce a similar result.
+
+Another useful application of `qgcomp` is to find the effect of mixtures on binary variables (variables that can be represented by 1's "Yes" or 0's "No"). In this example, we want to predict whether a participant is above the average BMI based on the chemical mixtures used in the previous example. We can create a binary variable corresponding for a participant that is greater than the average BMI (represented with 1) or below the average BMI (represented with 0).
+
+The following code can automate this process.
+
+```{r}
+nhanes <- nhanes |>
+      mutate(BMXBMIOVER = ifelse(BMXBMI >= 24.9,1,0))
+```
+
+Now that the BMIOVER variable is now in terms of 1's and 0's, we can use `qgcomp` to predict if a participant is over the average BMI using the chemical mixtures.
+
+```{r}
+chem_names_new <- c('URXMHBP', 'URXMOH',  'URXMHP',  'URXMHH',  'URXMCOH', 'URXMHNC', 'URXECP', 'URXHIBP', 'URXMIB')
+qc.fit2 <- qgcomp.noboot(BMXBMIOVER~.,dat=nhanes[,c(chem_names_new, 'BMXBMIOVER')], family=binomial())
+
+qc.fit2
+```
+
+We can interpret both the intercept intercepts and coefficient for the models:
+
+As the quantile sum increases by 1, an individual's BMI being over vs. under the national average decrease by approximately 1.26%.
+
+The expected BMI of an individual that is under the national average is approximately:
+
+## Non-Linear Models
+
+However, unlike `gWQS`, `qgcomp` can deal with non-linearity, where the relationship between the response and predictors do not follow a linear pattern. In the following example, the same predictor variables are transformed and squared in order to reflect a non-linear relationship.
+
+```{r}
+qcboot.fit5 <- qgcomp(BMXBMIlog~. + .^2,
+                         expnms=chem_names_new,
+                         nhanes[,c(chem_names_new, 'BMXBMIlog')], family=gaussian(), q=4, degree=2, B=5, seed=125)
+```
+
+```{r}
+qcboot.fit5
+```
+
+Although this model provides a result, it is difficult when there are numerous chemical mixtures as predictors. However, we can narrow down the variables by examining a correlation matrix. It is possible that exposures that are highly correlated with each other may have an underlying similarities, "a common environmental source or set of behaviors."
+
+By viewing the following correlation matrix of the urine samples:
+
+```{r}
+nhanescor <- nhanes|> select(BMXBMIlog, URXMHBP, URXMOH, URXMHP, URXMHH, URXMCOH, URXMHNC, URXMHH, URXECP, URXHIBP, URXMIB, RIDAGEYR)
+
+cor_hanes <- cor(nhanescor)
+
+ggcorrplot(cor_hanes)+
+  labs(title = "Corrleation of URX Variables and BMI")
+```
+
+From the above plot, we can see that several variables are highly correlated with each other. For this example, we will use the URXMHNC, URXMCOH, and URXMOH variables.
+
+To find the best fit for the data, three separate models will be used: a standard linear model, a non-linear model, and an interaction model. To compute the models, a new package called Splines will be used. Since we will be using non-linear models, Splines uses a "piecewise" method to for estimation (as shown below):
+
+![Splines Example](1200px-Parametic_Cubic_Spline.svg.png){width="317"}
+
+For more information about the Splines package, please visit LINK.
+
+```{r, cache=TRUE}
+correlated_chems <- c('URXMHNC', 'URXMCOH',  'URXMOH')
+
+
+
+qc.fit6lin <- qgcomp.glm.boot(BMXBMIlog ~ URXMHNC + URXMCOH  + URXMOH + URXMHP + URXMHBP + URXMHP + URXMHH + URXMHH + URXECP + URXHIBP + URXMIB,
+                         expnms=correlated_chems,
+                         nhanes, family=gaussian(), q=4, B=5)
+
+
+qc.fit6nonlin <- qgcomp.glm.boot(BMXBMIlog ~ bs(URXMHNC) + bs(URXMCOH) + bs(URXMOH)+ URXMHP + URXMHBP + URXMHP + URXMHH + URXMHH + URXECP + URXHIBP + URXMIB,
+                         expnms=correlated_chems,
+                         nhanes, family=gaussian(), q=4, B=5, degree=2)
+```
+
+## Covariates
+
+A similarity to Weighted Quantile Sum Regression is the ability to adjust for covariates. As demonstrated in the WQS tutorial, we are interested if our model does a better job of predicting BMI while adjusting for the age variable, RIDAGEYR.
+
+```{r}
+
+covars = c('RIDAGEYR')
+
+qcboot.fit5 <- qgcomp.noboot(BMXBMIlog~.,dat=nhanes[,c(chem_names_new,covars, 'BMXBMIlog')], family=gaussian())
+
+qcboot.fit5
+```
+
+In order to determine if the model with the age covariate is better than our original model, we can once again compare the AIC:
+
+```{r}
+#AIC For First Model
+AIC(qc.fit)
+#AIC For Covariate Model
+AIC(qcboot.fit5)
+
+```
+
+The second model, with age added as a covariate, has a lower AIC. This allows us to conclude that BMI can be better predicted with age included in the model.
+
+Unlike WQS, the qgccomp package allows the variables to contribute in different directions, as demonstrated with the "weights." Instead of unidirectional relationships, a weight is assigned to the individual chemical exposure correpoding to "the proportion of the overall effect when all of the exposures have effects in the same direction" (CRAN). The weights are shown in the figure below:
+
+```{r}
+plot(qcboot.fit5)
+```
+
+An interesting output of the `qgcomp` model is the sum of the positive and negative coefficients. In application, this appears to equate to a "partial effect," the impact of a chemical with a positive/negative coefficient. However, it cannot be interpreted as a "true partial effect" due to the fact that the sum of the coefficients depends on the model results/fit.
+
+In order to estimate the partial effects without the issues discussed above, a sample splitting procedure can be used by creating training and validation dataset. More information on how to complete this procedure can be found on the CRAN website (LINK).
+
+## Missing Data, Limits of Detection, and Multiple Imputation
+
+It is often that datum may include missing entries, possibly causing concern for conclusions. Similar to linear regression, there are methods to handle these situations.
+
+Primarily, a complete case analysis is often used for creating models. This means that all data entries have complete information, those with NA's are removed entirely. Unlike other regression packages, qgcomp package requires the researcher to make their own dataset with the function complete.cases.
+
+Additionally, missing data can become problematic when chemical exposures fall below the limit of detection. One method to correct this issue is to use very small values for the missing entries. As a general rule for qgcomp, if the proportion of the number of entries (below the limit of detection) are less than 1/(q), where q is the number of quantiles used, small values may be utilized.
+
+Lastly, missing data can be handled by a method called multiple imputation. This procedure replaces entries without data with "specific values" so that all participants can be included in the study (those with missing data do not have to be excluded entirely). Similar to above, a new dataset can be created using multiple imputation. Suggested packages include mice, with the function mice.impute.leftcenslognorm for best interface results with qgcomp.
+
+## Miscellaneous
+
+An additional feature of `qgcomp` is the use of time-to-event data analysis. This method helps predict whether and when an event happened. Standard linear models are unable to compute this metric, but it can be helpful in medical applications.
+
+The `qgcomp` package also has the capabilities to compute models despite the data having covariance among observations (the error term is not independent for individual observations). To compensate for this issue, cluster-based sampling and bootstrapping can be used through `qgcomp.glm.boot`.
+
+To read more about how to complete these steps and for additional applications of the qqgcomp model, visit the following website: <https://cran.r-project.org/web/packages/qgcomp/vignettes/qgcomp-vignette.html>
+
+## References
+
+
