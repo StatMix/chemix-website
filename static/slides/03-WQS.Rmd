@@ -221,7 +221,7 @@ predict(results, newdata = new_data)
 
 Using our model, the predicted log(BMI) is 3.39. This method is essential for extrapolating results, an important aspect of regression models. 
 
-## Model Dignostics 
+## Model Diagnostics 
 
 We check the assumption that all the chemical exposures contribute in the same direction using our expertise. 
 

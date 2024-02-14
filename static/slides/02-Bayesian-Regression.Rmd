@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE,
 
 ## Topics 
 
-- Get a brief introduction to Bayesian statistics and understand how it differs from the frequentist point of view. 
+- Get a brief introduction to Bayesian statistics and understand how it differs from the frequentists' point of view. 
 - Understand how to select prior for parameters, evaluate model, and compare different model in a Bayesian framework.
 - Understand how to create a Bayesian simple linear regression model with the `brms` package using different priors. 
 - Understand how to create a Bayesian multivariate linear regression model with the `brms` package using different priors.
@@ -50,7 +50,7 @@ load(file = 'nhanes1518.rda')
 
 There are two schools of thought in the world of statistics: frequentist, which we have been working with up to this point, and Bayesian. In the frequentist school, probability is defined as a frequency. For example, if we roll a fair six-sided die, the probability we will roll a 1 is $P(Y = 1) = \frac{1}{6}$. The conclusions we make in frequentist statistics are based on likelihood; we retrieve data and then make an inference based on the data.
 
-In the Bayesian school, probability is defined as a belief. For example, a Bayesian statement could be "I believe the probability that it rains tomorrow is 30%." Different people obviously have different beliefs, so another statistician stating "I believe the probability that it rains tomorrow is 40%" is just as valid. Like frequentist statistics, our conclusions rely on likelihood. However, unlike frequentist statistics, our conclusions combine the likelihood with another factor: our prior knowledge. When we collect data, we then combine our prior knowledge and our likelihood to *update* our prior knowledge. For simplicity, we can simply refer to our prior knowledge that we wish to update as the **prior**. After we see our data,  we combine our likelihood with our prior to create the **posterior**.
+In the Bayesian school, probability is defined as a belief. For example, a Bayesian statement could be "I believe the probability that it rains tomorrow is 30%." Different people obviously have different beliefs, so another statistician stating "I believe the probability that it rains tomorrow is 40%" could be just as valid. Like frequentist statistics, our conclusions rely on likelihood. However, unlike frequentist statistics, our conclusions combine the likelihood with another factor: our prior knowledge. When we collect data, we then combine our prior knowledge and our likelihood to *update* our prior knowledge. For simplicity, we can simply refer to our prior knowledge that we wish to update as the **prior**. After we see our data,  we combine our likelihood with our prior to create the **posterior**.
 
 It is important to understand that different statisticians can have different priors for the same data. For example, a statistician who lives in the desert may believe that the probability that it rains tomorrow is 5%. However, if they move to the rainforest, their belief on future rain chances will change dramatically. This example analogizes how we combine our prior knowledge (living in the desert leads to a low chance for rain) with our data (the amount of rain after we move to the rainforest) to obtain our posterior (living in the rainforest leads to a high chance for rain). 
 
@@ -60,7 +60,7 @@ But how exactly do we get from the prior and the likelihood to the posterior?
 
 ### Bayes' Rule
 
-The fundamental concept of Bayesian statistics is the fittingly-named **Bayes' rule**. Given a **likelihood function** $p(y | \theta)$ and a prior $p(\theta)$, the posterior $p(\theta | y)$ stated by Bayes' rule is $p(\theta | y) = \frac{p(y | \theta)p(\theta)}{p(y)}$.  $p(y)$ is the **marginal likelihood**, which we can get by integrating out the $theta$ from the likelihood function:
+The fundamental concept of Bayesian statistics is the fittingly-named **Bayes' rule**. Given a **likelihood function** $p(y | \theta)$ and a prior $p(\theta)$, the posterior $p(\theta | y)$ stated by Bayes' rule is $p(\theta | y) = \frac{p(y | \theta)p(\theta)}{p(y)}$.  $p(y)$ is the **marginal likelihood**, which we can get by integrating out the $\theta$ from the likelihood function:
 
 $$
 p(y) = \int p(y|\theta)p(\theta)d\theta
@@ -74,7 +74,7 @@ $$
 
 We can see that the posterior mean (the first parameter of the normal distribution above) is a weighted sum of the prior mean $\mu_0$ and the sample mean $\bar{y}$. This helps illustrate how the Bayes' rule combines the information from our data and from our prior in order to form the posterior. 
 
-This is a rather simple example, since the function for $p(y)$ ends up being a closed-form expression and we are working with common distributions. Particularly, this example makes use of a **conjugate prior**: this occurs when the prior, likelihood, and posterior all follow the same probability distribution. In this case, the prior and likelihood both came from a Normal distribution, and the posterior also ended up being normally distributed. Statisticians usually prefer using conjugate priors as it makes computation much simpler. However, conjugate priors may not be available or well-suited for every scenario. Under other priors, we may not be able to obtain a closed-form expression for $p(y)$. In these situations where performing calculations proves to be extremely complex, we will not be able to apply the Bayes' rule in order to retrieve the posterior. We would then have to use other sampling schemes--for example, **Markov Chain Monte Carlo**, which will be touched on later--in order to obtain the samples that follow the posterior distribution. 
+This is a rather simple example, since the function for $p(y)$ ends up being a closed-form expression and we are working with common distributions. Particularly, this example makes use of a **conjugate prior**: this occurs when the prior and posterior all follow the same probability distribution. In this case, the prior and likelihood both came from a Normal distribution, and the posterior also ended up being normally distributed. Statisticians often prefer using conjugate priors as it makes computation much simpler. However, conjugate priors may not be available or well-suited for every scenario. Under other priors, we may not be able to obtain a closed-form expression for $p(y)$. In these situations where performing calculations proves to be extremely complex, we will not be able to apply the Bayes' rule in order to retrieve the posterior. We would then have to use other sampling schemes--for example, **Markov chain Monte Carlo**, which will be touched on later--in order to obtain the samples that follow the posterior distribution. 
 
 ### Posteriors & Inference
 
@@ -114,7 +114,7 @@ It is important that these assumptions are not violated to preserve the validity
 
 As discussed earlier, we perform simple linear regression when we want to explore the relationship between one explanatory variable and one response variable. For example, we might want to better understand the relationship between body mass index and age for a variety of reasons--perhaps we want to know if different age groups are more prone to obesity. We can help answer this question with a simple linear regression model using the `nhanes` dataset. 
 
-For this linear model, we want to predict body mass index based on age; therefore, we will use `BMXBMI` as our response variable and `RIDAGEYR` as our explanatory variable. We will limit our analysis to adults. We center the age at 18 years to facilitate the interpretation of intercept.
+For this linear model, we want to predict body mass index based on age; therefore, we will use `BMXBMI` as our response variable and `RIDAGEYR` as our explanatory variable. We will limit our analysis to adults. We center the age at 18 years to facilitate the interpretation of intercept as the mean BMI value for 18 year olds.
 
 ```{r filter-to-adults}
 nhanes1518 <- nhanes1518 %>% 
@@ -124,7 +124,7 @@ nhanes1518 <- nhanes1518 %>%
 
 ### Model
 
-We will use the `brms` library to create our Bayesian model. An important part of creating a Bayesian regression model is establishing our priors for the parameters. Based on our prior knowledge of the data, there is a variety of priors we can set (and thus a variety of models we can create). Later, we will discuss strategies for selecting model priors. For now, we will assume that we have no prior knowledge of the dataset, using a noninformative prior (the default prior in `brms`: heavy-tail t-distribution with a degree of freedom df = 3, mean and sd adjusted based on data). We can use the `brm` function to create our model. The `formula` argument of this function follows the format `y ~ x`, with `y` being the response variable and `x` being the explanatory variable. We will save our model in a variable named `model1`.
+We will use the `brms` library to fit our Bayesian model. An important part of creating a Bayesian regression model is establishing our priors for the parameters. Based on our prior knowledge of the data, there is a variety of priors we can set (and thus a variety of models we can create). Later, we will discuss strategies for selecting model priors. For now, we will assume that we have no prior knowledge of the dataset, using a noninformative prior (the default prior in `brms`: heavy-tail t-distribution with a degree of freedom df = 3, mean and sd adjusted based on data). We can use the `brm` function to specify our model. The `formula` argument of this function follows the format `y ~ x`, with `y` being the response variable and `x` being the explanatory variable. We will save our model in a variable named `model1`.
 
 ```{r noninformative, echo = T, results = 'hide', warning = F, message = F}
 model1 <- brm(formula = BMXBMI ~ RIDAGEYR, 
@@ -146,17 +146,17 @@ mcmc_dens(model1, pars = c("b_Intercept", "b_RIDAGEYR"))
 summary(model1, priors = TRUE)
 ```
 
-Similar to frequentists, we have point estimates for $\beta_{Intercept}$ and $\beta_{Age}$ that we are interested in. These are the means of the posterior distributions we plotted with the `mcmc_dens` function. The estimates can be found in the `Intercept` and `BMXBMI` rows of the `summary` output. These tell us that our estimate for the intercept is 28.98, and the estimate for our slope is 0.02. With these statistics, let's now fill in our model:
+Similar to frequentists, we have point estimates for $\beta_{Intercept}$ and $\beta_{Age}$ that we are interested in. These are the means of the posterior distributions we plotted with the `mcmc_dens` function. The estimates can be found in the `Intercept` and `BMXBMI` rows of the `summary` output. These tell us that point estimate for the intercept is 28.98, and the point estimate for our slope is 0.02. With these statistics, let's now fill in our model:
 
 $$\hat{BMI} = 28.98 + 0.02(Age)$$
 
-We can interpret the estimate of the slope to mean that for every 1 year increase in age, we expect BMI to increase by 0.02 on average. For a person at age 18, his/her BMI is expected to be 28.98.
+We can interpret the estimate of the slope to mean that we expect those who are 1 year older to have BMI 0.02 kg/m^2 higher, on average. For a person at age 18, his/her BMI is expected to be 28.98.
 
 ### Inference
 
-We are also interested in the `l-95% CI` and `u-95% CI` columns of the `summary` output. These estimates are obtained from the credible intervals of the posterior distributions we plotted with `mcmc_dens`. We can thus state that there is a 95% chance that the true value for the intercept lies between 28.28 and 29.04, and there is a 95% chance that the true value for $\beta_{Age}$ lies between 0.01 and 0.03. 
+We are also interested in the `l-95% CI` and `u-95% CI` columns of the `summary` output. These estimates are obtained from the credible intervals of the posterior distributions we plotted with `mcmc_dens`. We can thus state that there is a 95% chance that the average BMI for an individual at age 18 lies between 28.28 and 29.04. We have high confidence in the result that BMI tends to be higher for those who are older . 
 
-Now that we have a credible interval for our slope, we might want to conclude whether there is a statistically significant relationship between BMI and age To do so, we can examine whether or not $\hat{\beta_{Age}}$ is statistically different from 0. Our **null hypothesis** in this case is that the slope is equal to 0, while our **alternative hypothesis** is that the slope is not equal to 0 (which implies a linear relationship between BMI and age). We can answer this question with our credible interval. Since the interval for `RIDAGEYR` does not include 0, we can reject our null hypothesis and conclude that there is likely a linear relationship between age and body mass index (although it appears to be very small).
+Now that we have a credible interval for our slope, we might want to conclude whether there is a statistically significant relationship between BMI and age. To do so, we can examine whether or not $\hat{\beta_{Age}}$ is statistically different from 0. Our **null hypothesis** in this case is that the slope is equal to 0, while our **alternative hypothesis** is that the slope is not equal to 0 (which implies a linear relationship between BMI and age). We can answer this question with our credible interval. Since the interval for `RIDAGEYR` does not include 0, we can reject our null hypothesis and conclude that there is likely a linear relationship between age and body mass index (although it appears to be very small).
 
 ### Prediction
 
@@ -181,7 +181,7 @@ Our prediction interval estimates that a 18-year-old individual likely has a BMI
 
 ### Motivation
 
-Now that we've tackled simple linear regression, let's learn how to do **multivariate linear regression** the Bayesian way. We do multivariate regression when we want to know how one variable is impacted by multiple other variables. We can also use this method when we want to control for some variable. For example, in our `nhanes` dataset, we might want to know how factors like age, waist size, weight, and height impact BMI; we might also want to know how waist size, weight, and height impact BMI if we control for age. To help answer these questions, we can fit a model with `BMXBMI` as the response and `RIDAGEYR`, `BMXWAIST`, `BMXWT`, and `BMXHT` as the predictors.
+Now that we've tackled simple linear regression, let's learn how to do **multivariate linear regression** the Bayesian way. We do multivariate regression when we want to know how one variable is impacted by multiple other variables. We can also use this method when we want to control for some variable. For example, in our `nhanes` dataset, we might want to know how factors like age, waist size, weight, and height impact BMI; we might also want to know how waist size, weight, and height impact BMI if we control for age. To help answer these questions, we can fit a model with `BMXBMI` as the response and `RIDAGEYR`, `BMXWAIST` as the predictors.
 
 ### Model
 
@@ -278,7 +278,7 @@ prior_summary(default_prior)
 
 A common prior for the coefficient (or $\beta$) in Bayesian inference deals with a **normal (Gaussian) distribution**. This is a **conjugate** prior, meaning that the posterior will also be a normal distribution, but with different parameters. This might be a good choice for our beta prior if we assume our data is normally distributed, meaning most values are situated in the middle, and there is a symmetrical decline in the frequency of values as we reach the ends.
 
-We will use the same `BMXBMI ~ RIDAGEYR` model we worked with in the single linear regression section. Let's assume the BMI values in our sample are normally distributed. We will choose a normal distribution with $\mu = 0$ and $\sigma = 0.3$ for $\beta_{Age}$. We can use the `prior` argument in the `brm` function to set our prior for $\beta$. In this argument, we set `class = "b"` and `coef = "RIDAGEYR"` to signify that this is a prior on $\beta_{Age}$.
+We will use the same `BMXBMI ~ RIDAGEYR` model we worked with in the single linear regression section. Let's assume the BMI values in our sample are normally distributed. We will choose a normal distribution with $\mu = 0$ and $\sigma = 0.3$ for $\beta_{Age}$. We can use the `prior` argument in the `brm` function to set our prior for $\beta$. In this argument, we set `class = "b"` and `coef = "RIDAGEYR"` to signify that this is a prior on $\beta_{Age}$. Notice that the parametrization in the function takes the form "normal(mean,sd)".
 
 ```{r model2, echo = T, results = 'hide', warning = F, message = F}
 model2 <- brm(formula = BMXBMI ~ RIDAGEYR, 
@@ -304,12 +304,12 @@ Now, let's use the `mcmc_intervals` function of the `bayesplot` package to compa
     point_est = "mean",
     pars = c("b_RIDAGEYR")) +
      coord_cartesian(xlim = c(-0.35, 0.1)) +
-     labs(title = TeX("Normal(0, $0.03^2$) Coefficient Prior")) +
+     labs(title = TeX("Normal(0, $0.3^2$) Coefficient Prior")) +
      theme_minimal()
    )
 ```
 
-The thick line represents a 50% confidence interval, while the thin line represents a 95% confidence interval. As we can see, both models have similar point estimates for the mean of $\beta_{Age}$, but the intervals differ in length. Our $N(0, 0.3^2)$ model has a narrower interval, likely because we supplied a prior with a small variance. This signifies how different priors can yield different posteriors.
+The thick line represents a 50% credible interval, while the thin line represents a 95% credible interval. As we can see, both models have similar point estimates for the mean of $\beta_{Age}$, but the intervals differ in length. Our $N(0, 0.3^2)$ model has a narrower interval, likely because we supplied a prior with a small variance. This signifies how different priors can yield different posteriors.
 
 Let's run another model with a normally distributed $\beta$ prior, using the same mean but inputting a much larger variance.
 
@@ -331,7 +331,7 @@ mcmc_intervals(
    theme_minimal()
 ```
 
-The results of this model more closely resemble our default model as compared to our model with the $N(0, 0.03^2)$ prior. This is because our extremely large variance means we are very unsure about the value of $\beta_{Age}$; thus, this prior is largely noninformative, similar to the default. 
+The results of this model more closely resemble our default model as compared to our model with the $N(0, 0.3^2)$ prior. This is because our extremely large variance means we are very unsure about the value of $\beta_{Age}$; thus, this prior is largely noninformative, similar to the default. 
 
 Let's recap the models we've created so far with their results:
 
@@ -350,7 +350,7 @@ Let's recap the models we've created so far with their results:
     point_est = "mean",
     pars = c("b_RIDAGEYR")) +
      coord_cartesian(xlim = c(-0.35, 0.1)) +
-     labs(title = TeX("Normal(0, $0.03^2$) Coefficient Prior")) +
+     labs(title = TeX("Normal(0, $0.3^2$) Coefficient Prior")) +
      theme_minimal()
    ) /
   (mcmc_intervals(
@@ -425,7 +425,7 @@ And now let's once again recap our models:
     point_est = "mean",
     pars = c("b_RIDAGEYR")) +
      coord_cartesian(xlim = c(-0.35, 0.1)) +
-     labs(title = TeX("Normal(0, $0.03^2$) Coefficient Prior")) +
+     labs(title = TeX("Normal(0, $0.3^2$) Coefficient Prior")) +
      theme_minimal()
    ) /
   (mcmc_intervals(
@@ -457,11 +457,11 @@ And now let's once again recap our models:
   )
 ```
 
-Upon selecting our priors and running our models, we can then use our posterior information to conduct further regression. Usually, regardless of the initial choice of prior, results will end up converging to the same posterior after many iterations. In this case, since our sample size is now very small (`n = 30`), it might be more intelligent to start with a student-t distribution for our $\beta_{Age}$ parameter.  
+Upon selecting our priors and running our models, we can then use our posterior information to conduct further regression. Usually, regardless of the initial choice of prior, results will end up converging to the same posterior after many iterations. In this case, since our sample size is now very small (`n = 30`), it might be more sensible to start with a student-t distribution for our $\beta_{Age}$ parameter, since t-distribution has a heavier tail, is more robust.
 
 ### Variance Priors: The Inverse-Gamma
 
-```{r image2, echo=FALSE}
+```{r image2, echo=FALSE,fig.cap="Inverse Gamma Distributions"}
 knitr::include_graphics("img/bayesian-regression/inv_gamma.png")
 ```
 
@@ -551,7 +551,7 @@ Notice specifically how the model with the $InvGam(3, 0.5)$ prior for the varian
 
 ### Priors for Multivariate Regression
 
-When we construct a multivariate regression model, we have more parameters for which we can set a prior. For this section, we will construct the same model as in the section on multivariate regression, with BMI as the response and age, waist size, weight, and height as the predictors. However, we will now use the `nhanes1518_sample` dataset. We first need to scale our variables.
+When we construct a multivariate regression model, we have more parameters for which we can set a prior. For this section, we will construct the same model as in the section on multivariate regression, with BMI as the response and age, waist size as the predictors. However, we will now use the `nhanes1518_sample` dataset. We first need to scale our variables.
 
 ```{r scale-data-priors}
 nhanes1518_sample['RIDAGEYR_sc'] <- scale(nhanes1518_sample$RIDAGEYR)
@@ -606,19 +606,19 @@ As we can see, the results of both models are very similar. This makes sense, as
 
 Prior selection is a pivotal step of the Bayesian process. An informative prior can help make up for a lack of available data, allowing us to still obtain a posterior from which we can make meaningful interpretations and inferences.
 
-This section goes over two common priors for both $\beta$ and $\sigma^2$ values. Using a normal distribution for $\beta$ and an inverse-gamma distribution for $\sigma^2$ can be a good choice if we believe most of our data is centered around the mean. However, Bayesian statisticians tend to use a t-distribution for $\beta$ and a Half-Cauchy distribution for $\sigma^2$ as these are insensitive to outliers. Regardless, there is no predefined "best answer" on what prior to use in any given situation; it depends on our knowledge of the information. 
+This section goes over two common priors for both $\beta$ and $\sigma^2$ values. Using a normal distribution for $\beta$ and an inverse-gamma distribution for $\sigma^2$ can be a good choice if we believe most of our data is not too far from the mean. However, Bayesian statisticians tend to use a t-distribution for $\beta$ and a Half-Cauchy distribution for $\sigma^2$ as these are insensitive to outliers. Regardless, there is no predefined "best answer" on what prior to use in any given situation; it depends on our knowledge of the information. 
 
 
 
 ## MCMC Diagnostics 
 
-There also exist a special diagnostic for Bayesian models: MCMC diagnostics. Most of the time, we usually cannot determine the exact posterior distribution from our model, but we can use **MCMC sampling** to draw samples from the posterior distribution. Therefore, we need to check **MCMC diagnostics** to ensure that the MCMC samples we obtain can accurately represent the true posterior distribution. 
+There also exists a special diagnostic for Bayesian models: MCMC diagnostics. Most of the time, we usually cannot determine the exact posterior distribution from our model, but we can use **MCMC sampling** to draw samples from the posterior distribution. Therefore, we need to check **MCMC diagnostics** to ensure that the MCMC samples we obtain can accurately represent the true posterior distribution. 
 
-In order to see if our Bayesian analysis is working and performing well, we need to examine **Markov Chain Monte Carlo (MCMC) diagnostics**. In statistics, the Monte Carlo method refers to when we generate a sample of independent draws from the probability distribution of a random variable $X$ in order to estimate a feature of that distribution. The Markov Chain Monte Carlo method is similar, but in this case the items in the generated sample are serially correlated rather than independent.
+In order to see if our Bayesian analysis is working and performing well, we need to examine **Markov chain Monte Carlo (MCMC) diagnostics**. In statistics, the Monte Carlo method refers to when we generate a sample of independent draws from the probability distribution of a random variable $X$ in order to estimate a feature of that distribution. The Markov chain Monte Carlo method is similar, but in this case the items in the generated sample are serially correlated rather than independent.
 
 ### Trace Plots
 
-During model evaluation, samples from our posterior distributions will be generated using the MCMC method; we then can use **trace plots** to examine if our model meets MCMC diagnostics. Trace plots are line charts showing time on the x-axis, and values from the sample draws on the y-axis. We can use the `plot()` function in the `brms` package to display trace plots.
+During model evaluation, samples from our posterior distributions will be generated using the MCMC method; we then can use **trace plots** to check convergence of our samples. Trace plots are line charts showing time on the x-axis, and values from the sample draws on the y-axis. We can use the `plot()` function in the `brms` package to display trace plots.
 
 Let's first examine a model that passes MCMC diagnostics. We will continue to use the `nhanes1518_sample` dataset, and we will focus on simple linear regression models.
 
@@ -632,7 +632,7 @@ mcmc1 <- brm(formula = BMXBMI ~ RIDAGEYR,
 plot(mcmc1)
 ```
 
-The plots on the right side are the trace plots. We want to see something that represents a fuzzy caterpillar; this means that the generated draws have low serial correlation and that the sample space is explored many times. All three of our trace plots for this model fit the criteria. We can also do `summary(mcmc1)` and look at the values in the `Rhat` column; a value of 1 means our Markov chains have converged sufficiently, which is what we are looking for.
+The plots on the right side are the trace plots. We want to see something that represents a fuzzy caterpillar; this means that the generated draws have low serial correlation and that the sample space is well explored. All three of our trace plots for this model fit the criteria. We can also do `summary(mcmc1)` and look at the values in the `Rhat` column; a value of 1 means our Markov chains have converged sufficiently, which is what we are looking for.
 
 Now, let's examine some models that fail MCMC diagnostics. Let's run the same model as the previous example, but set the `iter` parameter to equal 50 (`brms` defaults this parameter to 2000).
 
@@ -647,7 +647,7 @@ mcmc2 <- brm(formula = BMXBMI ~ RIDAGEYR,
 plot(mcmc2)
 ```
 
-Here, we see our trace plots look vastly different than the ones in the `iter = 2000` example. With plots like this, we can infer that the generated draws have high serial correlations and that the chains are failing to explore the sample space as frequently. This means that the effective size of our sample is too small; we can fix this issue by increasing the number of iterations (in this case, changing the `iter` parameter when fitting our model).
+Here, we see our trace plots look vastly different than the ones in the `iter = 2000` example. With plots like this, we can infer that the generated draws have high serial correlations and that the chains have not yet converged around any value. This means that the effective size of our sample is too small; we can fix this issue by increasing the number of iterations (in this case, changing the `iter` parameter when fitting our model).
 
 For this next model, we will use the same structure as the previous two models, except we will set the `iter` parameter to 400 and the `warmup` to 10 (the `warmup` parameter defaults to `iter/2`).
 
