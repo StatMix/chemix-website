@@ -32,7 +32,7 @@ library(tidyverse)
 library(bayesplot)
 library(rstanarm)
 library(broom)
-
+library(ggplot2)
 library(patchwork)
 library(pander)
 library(latex2exp)
@@ -95,10 +95,10 @@ In statistics, we use **linear regression** to model the relationship between a 
 In **simple linear regression**, we have one explanatory variable. Simple linear regression takes the form $y = \beta_0 +\beta_1 x +\epsilon$, where $y$ is the response variable, $x$ is the explanatory variable, $\beta_1$ is the true slope of the relationship between $x$ and $y$, $\beta_0$ is the true intercept of the relationship between $x$ and $y$, and $\epsilon$ is the random error term.
 
 ```{r image1, echo=FALSE}
-knitr::include_graphics("img/bayesian-regression/regression-ss1.png")
+knitr::include_graphics("img/bayesian-regression/bayes_reg.png")
 ```
 
-In frequentists' statistics, linear regression uses point estimates for parameters $\beta_0$ and $\beta_1$ in order to help predict the value of the response variable based on the explanatory variable. The formula for **Bayesian regression** may appear to be the same, but now, our parameters are drawn from probability distributions. A vague prior suggests we have little prior knowledge on coefficients. As a result, the regression lines will spread out the space. In contrast, if we have strong prior on parameters, the line will be concentrated on a smaller space. Here we observe from the visualization, the prior is quite informative, suggesting correlation between x and y are close around 0. After we see the data and update our prior, we will begin to see stronger correlations between the variables. 
+In frequentists' statistics, linear regression uses point estimates for parameters $\beta_0$ and $\beta_1$ in order to help predict the value of the response variable based on the explanatory variable. The formula for **Bayesian regression** may appear to be the same, but now, our parameters are drawn from probability distributions. A vague prior suggests we have little prior knowledge on coefficients. As a result, the regression lines will spread out the space. In contrast, if we have strong prior on parameters, the line will be concentrated on a smaller space. Here we observe from the visualization, the prior is quite vague, after we see the data and update our prior, we will begin to update the prior with the data to obtain posterior which is more concentrated within a small range. 
 
 The assumptions for Bayesian linear regression are the same for the frequentist method, being as follows:
 
@@ -114,20 +114,50 @@ It is important that these assumptions are not violated to preserve the validity
 
 As discussed earlier, we perform simple linear regression when we want to explore the relationship between one explanatory variable and one response variable. For example, we might want to better understand the relationship between body mass index and age for a variety of reasons--perhaps we want to know if different age groups are more prone to obesity. We can help answer this question with a simple linear regression model using the `nhanes` dataset. 
 
-For this linear model, we want to predict body mass index based on age; therefore, we will use `BMXBMI` as our response variable and `RIDAGEYR` as our explanatory variable. We will limit our analysis to adults. We center the age at 18 years to facilitate the interpretation of intercept as the mean BMI value for 18 year olds.
+For this linear model, we want to predict body mass index based on age; therefore, we will use `BMXBMI` as our response variable and `AGE_C` as our explanatory variable. We will limit our analysis to adults. We center the age at 18 years to facilitate the interpretation of intercept as the mean BMI value for 18 year olds.
 
 ```{r filter-to-adults}
 nhanes1518 <- nhanes1518 %>% 
   filter(RIDAGEYR >= 18) %>%
-  mutate(RIDAGEYR = RIDAGEYR - 18)
+  mutate(AGE_C = RIDAGEYR - 18)
+
 ```
 
 ### Model
 
-We will use the `brms` library to fit our Bayesian model. An important part of creating a Bayesian regression model is establishing our priors for the parameters. Based on our prior knowledge of the data, there is a variety of priors we can set (and thus a variety of models we can create). Later, we will discuss strategies for selecting model priors. For now, we will assume that we have no prior knowledge of the dataset, using a noninformative prior (the default prior in `brms`: heavy-tail t-distribution with a degree of freedom df = 3, mean and sd adjusted based on data). We can use the `brm` function to specify our model. The `formula` argument of this function follows the format `y ~ x`, with `y` being the response variable and `x` being the explanatory variable. We will save our model in a variable named `model1`.
+We will use the `brms` library to fit our Bayesian model. An important part of creating a Bayesian regression model is establishing our priors for the parameters. Based on our prior knowledge of the data, there is a variety of priors we can set (and thus a variety of models we can create). Later, we will discuss strategies for selecting model priors. For now, we will assume that we have no prior knowledge of the dataset, using a noninformative prior. Notice the default prior in `brms` is heavy-tail t-distribution with a degree of freedom df = 3, mean and sd adjusted based on data. From the plot below, you can observe t-distribution has heavier tail compared to a normal distribution. As a result, a t-distribution prior is less sensitive to extreme values and thus the resulting model is more robust.
+
+```{r t-vs-n, echo=FALSE}
+
+# Define a sequence of values for x-axis
+x <- seq(-5, 5, length.out = 1000)
+
+# Calculate PDF values for t-distribution and normal distribution
+df <- 3 # degrees of freedom for t-distribution
+t_density <- dt(x, df)
+normal_density <- dnorm(x)
+
+# Create a data frame for ggplot
+df_density <- data.frame(x = rep(x, 2),
+                         density = c(t_density, normal_density),
+                         distribution = rep(c("t-distribution", "Normal"), each = length(x)))
+
+# Plot the densities
+ggplot(df_density, aes(x = x, y = density, color = distribution, linetype = distribution)) +
+  geom_line() +
+  scale_color_manual(values = c("blue", "red")) +
+  scale_linetype_manual(values = c("solid", "dashed")) +
+  labs(title = "PDF of t-distribution with df = 3 compared with Normal distribution",
+       x = "x", y = "Density") +
+  theme_minimal()
+
+```
+
+
+We can use the `brm` function to specify our model. The `formula` argument of this function follows the format `y ~ x`, with `y` being the response variable and `x` being the explanatory variable. We will save our model in a variable named `model1`. Since Bayesian model fitting relies on random sampling, we specified the seed here to make sure it is reproducible. Here we just picked the seed at convenience. Please refer to this [R-blog](https://www.r-bloggers.com/2019/03/how-to-select-a-seed-for-simulation-or-randomization/) for picking a more scientific random seed.
 
 ```{r noninformative, echo = T, results = 'hide', warning = F, message = F}
-model1 <- brm(formula = BMXBMI ~ RIDAGEYR, 
+model1 <- brm(formula = BMXBMI ~ AGE_C, 
              data    = nhanes1518,
              seed    = 123)
 ```
@@ -136,15 +166,39 @@ model1 <- brm(formula = BMXBMI ~ RIDAGEYR,
 
 Once we have created our model, we will then interpret its results. Our model gives us posterior distributions for $\beta_{Intercept}$ and $\beta_{Age}$; we can plot these with the `mcmc_dens` function of the `bayesplot` package, specifying the distributions we want to plot with the `pars` argument.
 
-We can also use the `summary` function to view more detailed statistics of our model. We will set the `priors` argument to `TRUE` so that the summary includes the prior distributions we used for our model. Here the default priors for coefficients and variance of error term are set to be t-distributions by default.
-
 ```{r plot-model1, fig.asp = 0.618}
-mcmc_dens(model1, pars = c("b_Intercept", "b_RIDAGEYR"))
+mcmc_dens(model1, pars = c("b_Intercept", "b_AGE_C"))
 ```
+
+We can also use the `summary` function to view detailed statistics of full posteriors. We will set the `priors` argument to `TRUE` so that the summary includes the prior distributions we used for our model. Here the default priors for coefficients and variance of error term are set to be t-distributions by default.
+
 
 ```{r noninformative-summary}
 summary(model1, priors = TRUE)
 ```
+
+### Annotated ouput
+
+#### Model
+
+The first three lines specify the data model $y_i|\mu,\sigma \sim N(\beta_{int}+\beta_{age} age_i,\sigma^2)$. The following two lines specify the dataset and settings of MCMC. We ran four chains, each chains have 2000 iterations with the first 1000 as warmup (discarding in the final analysis). Notice here we set `iter = 2000` is only for illustration. In practice, we usually set iteration to be at least 10000 to ensure the convergence of MCMC.
+
+#### Priors
+
+
+Suggest the prior of intercept is t-distribution with mean 28.4, sd 6.4, and df 3. The prior of $\sigma$ is half t-distribution with mean 0, sd 6.4, and df 3. These are the default priors specified by `brms` package since we do not specify any prior in our code. The mean 28.4 and sd 6.4 are estimated from data. 
+
+Notice the default prior for coefficients $\beta_{age}$ is flat prior, which is a constant on the real line. $p(\beta)\propto 1, \beta \in (-\infty,\infty)$. If you wish to obtain the full priors for all the parameters, use `get_prior(model1)`.
+
+#### Population-Level Effects
+
+This provides summary statistics of posterior distribution of $\beta_{int}$ and $\beta_{age}$. `Estimate` provides posterior mean, and `l-95\% CI`, `u-95\% CI` provide 0.025- and 0.975- quantiles. 
+
+#### Family Specific Parameter
+
+This provides summary statistics of posterior distribution of $\sigma$. Similarly `Estimate` provides posterior mean, and `l-95\% CI`, `u-95\% CI` provide 0.025- and 0.975- quantiles. 
+
+### Interpretation
 
 Similar to frequentists, we have point estimates for $\beta_{Intercept}$ and $\beta_{Age}$ that we are interested in. These are the means of the posterior distributions we plotted with the `mcmc_dens` function. The estimates can be found in the `Intercept` and `BMXBMI` rows of the `summary` output. These tell us that point estimate for the intercept is 28.98, and the point estimate for our slope is 0.02. With these statistics, let's now fill in our model:
 
@@ -156,7 +210,7 @@ We can interpret the estimate of the slope to mean that we expect those who are 
 
 We are also interested in the `l-95% CI` and `u-95% CI` columns of the `summary` output. These estimates are obtained from the credible intervals of the posterior distributions we plotted with `mcmc_dens`. We can thus state that there is a 95% chance that the average BMI for an individual at age 18 lies between 28.28 and 29.04. We have high confidence in the result that BMI tends to be higher for those who are older . 
 
-Now that we have a credible interval for our slope, we might want to conclude whether there is a statistically significant relationship between BMI and age. To do so, we can examine whether or not $\hat{\beta_{Age}}$ is statistically different from 0. Our **null hypothesis** in this case is that the slope is equal to 0, while our **alternative hypothesis** is that the slope is not equal to 0 (which implies a linear relationship between BMI and age). We can answer this question with our credible interval. Since the interval for `RIDAGEYR` does not include 0, we can reject our null hypothesis and conclude that there is likely a linear relationship between age and body mass index (although it appears to be very small).
+Now that we have a credible interval for our slope, we might want to conclude whether there is a statistically significant relationship between BMI and age. To do so, we can examine whether or not $\hat{\beta_{Age}}$ is statistically different from 0. Our **null hypothesis** in this case is that the slope is equal to 0, while our **alternative hypothesis** is that the slope is not equal to 0 (which implies a linear relationship between BMI and age). We can answer this question with our credible interval. Since the interval for `AGE_C` does not include 0, we can reject our null hypothesis and conclude that there is likely a linear relationship between age and body mass index (although it appears to be very small).
 
 ### Prediction
 
@@ -167,13 +221,13 @@ We can use the `predict` function with our model to predict individual's BMIs gi
 ```{r predict}
 set.seed(123)
 predict(model1,
-        newdata = data.frame(RIDAGEYR = c(18, 30, 60)-18),
+        newdata = data.frame(AGE_C = c(18, 30, 60)-18),
         interval = "prediction",
         level = 0.95) %>%
   knitr::kable(digits = 2)
 ```
 
-Our prediction interval estimates that a 18-year-old individual likely has a BMI between 14.765 and 43.32. As we can see, the interval is extremely wide, limiting our ability to make meaningful conclusions; this is likely because the relationship between BMI and age is weak.
+Our prediction interval estimates that a 18-year-old individual likely has a BMI between 14.765 and 43.32. As we can see, the interval is extremely wide, limiting our ability to make meaningful conclusions. We will later see in section [Posterior Predictive Check] that a transformation might this situation.
 
 
 
@@ -181,14 +235,14 @@ Our prediction interval estimates that a 18-year-old individual likely has a BMI
 
 ### Motivation
 
-Now that we've tackled simple linear regression, let's learn how to do **multivariate linear regression** the Bayesian way. We do multivariate regression when we want to know how one variable is impacted by multiple other variables. We can also use this method when we want to control for some variable. For example, in our `nhanes` dataset, we might want to know how factors like age, waist size, weight, and height impact BMI; we might also want to know how waist size, weight, and height impact BMI if we control for age. To help answer these questions, we can fit a model with `BMXBMI` as the response and `RIDAGEYR`, `BMXWAIST` as the predictors.
+Now that we've tackled simple linear regression, let's learn how to do **multivariate linear regression** the Bayesian way. We do multivariate regression when we want to know how one variable is impacted by multiple other variables. We can also use this method when we want to control for some variable. For example, in our `nhanes` dataset, we might want to know how factors like age, waist size, weight, and height impact BMI; we might also want to know how waist size, weight, and height impact BMI if we control for age. To help answer these questions, we can fit a model with `BMXBMI` as the response and `AGE_C`, `BMXWAIST` as the predictors.
 
 ### Model
 
-Let's first visualize the distribution of all of our predictor variables in the dataset.
+Let's first visualize the distribution of all of our predictor variables in the dataset. Notice the age is top-coded, which means age above 80 (62 after centering at 18) years are censored. 
 
 ```{r predictor-dists, fig.height = 3}
-p1 <- ggplot(nhanes1518, aes(x = RIDAGEYR)) + 
+p1 <- ggplot(nhanes1518, aes(x = AGE_C)) + 
   geom_histogram(color = "black", fill = "red") +
   labs(title = 'Distribution of Age in Dataset')
 
@@ -204,14 +258,14 @@ p1 + p2 +
 As we can see from the x-axis labels, our predictors are not measured in the same way; age is in years, waist is in centimeters. This leads to these predictors having different ranges and, therefore, different variances. If we used this data as is, we would have to specify different variances for the prior distributions of each predictor. For simplicity purposes, we can use the `scale` function in R to normalize our data so that each predictor has a mean of 0 and a standard deviation of 1. This will allow us to specify the same prior for each of our predictor variables. Note that, in this example, scaling our data is for convenience; in real-world scenarios, this may not be the best approach. It's important to mention that scaling isn't required when utilizing the default prior in the package. The package automatically adjusts the prior according to the data.
 
 ```{r scale-data}
-nhanes1518['RIDAGEYR_sc'] <- scale(nhanes1518$RIDAGEYR)
+nhanes1518['AGE_C_sc'] <- scale(nhanes1518$AGE_C)
 nhanes1518['BMXWAIST_sc'] <- scale(nhanes1518$BMXWAIST)
 ```
 
 Again, we will begin by assuming we have no prior knowledge of the data and use the default the prior in `brms`. We will again use the `brm` function to create our model. The format for the `formula` argument here is `y ~ x1 + x2 + .. + xn`, where each $x_i$ is an explanatory variable.
 
 ```{r multi-model1, echo = T, results = 'hide', warning = F, message = F}
-multi_model1 <- brm(formula = BMXBMI ~ RIDAGEYR_sc + BMXWAIST_sc, 
+multi_model1 <- brm(formula = BMXBMI ~ AGE_C_sc + BMXWAIST_sc, 
              data    = nhanes1518,
              seed    = 123)
 ```
@@ -254,7 +308,7 @@ nhanes1518_sample <- sample_n(nhanes1518, 30)
 Now, using our sampled data, let's see the results of a model using default priors.
 
 ```{r noninformative-subset, echo = T, results = 'hide', warning = F, message = F}
-default_prior <- brm(formula = BMXBMI ~ RIDAGEYR, 
+default_prior <- brm(formula = BMXBMI ~ AGE_C, 
              data    = nhanes1518_sample,
              seed    = 123)
 ```
@@ -263,9 +317,9 @@ default_prior <- brm(formula = BMXBMI ~ RIDAGEYR,
 summary(default_prior, priors = TRUE)
 ```
 
-We get the model $\hat{BMI} = 36.19 - 0.12(Age)$. 
+We get the model $\hat{BMI} = 34.03 - 0.11(Age)$. 
 
-We can use `prior_summary` to obtain the default prior. We can see the default prior for intercept and sigma (sd of error term) is t-distribution, and default prior for slope is a flat prior ($f(\beta) \propto constant$). We will compare this to models using specified priors.
+We can use `prior_summary` to obtain the default prior. We can see the default prior for intercept and sigma (sd of error term) is t-distribution, and default prior for slope is a flat prior ($f(\beta) \propto 1, \beta \in (-\infty,\infty)$). We will compare this to models using specified priors.
 
 ```{r def_pri}
 prior_summary(default_prior)
@@ -278,12 +332,12 @@ prior_summary(default_prior)
 
 A common prior for the coefficient (or $\beta$) in Bayesian inference deals with a **normal (Gaussian) distribution**. This is a **conjugate** prior, meaning that the posterior will also be a normal distribution, but with different parameters. This might be a good choice for our beta prior if we assume our data is normally distributed, meaning most values are situated in the middle, and there is a symmetrical decline in the frequency of values as we reach the ends.
 
-We will use the same `BMXBMI ~ RIDAGEYR` model we worked with in the single linear regression section. Let's assume the BMI values in our sample are normally distributed. We will choose a normal distribution with $\mu = 0$ and $\sigma = 0.3$ for $\beta_{Age}$. We can use the `prior` argument in the `brm` function to set our prior for $\beta$. In this argument, we set `class = "b"` and `coef = "RIDAGEYR"` to signify that this is a prior on $\beta_{Age}$. Notice that the parametrization in the function takes the form "normal(mean,sd)".
+We will use the same `BMXBMI ~ AGE_C` model we worked with in the single linear regression section. Let's assume the BMI values in our sample are normally distributed. We will choose a normal distribution with $\mu = 0$ and $\sigma = 0.3$ for $\beta_{Age}$. We can use the `prior` argument in the `brm` function to set our prior for $\beta$. In this argument, we set `class = "b"` and `coef = "AGE_C"` to signify that this is a prior on $\beta_{Age}$. Notice that the parametrization in the function takes the form "normal(mean,sd)".
 
 ```{r model2, echo = T, results = 'hide', warning = F, message = F}
-model2 <- brm(formula = BMXBMI ~ RIDAGEYR, 
+model2 <- brm(formula = BMXBMI ~ AGE_C, 
              data    = nhanes1518_sample,
-             prior   = c(set_prior("normal(0, 0.3)", class = "b", coef = "RIDAGEYR")),
+             prior   = c(set_prior("normal(0, 0.3)", class = "b", coef = "AGE_C")),
              seed    = 123)
 ```
 
@@ -294,15 +348,15 @@ Now, let's use the `mcmc_intervals` function of the `bayesplot` package to compa
   default_prior,
   point_est = "mean",
   prob_outer = 0.95,
-  pars = c("b_RIDAGEYR")) +
+  pars = c("b_AGE_C")) +
    coord_cartesian(xlim = c(-0.35, 0.1)) +
-   labs(title = "Default Coefficient Prior") +
+   labs(title = "Default Prior (Flat Prior)") +
    theme_minimal()
  ) /
   (mcmc_intervals(
     model2,
     point_est = "mean",
-    pars = c("b_RIDAGEYR")) +
+    pars = c("b_AGE_C")) +
      coord_cartesian(xlim = c(-0.35, 0.1)) +
      labs(title = TeX("Normal(0, $0.3^2$) Coefficient Prior")) +
      theme_minimal()
@@ -314,9 +368,9 @@ The thick line represents a 50% credible interval, while the thin line represent
 Let's run another model with a normally distributed $\beta$ prior, using the same mean but inputting a much larger variance.
 
 ```{r model3, echo = T, results = 'hide', warning = F, message = F}
-model3 <- brm(formula = BMXBMI ~ RIDAGEYR, 
+model3 <- brm(formula = BMXBMI ~ AGE_C, 
              data    = nhanes1518_sample,
-             prior   = c(set_prior("normal(0, 100)", class = "b", coef = "RIDAGEYR")),
+             prior   = c(set_prior("normal(0, 100)", class = "b", coef = "AGE_C")),
              seed    = 123)
 ```
 
@@ -325,7 +379,7 @@ mcmc_intervals(
   model3,
   point_est = "mean",
   prob_outer = 0.95,
-  pars = c("b_RIDAGEYR")) +
+  pars = c("b_AGE_C")) +
    coord_cartesian(xlim = c(-0.35, 0.1)) +
    labs(title = TeX("Normal(0, $100^2$) Coefficient Prior")) +
    theme_minimal()
@@ -340,15 +394,15 @@ Let's recap the models we've created so far with their results:
   default_prior,
   point_est = "mean",
   prob_outer = 0.95,
-  pars = c("b_RIDAGEYR")) +
+  pars = c("b_AGE_C")) +
    coord_cartesian(xlim = c(-0.35, 0.1)) +
-   labs(title = "Default Coefficient Prior") +
+   labs(title = "Default Prior (Flat Prior)") +
    theme_minimal()
  ) /
   (mcmc_intervals(
     model2,
     point_est = "mean",
-    pars = c("b_RIDAGEYR")) +
+    pars = c("b_AGE_C")) +
      coord_cartesian(xlim = c(-0.35, 0.1)) +
      labs(title = TeX("Normal(0, $0.3^2$) Coefficient Prior")) +
      theme_minimal()
@@ -357,7 +411,7 @@ Let's recap the models we've created so far with their results:
     model3,
     point_est = "mean",
     prob_outer = 0.95,
-    pars = c("b_RIDAGEYR")) +
+    pars = c("b_AGE_C")) +
       coord_cartesian(xlim = c(-0.35, 0.1)) +
       labs(title = TeX("Normal(0, $100^2$) Coefficient Prior")) +
       theme_minimal()
@@ -371,9 +425,9 @@ Another common prior for the coefficient in Bayesian inference deals with the **
 We can change the shape of our t-distribution by altering the **degrees of freedom**; the more degrees of freedom we have, the more we will resemble a normal distribution (so, the less heavy the tail ends will be). Let's fit a model with a beta prior distributed as a unit t-distribution with 3 degrees of freedom:
 
 ```{r model4, echo = T, results = 'hide', warning = F, message = F}
-model4 <- brm(formula = BMXBMI ~ RIDAGEYR, 
+model4 <- brm(formula = BMXBMI ~ AGE_C, 
              data    = nhanes1518_sample,
-             prior   = c(set_prior("student_t(3, 0, 1)", class = "b", coef = "RIDAGEYR")),
+             prior   = c(set_prior("student_t(3, 0, 1)", class = "b", coef = "AGE_C")),
              seed    = 123)
 ```
 
@@ -382,7 +436,7 @@ mcmc_intervals(
   model4,
   point_est = "mean",
   prob_outer = 0.95,
-  pars = c("b_RIDAGEYR")) +
+  pars = c("b_AGE_C")) +
    coord_cartesian(xlim = c(-0.35, 0.1)) +
    labs(title = TeX("Student_T(3, 0, 1) Coefficient Prior")) +
    theme_minimal()
@@ -391,9 +445,9 @@ mcmc_intervals(
 Again, our model results resemble those we have previously calculated. For demonstrative purposes, let's also run a model with more degrees of freedom (a more Gaussian-like distribution).
 
 ```{r model5, echo = T, results = 'hide', warning = F, message = F}
-model5 <- brm(formula = BMXBMI ~ RIDAGEYR, 
+model5 <- brm(formula = BMXBMI ~ AGE_C, 
              data    = nhanes1518_sample,
-             prior   = c(set_prior("student_t(30, 0, 1)", class = "b", coef = "RIDAGEYR")),
+             prior   = c(set_prior("student_t(30, 0, 1)", class = "b", coef = "AGE_C")),
              seed    = 123)
 ```
 
@@ -402,7 +456,7 @@ mcmc_intervals(
   model5,
   point_est = "mean",
   prob_outer = 0.95,
-  pars = c("b_RIDAGEYR")) +
+  pars = c("b_AGE_C")) +
    coord_cartesian(xlim = c(-0.35, 0.1)) +
    labs(title = TeX("Student_T(30, 0, 1) Coefficient Prior")) +
    theme_minimal()
@@ -415,15 +469,15 @@ And now let's once again recap our models:
   default_prior,
   point_est = "mean",
   prob_outer = 0.95,
-  pars = c("b_RIDAGEYR")) +
+  pars = c("b_AGE_C")) +
    coord_cartesian(xlim = c(-0.35, 0.1)) +
-   labs(title = "Default Coefficient Prior") +
+   labs(title = "Default Prior (Flat Prior)") +
    theme_minimal()
  ) /
   (mcmc_intervals(
     model2,
     point_est = "mean",
-    pars = c("b_RIDAGEYR")) +
+    pars = c("b_AGE_C")) +
      coord_cartesian(xlim = c(-0.35, 0.1)) +
      labs(title = TeX("Normal(0, $0.3^2$) Coefficient Prior")) +
      theme_minimal()
@@ -432,7 +486,7 @@ And now let's once again recap our models:
     model3,
     point_est = "mean",
     prob_outer = 0.95,
-    pars = c("b_RIDAGEYR")) +
+    pars = c("b_AGE_C")) +
       coord_cartesian(xlim = c(-0.35, 0.1)) +
       labs(title = TeX("Normal(0, $100^2$) Coefficient Prior")) +
       theme_minimal()
@@ -441,7 +495,7 @@ And now let's once again recap our models:
     model4,
     point_est = "mean",
     prob_outer = 0.95,
-    pars = c("b_RIDAGEYR")) +
+    pars = c("b_AGE_C")) +
       coord_cartesian(xlim = c(-0.35, 0.1)) +
       labs(title = TeX("Student_T(3, 0, 1) Coefficient Prior")) +
       theme_minimal()
@@ -450,7 +504,7 @@ And now let's once again recap our models:
     model5,
     point_est = "mean",
     prob_outer = 0.95,
-    pars = c("b_RIDAGEYR")) +
+    pars = c("b_AGE_C")) +
       coord_cartesian(xlim = c(-0.35, 0.1)) +
       labs(title = TeX("Student_T(30, 0, 1) Coefficient Prior")) +
       theme_minimal()
@@ -470,14 +524,14 @@ Now let's move on to our variance (or $\sigma^2$) parameter. A common prior for 
 Let's run two models with inverse-gamma variance priors, using the parameters of the light blue line and the red line in the visualization above. We will use our `nhanes1518_sample` dataset that we created in the previous section.
 
 ```{r model6, echo = T, results = 'hide', warning = F, message = F}
-model6 <- brm(formula = BMXBMI ~ RIDAGEYR, 
+model6 <- brm(formula = BMXBMI ~ AGE_C, 
              data    = nhanes1518_sample,
              prior   = c(set_prior("inv_gamma(3, 0.5)", class = "sigma")),
              seed    = 123)
 ```
 
 ```{r model7, echo = T, results = 'hide', warning = F, message = F}
-model7 <- brm(formula = BMXBMI ~ RIDAGEYR, 
+model7 <- brm(formula = BMXBMI ~ AGE_C, 
              data    = nhanes1518_sample,
              prior   = c(set_prior("inv_gamma(1, 1)", class = "sigma")),
              seed    = 123)
@@ -494,14 +548,14 @@ Another common prior for the variance in Bayesian inference deals with the **Hal
 Let's run two models with Half-Cauchy variance priors, using the parameters of the two examples pictured above. We will continue to use our `nhanes1518_sample` dataset. If we specify our `sigma` prior to be a `cauchy`, the `brms` package will automatically restrict it to positive values, thus effectively making it a Half-Cauchy. 
 
 ```{r model8, echo = T, results = 'hide', warning = F, message = F}
-model8 <- brm(formula = BMXBMI ~ RIDAGEYR, 
+model8 <- brm(formula = BMXBMI ~ AGE_C, 
              data    = nhanes1518_sample,
              prior   = c(set_prior("cauchy(0, 0.1)", class = "sigma")),
              seed    = 123)
 ```
 
 ```{r model9, echo = T, results = 'hide', warning = F, message = F}
-model9 <- brm(formula = BMXBMI ~ RIDAGEYR, 
+model9 <- brm(formula = BMXBMI ~ AGE_C, 
              data    = nhanes1518_sample,
              prior   = c(set_prior("cauchy(0, 1)", class = "sigma")),
              seed    = 123)
@@ -510,6 +564,15 @@ model9 <- brm(formula = BMXBMI ~ RIDAGEYR,
 Let's visualize the results from all of our variance models with the `mcmc_intervals` function
 
 ```{r model-recap3, echo = F, warning = F, message = F, fig.asp = 0.8}
+(mcmc_intervals(
+  default_prior,
+  point_est = "mean",
+  prob_outer = 0.95,
+  pars = c("sigma")) +
+   coord_cartesian(xlim = c(6.5, 13)) +
+   labs(title = "Default Prior (Half-T(3,0,5.5))") +
+   theme_minimal()
+ ) /
 (mcmc_intervals(
   model6,
   point_est = "mean",
@@ -554,29 +617,38 @@ Notice specifically how the model with the $InvGam(3, 0.5)$ prior for the varian
 When we construct a multivariate regression model, we have more parameters for which we can set a prior. For this section, we will construct the same model as in the section on multivariate regression, with BMI as the response and age, waist size as the predictors. However, we will now use the `nhanes1518_sample` dataset. We first need to scale our variables.
 
 ```{r scale-data-priors}
-nhanes1518_sample['RIDAGEYR_sc'] <- scale(nhanes1518_sample$RIDAGEYR)
+nhanes1518_sample['AGE_C_sc'] <- scale(nhanes1518_sample$AGE_C)
 nhanes1518_sample['BMXWAIST_sc'] <- scale(nhanes1518_sample$BMXWAIST)
 ```
 
-Now, let's create a model with the default parameters, which we will compare to a model with specified priors.
+Now, let's create a model with the default parameters, which we will compare to a model with specified priors. The default priors are: flat priors for coefficients, t(3, 27.3, 5.6) for intercept, and half-t(3, 0, 5.6) for sigma.
+
+
 
 ```{r default-priors-multi, echo = T, results = 'hide', warning = F, message = F}
-default_multi <- brm(formula = BMXBMI ~ RIDAGEYR_sc + BMXWAIST_sc , 
+default_multi <- brm(formula = BMXBMI ~ AGE_C_sc + BMXWAIST_sc , 
              data    = nhanes1518_sample,
              seed    = 123)
 ```
 
-In `brms`, we can set the prior for each coefficient separately. For this model, we will use a normal distribution prior for each $\beta$ with a mean of 0. Since we don't know much about the data, we want our prior to be relatively flat; thus we will use a relatively large variance of 100. We will also use a simple $HalfCauchy(0, 1)$ prior for sigma, and a very flat $N(0, 500)$ prior for the intercept.
+```{r default-priors-multi-pri}
+get_prior(formula = BMXBMI ~ AGE_C_sc + BMXWAIST_sc , 
+             data    = nhanes1518_sample,
+             seed    = 123)
+```
+
+
+In `brms`, we can set the prior for each coefficient separately. For this model, we will use a normal distribution prior for each $\beta$ with a mean of 0. Since we don't know much about the data, we want our prior to be relatively flat; thus we will use a relatively large variance of 100. We will also use a simple $HalfCauchy(0, 1)$ prior for sigma, and a relative flat $N(0, 22)$ prior for the intercept.
 
 After we create our model, we will compare the results of the two models with `mcmc_intervals`.
 
 ```{r multi-model2, echo = T, results = 'hide', warning = F, message = F}
-priors2 <- c(set_prior("normal(0, 10)", class = "b", coef = 'RIDAGEYR_sc'),
+priors2 <- c(set_prior("normal(0, 10)", class = "b", coef = 'AGE_C_sc'),
              set_prior("normal(0, 10)", class = "b", coef = 'BMXWAIST_sc'),
              set_prior("cauchy(1, 1)", class = "sigma"),
-             set_prior("normal(0, 22.3607)", class = "Intercept"))
+             set_prior("normal(0, 22)", class = "Intercept"))
 
-multi_model2 <- brm(formula = BMXBMI ~ RIDAGEYR_sc + BMXWAIST_sc , 
+multi_model2 <- brm(formula = BMXBMI ~ AGE_C_sc + BMXWAIST_sc , 
              data    = nhanes1518_sample,
              prior   = priors2,
              seed    = 123)
@@ -587,14 +659,14 @@ multi_model2 <- brm(formula = BMXBMI ~ RIDAGEYR_sc + BMXWAIST_sc ,
   default_multi,
   point_est = "mean",
   prob_outer = 0.95,
-  pars = c("b_RIDAGEYR_sc", "b_BMXWAIST_sc")) +
+  pars = c("b_AGE_C_sc", "b_BMXWAIST_sc")) +
    labs(title = "Default Priors") +
    theme_minimal()
  ) /
   (mcmc_intervals(
     multi_model2,
     point_est = "mean",
-    pars = c("b_RIDAGEYR_sc", "b_BMXWAIST_sc")) +
+    pars = c("b_AGE_C_sc", "b_BMXWAIST_sc")) +
      labs(title = "Specified Priors") +
      theme_minimal()
    )
@@ -623,7 +695,7 @@ During model evaluation, samples from our posterior distributions will be genera
 Let's first examine a model that passes MCMC diagnostics. We will continue to use the `nhanes1518_sample` dataset, and we will focus on simple linear regression models.
 
 ```{r mcmc1, echo = T, results = 'hide', warning = F, message = F}
-mcmc1 <- brm(formula = BMXBMI ~ RIDAGEYR, 
+mcmc1 <- brm(formula = BMXBMI ~ AGE_C, 
              data    = nhanes1518_sample,
              seed    = 123)
 ```
@@ -637,7 +709,7 @@ The plots on the right side are the trace plots. We want to see something that r
 Now, let's examine some models that fail MCMC diagnostics. Let's run the same model as the previous example, but set the `iter` parameter to equal 50 (`brms` defaults this parameter to 2000).
 
 ```{r mcmc2, echo = T, results = 'hide', warning = F, message = F}
-mcmc2 <- brm(formula = BMXBMI ~ RIDAGEYR, 
+mcmc2 <- brm(formula = BMXBMI ~ AGE_C, 
              data    = nhanes1518_sample,
              seed    = 123,
              iter    = 50)
@@ -652,7 +724,7 @@ Here, we see our trace plots look vastly different than the ones in the `iter = 
 For this next model, we will use the same structure as the previous two models, except we will set the `iter` parameter to 400 and the `warmup` to 10 (the `warmup` parameter defaults to `iter/2`).
 
 ```{r mcmc3, echo = T, results = 'hide', warning = F, message = F}
-mcmc3 <- brm(formula = BMXBMI ~ RIDAGEYR, 
+mcmc3 <- brm(formula = BMXBMI ~ AGE_C, 
              data    = nhanes1518_sample,
              seed    = 123,
              iter    = 400,
@@ -672,7 +744,7 @@ Trace plots allow us to examine the extent to which serial correlation exists am
 Let's plot the autocorrelation for `mcmc1`, the model that we just showed passes MCMC diagnostics. We can use the `mcmc_acf` function of the `bayesplot` package to do so, using the `pars` argument to specify which ACFs we want to see. Recall that an assumption for Bayesian linear regression is the presence of no autocorrelation; thus, we want the ACFs to quickly approach zero. 
 
 ```{r autocorr-mcmc1}
-mcmc_acf(mcmc1, pars = c("b_Intercept", "b_RIDAGEYR", "sigma"))
+mcmc_acf(mcmc1, pars = c("b_Intercept", "b_AGE_C", "sigma"))
 ```
 
 The ACFs for this model all quickly approach zero, meaning this is a valid model in terms of the no autocorrelation assumption.
@@ -680,7 +752,7 @@ The ACFs for this model all quickly approach zero, meaning this is a valid model
 Let's compare these plots to those for the `mcmc3` model, which we just showed fails MCMC diagnostics.
 
 ```{r autocorr-mcmc3}
-mcmc_acf(mcmc3, pars = c("b_Intercept", "b_RIDAGEYR", "sigma"))
+mcmc_acf(mcmc3, pars = c("b_Intercept", "b_AGE_C", "sigma"))
 ```
 
 These plots take much longer to reach zero, indicating a high degree of serial correlation. We would likely want to refit this model.
@@ -692,7 +764,7 @@ Autocorrelation is closely related to another indicator used in model evaluation
 We can examine effective sample size using the `neff_ratio` and `mcmc_neff` functions from the `bayesplot` package. `neff_ratio` calculates the ratio $\frac{n_{eff}}{N}$ for each parameter specified in the `pars` argument. `mcmc_neff` then takes a vector of these ratios and plots them. Let's continue to use `mcmc1`, our diagnostic-passing model, and plot its effective sample sizes. We add `theme_minimal` to make the plot easier to read.
 
 ```{r neff-mcmc1}
-neff_mcmc1 <- neff_ratio(mcmc1, pars = c("b_Intercept", "b_RIDAGEYR", "sigma"))
+neff_mcmc1 <- neff_ratio(mcmc1, pars = c("b_Intercept", "b_AGE_C", "sigma"))
 mcmc_neff(neff_mcmc1) + theme_minimal()
 ```
 
@@ -701,7 +773,7 @@ This plot shows that the effective sample sizes for the parameters of this model
 Let's compare these results to those for `mcmc3`, one of our diagnostic-failing models. 
 
 ```{r neff-mcmc3}
-neff_mcmc3 <- neff_ratio(mcmc3, pars = c("b_Intercept", "b_RIDAGEYR", "sigma"))
+neff_mcmc3 <- neff_ratio(mcmc3, pars = c("b_Intercept", "b_AGE_C", "sigma"))
 mcmc_neff(neff_mcmc3) + theme_minimal()
 ```
 
@@ -714,7 +786,7 @@ In the section on single linear regression, we mentioned a list of assumptions f
 In addition, Bayesian can construct posterior check, generating posterior samples and compare them with original data to evaluate the model performance. 
 
 
-### Posterior Prective Check
+### Posterior Predictive Check
 
 In Bayesian estimation, we can obtain posterior samples $\theta = (\theta^{(1)},\dots,\theta^{(N)})$. From which we can generate posterior predictions of response variables $Y^* = (Y^*{(1)},\dots,Y^*{(N)})$, to check whether they are close to the original data. In addition, we can construct any statistics based on $\theta$ or $Y^*$, and compare these posterior samples to the feature of original data. If the data-based statistics lie at the tail of distribution of the posterior samples, we may conclude the model does not fit the data well at least cannot capture the desired feature well.
 
@@ -727,7 +799,7 @@ pp_check(model1,nreps = 50)
 We know the reason in previous tutorial [module on frequentist linear regression](https://chem-mix.netlify.app/slides/01-linear_regression#Linear_Regression) that BMI has long tail, and thus the error term does not follow normal distribution. Here we fit the regression model use log(BMI) and construct posterior predictive check. It shows the model fits the data well.
 
 ```{r model1log, echo = T, results = 'hide', warning = F, message = F}
-model1log <- brm(formula = log(BMXBMI) ~ RIDAGEYR, 
+model1log <- brm(formula = log(BMXBMI) ~ AGE_C, 
              data    = nhanes1518,
              seed    = 123)
 ```
@@ -744,14 +816,14 @@ To ease computation, we draw 1000 samples from the data to evaluate the performa
 
 ```{r}
 set.seed(1)
-nhanes1518_sample1000=na.omit(nhanes1518%>%select(BMXBMI,RIDAGEYR))
+nhanes1518_sample1000=na.omit(nhanes1518%>%select(BMXBMI,AGE_C))
 nhanes1518_sample1000 <- sample_n(nhanes1518_sample1000, 1000)
 
 set.seed(1)
 predictions <- posterior_predict(model1, newdata = nhanes1518_sample1000)
 dim(predictions)
 ppc_intervals(nhanes1518_sample1000$BMXBMI,
-              yrep = predictions, x = nhanes1518_sample1000$RIDAGEYR, 
+              yrep = predictions, x = nhanes1518_sample1000$AGE_C, 
               prob = 0.5, prob_outer = 0.95)
 ```
 
