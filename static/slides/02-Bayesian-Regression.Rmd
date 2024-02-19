@@ -282,7 +282,7 @@ With these statistics, we can now fill in our model:
 
 $$\hat{BMI} = 29.41 -1.12Age\_sc + 6.67Waist\_sc$$
 
-We can interpret the estimate of the slope of age to mean that for every 1 unit increase in scaled age, we expect BMI to decrease by 1.12 on average, **holding all other factors constant**. Since we scaled our data, we also have a meaningful interpretation for our intercept: we expect a person with the average age, waist size to have a BMI of 29.41.
+We can interpret the estimate of the slope of age to mean that for every one standard deviation increase in scaled age, we expect BMI to decrease by 1.12 on average, **holding all other factors constant**. Since we scaled our data, we also have a meaningful interpretation for our intercept: we expect a person with the average age, waist size to have a BMI of 29.41.
 
 ### Inference
 
