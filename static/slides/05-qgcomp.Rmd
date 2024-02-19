@@ -161,6 +161,16 @@ Although this model provides a result, it is difficult when there are numerous c
 By viewing the following correlation matrix of the urine samples:
 
 ```{r}
+
+nhanes.cor <- nhanes|> select(BMXBMIlog, URXMHBP, URXMOH, URXMHP, URXMHH, URXMCOH, URXMHNC, URXMHH, URXECP, URXHIBP, URXMIB, RIDAGEYR)|>cor(use="pairwise.complete.obs")
+
+nhanes.dist<- as.dist(1-nhanes.cor)
+
+ggcorrplot(nhanes.cor)+
+  labs(title = "Corrleation of URX Variables and BMI")
+```
+
+```{r}
 nhanescor <- nhanes|> select(BMXBMIlog, URXMHBP, URXMOH, URXMHP, URXMHH, URXMCOH, URXMHNC, URXMHH, URXECP, URXHIBP, URXMIB, RIDAGEYR)
 
 cor_hanes <- cor(nhanescor)
