@@ -11,13 +11,13 @@ output:
 
 ## qgcomp Package
 
-Weighted Sums allow researchers to understand the effects of a mixture with highly correlated components. In a previous tutorial, we used the `gWQS` package to find relationship between the chemicals. An additional method used to study the effects of highly correlated exposures on an outcome is the `qgcomp` package. This method follows similar procedures and assumptions of `gWQS`; however, the computation can be more efficient (faster) and it can also work with non-linear data. Although the `gWQS` package is more widely used, the `qgcomp` package can provide a structured approach to using variables that do not follow a linear pattern. All other assumptions are similar to this tutorial and a link is included below for further exploration.
+Weighted Quantile Sum Regression (WQS) allow researchers to understand the effects of highly correlated components. In a previous tutorial, we used the `gWQS` package to implement modeling fitting, inference, and diagnostics. An additional method used to employ Weighted Quantile Sum Regression is the `qgcomp` package. This method relaxes the "unidirectional relationship" assumption of WQS, here the components do not have to contribute in the same direction. Additionally, `qgcomp` has greater computation efficiency and it allows more flexibility on modeling non-linear relationship. 
 
-In this tutorial, we will explore how demonstrate the `qgcomp` can provide additional flexibility when analyzing chemical mixtures. Specifically, we will explore applications for (1) a standard linear model (2) non-linear model (3) etc
+In this tutorial, we will demonstrate how the `qgcomp` can provide additional flexibility when analyzing chemical mixtures. Specifically, we will explore applications for (1) linear model (2) linear model with covariates (3) non-linear model (4) missing data, limits of detection, and multiple imputation
 
 ## Libraries
 
-For this tutorial, we will be using similar packages to the previous tutorials. Note that in addition to `qgcomp`, we will also use the `splines` package for analysis later in the tutorial.
+For this tutorial, we will be using similar packages to the previous tutorials. Note that in addition to `qgcomp`, we will also use the `splines` package for [Non-Linear Models] later in the tutorial.
 
 ```{r}
 #| message: false
