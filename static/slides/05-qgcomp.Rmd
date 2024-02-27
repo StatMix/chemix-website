@@ -11,7 +11,7 @@ output:
 
 ## qgcomp Package
 
-Weighted Quantile Sum Regression (WQS) allow researchers to understand the effects of highly correlated components. In a previous tutorial, we used the `gWQS` package to implement modeling fitting, inference, and diagnostics. An additional method used to employ Weighted Quantile Sum Regression is the `qgcomp` package. This method relaxes the "unidirectional relationship" assumption of WQS, here the components do not have to contribute in the same direction. Additionally, `qgcomp` has greater computation efficiency and it allows more flexibility on modeling non-linear relationship. 
+Weighted Quantile Sum Regression (WQS) allows researchers to understand the effects of highly correlated components. In a previous tutorial, we used the `gWQS` package to implement modeling fitting, inference, and diagnostics. An additional method used to employ Weighted Quantile Sum Regression is the `qgcomp` package. This method relaxes the "unidirectional relationship" assumption of WQS, here the components do not have to contribute in the same direction. Additionally, `qgcomp` has greater computation efficiency and it allows more flexibility on modeling non-linear relationship.
 
 In this tutorial, we will demonstrate how the `qgcomp` can provide additional flexibility when analyzing chemical mixtures. Specifically, we will explore applications for (1) linear model (2) linear model with covariates (3) non-linear model (4) missing data, limits of detection, and multiple imputation
 
@@ -24,6 +24,7 @@ For this tutorial, we will be using similar packages to the previous tutorials. 
 
 #| install.packages("gWQS")
 #| install.packages("qgcomp")
+#| install.packages("corrplot")
 #| install.packages("ggcorrplot")
 #| install.packages("splines")
 #| 
@@ -33,6 +34,7 @@ library(tidymodels)
 library(dplyr)
 library(ggcorrplot)
 library(splines)
+library(corrplot)
 ```
 
 ## Exploratory Data Analysis
@@ -43,7 +45,6 @@ For this analysis, we will be using the `nhanes` dataset, which can be loaded in
 load(file='nhanes1518.rda')
 head(nhanes1518)
 ```
-
 Consistent with prior tutorials, we hope to study the impacts of specific chemical exposures (Phalates and Phytoestrogen) on log(BMI), for participants over 18. The `nhanes` data can be normalized through this method.
 
 ```{r}
@@ -65,12 +66,11 @@ The`qgcomp`package shares similarities to `gWQS`, but there are several key dist
 Similar to `gWQS`, `qgcomp` can be applied to a standard linear regression model:
 
 $$\mathbb{E}(Y^{\mathbf{X}_q} | \mathbf{Z,\psi,\eta}) = g(\psi_0 + \psi_1 S_q + \mathbf{\eta Z})$$
-
 In the model above, $\psi_0$ represents the intercept while $S_q$ is the combined effect of the exposures (predictor variables). $\mathbf{\eta Z$ is the error term, demonstrating the uncertainty in the model. Lastly, $\mathbf{X}_q$ is the transformation of of the X variable that has been sorted into quantiles.
 
 ## Model Fitting
 
-`qgcomp` has simliar arguments to the `gWQS` package; however, there are several formatting differences:
+`qgcomp` has similar arguments to the `gWQS` package; however, there are several formatting differences:
 
 `q` - specifies the number of quantiles to be used `B` - number of bootstrap samples `degree` - the number of parameters estimated in the model fitting process
 
@@ -105,7 +105,7 @@ The Regression output:
 
 $$ \widehat{log(\text{BMXBMI})} = 3.319 + 0.019 \times (WQS) $$ As demonstrated above, the standard linear output is very similar to that of the WQS model. Although the coefficients vary slightly (WQS slope: 0.015, WQS intercept: 3.318), both methods produce a similar result.
 
-To confirm that this model is appropriate, we can visualize the weights and check the residuals:
+To confirm that this model is appropriate, we can visualize the weights and the residuals:
 
 ```{r}
 plot(qc.fit)
@@ -116,7 +116,7 @@ plot(qc.fit)
 plot(qc.fit$fit, which=1)
 ```
 
-QUESTION: WHAT IS THIS SHOWING?
+Examining the residual plot, the datum appear to be fairly evenly spread about the axis. However, there appears to be a cluster of points centered between 3.3 and 3.5. Despite this, the there are generally no major concerns with the residuals. 
 
 Another useful application of `qgcomp` is to find the effect of mixtures on binary variables (variables that can be represented by 1's "Yes" or 0's "No"). In this example, we want to predict whether a participant is above the average BMI based on the chemical mixtures used in the previous example. We can create a binary variable corresponding for a participant that is greater than the average BMI (represented with 1) or below the average BMI (represented with 0).
 
@@ -138,71 +138,9 @@ qc.fit2
 
 We can interpret both the intercept intercepts and coefficient for the models:
 
-As the quantile sum increases by 1, an individual's BMI being over vs. under the national average decrease by approximately 1.26%.
+As the quantile sum increases by 1, an individual's BMI being over vs. under the national average decreases by approximately 1.26%.
 
-The expected BMI of an individual that is under the national average is approximately:
-
-## Non-Linear Models
-
-However, unlike `gWQS`, `qgcomp` can deal with non-linearity, where the relationship between the response and predictors do not follow a linear pattern. In the following example, the same predictor variables are transformed and squared in order to reflect a non-linear relationship.
-
-```{r}
-qcboot.fit5 <- qgcomp(BMXBMIlog~. + .^2,
-                         expnms=chem_names_new,
-                         nhanes[,c(chem_names_new, 'BMXBMIlog')], family=gaussian(), q=4, degree=2, B=5, seed=125)
-```
-
-```{r}
-qcboot.fit5
-```
-
-Although this model provides a result, it is difficult when there are numerous chemical mixtures as predictors. However, we can narrow down the variables by examining a correlation matrix. It is possible that exposures that are highly correlated with each other may have an underlying similarities, "a common environmental source or set of behaviors."
-
-By viewing the following correlation matrix of the urine samples:
-
-```{r}
-
-nhanes.cor <- nhanes|> select(BMXBMIlog, URXMHBP, URXMOH, URXMHP, URXMHH, URXMCOH, URXMHNC, URXMHH, URXECP, URXHIBP, URXMIB, RIDAGEYR)|>cor(use="pairwise.complete.obs")
-
-nhanes.dist<- as.dist(1-nhanes.cor)
-
-ggcorrplot(nhanes.cor)+
-  labs(title = "Corrleation of URX Variables and BMI")
-```
-
-```{r}
-nhanescor <- nhanes|> select(BMXBMIlog, URXMHBP, URXMOH, URXMHP, URXMHH, URXMCOH, URXMHNC, URXMHH, URXECP, URXHIBP, URXMIB, RIDAGEYR)
-
-cor_hanes <- cor(nhanescor)
-
-ggcorrplot(cor_hanes)+
-  labs(title = "Corrleation of URX Variables and BMI")
-```
-
-From the above plot, we can see that several variables are highly correlated with each other. For this example, we will use the URXMHNC, URXMCOH, and URXMOH variables.
-
-To find the best fit for the data, three separate models will be used: a standard linear model, a non-linear model, and an interaction model. To compute the models, a new package called Splines will be used. Since we will be using non-linear models, Splines uses a "piecewise" polynomial regression method to for estimation (as shown below):
-
-![Splines Example](1200px-Parametic_Cubic_Spline.svg.png){width="317"}
-
-For more information about the Splines package, please visit LINK.
-
-```{r, cache=TRUE}
-correlated_chems <- c('URXMHNC', 'URXMCOH',  'URXMOH')
-
-
-
-qc.fit6lin <- qgcomp.glm.boot(BMXBMIlog ~ URXMHNC + URXMCOH  + URXMOH + URXMHP + URXMHBP + URXMHP + URXMHH + URXMHH + URXECP + URXHIBP + URXMIB,
-                         expnms=correlated_chems,
-                         nhanes, family=gaussian(), q=4, B=5)
-
-
-qc.fit6nonlin <- qgcomp.glm.boot(BMXBMIlog ~ bs(URXMHNC) + bs(URXMCOH) + bs(URXMOH)+ URXMHP + URXMHBP + URXMHP + URXMHH + URXMHH + URXECP + URXHIBP + URXMIB,
-                         expnms=correlated_chems,
-                         nhanes, family=gaussian(), q=4, B=5, degree=2)
-```
-
-## Covariates
+When the quantile sum is approximately zero, the probability of an individual being over vs. under the national average is approximately 2.16. 
 
 A similarity to Weighted Quantile Sum Regression is the ability to adjust for covariates. As demonstrated in the WQS tutorial, we are interested if our model does a better job of predicting BMI while adjusting for the age variable, RIDAGEYR.
 
@@ -225,9 +163,10 @@ AIC(qcboot.fit5)
 
 ```
 
-The second model, with age added as a covariate, has a lower AIC. This allows us to conclude that BMI can be better predicted with age included in the model.
+The second model, with age added as a covariate, has a lower AIC. This allows us to conclude that log(BMI) can be better predicted with age included in the model.
 
-Unlike WQS, the qgccomp package allows the variables to contribute in different directions, as demonstrated with the "weights." Instead of unidirectional relationships, a weight is assigned to the individual chemical exposure correspoding to "the proportion of the overall effect when all of the exposures have effects in the same direction" (CRAN). The weights are shown in the figure below:
+
+Unlike WQS, the qgccomp package allows the variables to contribute in different directions, as demonstrated with the "weights." Instead of unidirectional relationships, a weight is assigned to the individual chemical exposure corresponding to "the proportion of the overall effect when all of the exposures have effects in the same direction" (CRAN). The weights are shown in the figure below:
 
 ```{r}
 plot(qcboot.fit5)
@@ -235,7 +174,67 @@ plot(qcboot.fit5)
 
 An interesting output of the `qgcomp` model is the sum of the positive and negative coefficients. In application, this appears to equate to a "partial effect," the impact of a chemical with a positive/negative coefficient. However, it cannot be interpreted as a "true partial effect" due to the fact that the sum of the coefficients depends on the model results/fit.
 
-In order to estimate the partial effects without the issues discussed above, a sample splitting procedure can be used by creating training and validation dataset. More information on how to complete this procedure can be found on the CRAN website (LINK).
+In order to estimate the partial effects without the issues discussed above, a sample splitting procedure can be used by creating training and validation dataset. More information on how to complete this procedure can be found on the CRAN website <https://cran.r-project.org/web/packages/qgcomp/vignettes/qgcomp-vignette.html>.
+
+## Non-Linear Models
+
+However, unlike `gWQS`, `qgcomp` can deal with non-linearity, where the relationship between the response and predictors do not follow a linear pattern. In the following example, the same predictor variables are transformed and squared in order to reflect a non-linear relationship.
+
+```{r}
+qcboot.fit5 <- qgcomp(BMXBMIlog~. + .^2,
+                         expnms=chem_names_new,
+                         nhanes[,c(chem_names_new, 'BMXBMIlog')], family=gaussian(), q=4, degree=2, B=5, seed=125)
+```
+
+```{r}
+qcboot.fit5
+```
+
+Although this model provides a result, it is difficult when there are numerous chemical mixtures as predictors. However, we can narrow down the variables by examining a correlation matrix. It is possible that exposures that are highly correlated with each other may have an underlying similarities, "a common environmental source or set of behaviors."
+
+By viewing the following correlation matrix of the urine samples:
+
+```{r}
+nhanescor <- nhanes|> select(BMXBMIlog, URXMHBP, URXMOH, URXMHP, URXMHH, URXMCOH, URXMHNC, URXMHH, URXECP, URXHIBP, URXMIB, RIDAGEYR)
+
+cor_hanes <- cor(nhanescor)
+
+corrplot(cor_hanes, order = 'hclust', addrect = 4)
+```
+
+From the above plot, we can see that several variables are highly correlated with each other. For this example, we will use the URXMHNC, URXMCOH, and URXMOH variables.
+
+To find the best fit for the data, three separate models will be used: a standard linear model, a non-linear model, and an interaction model. To compute the models, a new package called Splines will be used. Since we will be using non-linear models, Splines uses a "piecewise" polynomial regression method to for estimation (as shown below):
+
+![Splines Example](1200px-Parametic_Cubic_Spline.svg.png){width="317"}
+For more information about the Splines package, please visit <https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-019-0666-3>.
+
+```{r, cache=TRUE}
+correlated_chems <- c('URXMHNC', 'URXMCOH',  'URXMOH')
+
+qc.fit6lin <- qgcomp.glm.boot(BMXBMIlog ~ URXMHNC + URXMCOH  + URXMOH + URXMHP + URXMHBP + URXMHP + URXMHH + URXMHH + URXECP + URXHIBP + URXMIB,
+                         expnms=correlated_chems,
+                         nhanes, family=gaussian(), q=4, B=5)
+
+qc.fit6nonlin <- qgcomp.glm.boot(BMXBMIlog ~ bs(URXMHNC) + bs(URXMCOH) + bs(URXMOH)+ URXMHP + URXMHBP + URXMHP + URXMHH + URXMHH + URXECP + URXHIBP + URXMIB,
+                         expnms=correlated_chems,
+                         nhanes, family=gaussian(), q=4, B=5, degree=1)
+```
+
+```{r}
+qc.fit6lin
+
+pl.fit6lin <- plot(qc.fit6lin, suppressprint = TRUE, pointwiseref = 4)
+pl.fit6lin + coord_cartesian(ylim=c(-0.75, .75))
+```
+
+```{r}
+qc.fit6nonlin
+pl.fit6nonlin <- plot(qc.fit6nonlin, suppressprint = TRUE, pointwiseref = 4)
+pl.fit6nonlin + coord_cartesian(ylim=c(-0.75, .75)) + 
+  ggtitle("Non-linear fit: mixture of iron, lead, and cadmium")
+```
+
 
 ## Missing Data, Limits of Detection, and Multiple Imputation
 
@@ -256,3 +255,6 @@ The `qgcomp` package also has the capabilities to compute models despite the dat
 To read more about how to complete these steps and for additional applications of the qqgcomp model, visit the following website: <https://cran.r-project.org/web/packages/qgcomp/vignettes/qgcomp-vignette.html>
 
 ## References
+
+<https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-019-0666-3>
+<https://cran.r-project.org/web/packages/qgcomp/vignettes/qgcomp-vignette.html>
