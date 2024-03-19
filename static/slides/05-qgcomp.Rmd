@@ -234,7 +234,7 @@ To find the best fit for the data, three separate models will be used: a quadrat
 For more information about the Splines package, please visit <https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-019-0666-3>.
 
 ```{r, cache=TRUE}
-correlated_chems <- c('URXMHNC', 'URXMCOH',  'URXMOH')
+correlated_chems <- c('URXMIB', 'URXHIBP')
 
 qc.fit6lin <- qgcomp.glm.boot(BMXBMIlog ~ URXMHNC + URXMCOH  + URXMOH + URXMHP + URXMHBP + URXMHP + URXMHH + URXMHH + URXECP + URXHIBP + URXMIB,
                          expnms=correlated_chems,
