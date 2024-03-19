@@ -209,11 +209,11 @@ qcboot.fit5d
 
 ## Non-linear regression model using splines
 
-In the previous example, we specify the non-linear regression model based on our priori (quadratic terms). Here `qgcomp` can also allow learning of nonlinear trend by using splines.
+In the previous example, we specify the non-linear regression model based on our prior (quadratic terms). Here `qgcomp` can also allow learning of nonlinear trend by using splines.
 
 ----- start here
 
-Although this model provides a result, it is difficult when there are numerous chemical mixtures as predictors. However, we can narrow down the variables by examining a correlation matrix. It is possible that exposures that are highly correlated with each other may have an underly ing similarities, "a common environmental source or set of behaviors."
+Often with chemical mixtures, variables that have high correlations may have a non-linear trend (possibly quadratic). Exposures that are highly correlated with each other may have an underlying similarities, "a common environmental source or set of behaviors" (CRAN). To account for this issue, we can use the splines model which specializes in modeling quadratic terms. First, a correlation matrix can be used to determine which chemicals found in urine samples have a strong correlation. 
 
 By viewing the following correlation matrix of the urine samples:
 
@@ -225,7 +225,7 @@ cor_hanes <- cor(nhanescor)
 corrplot(cor_hanes, order = 'hclust')
 ```
 
-From the above plot, we can see that several variables are highly correlated with each other. For this example, we will use the URXMHNC, URXMCOH, and URXMOH variables.
+From the above plot, we can see that several variables are highly correlated with each other. For this example, we will use the URXMIB and URXHIBP variables.
 
 To find the best fit for the data, three separate models will be used: a quadratic regression model, a non-linear model, and an interaction model. To compute the models, a new package called Splines will be used. Since we will be using non-linear models, Splines uses a "piecewise" polynomial regression method to for estimation (as shown below):
 
@@ -238,9 +238,9 @@ correlated_chems <- c('URXMIB', 'URXHIBP')
 
 qc.fit6lin <- qgcomp.glm.boot(BMXBMIlog ~ URXMHNC + URXMCOH  + URXMOH + URXMHP + URXMHBP + URXMHP + URXMHH + URXMHH + URXECP + URXHIBP + URXMIB,
                          expnms=correlated_chems,
-                         nhanes, family=gaussian(), q=8, B=5,degree=2)
+                         nhanes, family=gaussian(), q=8, B=5)
 
-qc.fit6nonlin <- qgcomp.glm.boot(BMXBMIlog ~ bs(URXMHNC,df = 3) + URXMCOH + URXMOH+ URXMHP + URXMHBP + URXMHP + URXMHH + URXMHH + URXECP + URXHIBP + URXMIB,
+qc.fit6nonlin <- qgcomp.glm.boot(BMXBMIlog ~ bs(URXMIB) + bs(URXHIBP) + URXMCOH + URXMOH+ URXMHP + URXMHBP + URXMHP + URXMHH + URXECP,
                          expnms=correlated_chems,
                          nhanes, family=gaussian(), q=8, B=5)
 summary(qc.fit6lin$fit)$coefficients
