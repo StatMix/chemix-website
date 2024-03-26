@@ -223,6 +223,15 @@ cor_hanes <- cor(nhanescor)
 
 corrplot(cor_hanes, order = 'hclust')
 ```
+```{r}
+
+nhanescor <- nhanes|> select(BMXBMIlog, URXMHBP, URXMOH, URXMHP, URXMHH, URXMCOH, URXMHNC, URXMHH, URXECP, URXHIBP, URXMIB, RIDAGEYR)
+
+cor_hanes <- cor(nhanescor)
+
+
+
+```
 
 From the above plot, we can see that several variables are highly correlated with each other. For this example, we will use the URXMIB and URXHIBP variables.
 
@@ -250,7 +259,7 @@ plot(qc.fit6lin$fit)
 AIC(qc.fit6lin)
 AIC(qc.fit6nonlin)
 ```
-Prior to interpreting the data, it is important to examine the residual plots. For both models, the residuals appear to generally follow the QQ plot and appear to be evenly scattered in the Residuals vs Fitted visualization. When examining the splines model, it is important to note that variables of interest with high correlations appear more than once in the regression model, this signifies???. The linear model is similar to the examples above and carries the same assumptions. 
+Prior to interpreting the data, it is important to examine the residual plots. For both models, the residuals appear to generally follow the QQ plot and appear to be evenly scattered in the Residuals vs Fitted visualization. The linear model is similar to the examples above and carries the same assumptions. 
 
 For our model comparison, we can once again use AIC. The non-linear model using spines produces the lower AIC, -309.7716 compared to -298.9247 for the standard linear form. This means that the splines method produced a more appropriate model for the highly correlated urine samples. 
 
