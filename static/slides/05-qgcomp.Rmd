@@ -211,7 +211,6 @@ qcboot.fit5d
 
 In the previous example, we specify the non-linear regression model based on our prior (quadratic terms). Here `qgcomp` can also allow learning of nonlinear trend by using splines.
 
------ start here
 
 Often with chemical mixtures, variables that have high correlations may have a non-linear trend (possibly quadratic). Exposures that are highly correlated with each other may have an underlying similarities, "a common environmental source or set of behaviors" (CRAN). To account for this issue, we can use the splines model which specializes in modeling quadratic terms. First, a correlation matrix can be used to determine which chemicals found in urine samples have a strong correlation. 
 
@@ -251,6 +250,10 @@ plot(qc.fit6lin$fit)
 AIC(qc.fit6lin)
 AIC(qc.fit6nonlin)
 ```
+Prior to interpreting the data, it is important to examine the residual plots. For both models, the residuals appear to generally follow the QQ plot and appear to be evenly scattered in the Residuals vs Fitted visualization. When examining the splines model, it is important to note that variables of interest with high correlations appear more than once in the regression model, this signifies???. The linear model is similar to the examples above and carries the same assumptions. 
+
+For our model comparison, we can once again use AIC. The non-linear model using spines produces the lower AIC, -309.7716 compared to -298.9247 for the standard linear form. This means that the splines method produced a more appropriate model for the highly correlated urine samples. 
+
 
 ```{r}
 qc.fit6lin
@@ -259,7 +262,7 @@ plot(qc.fit6lin)
 plot(qc.fit6lin, suppressprint = TRUE, pointwiseref = 4) + 
   ggtitle("Linear fit")
 ```
-
+Further, the model evaluation through the visualization above demonstrates the linear trend produced???
 ```{r}
 qc.fit6nonlin
 pl.fit6nonlin <- plot(qc.fit6nonlin, suppressprint = TRUE, pointwiseref = 4)
