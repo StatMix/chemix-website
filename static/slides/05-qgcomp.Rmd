@@ -81,7 +81,7 @@ library(gWQS) # for comparison
 
 `q` - specifies the number of quantiles to be used.
 
-`B` - number of bootstrap samples when using `qgcomp.glm.noboot()`. If we fit a non-linear model, we will employ bootstrap for simulation based inference. Usually we use the default value, which is 200. 
+`B` - number of bootstrap samples when using `qgcomp.glm.boot()`. If we fit a non-linear model, we will employ bootstrap for simulation based inference. Usually we use the default value, which is 200. 
 
 `seed` - random seed for bootstrap-based inference. Recommend to specify the seed when fitting nonlinear model (enable reproducing your results).
 

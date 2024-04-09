@@ -1801,7 +1801,7 @@ variables in the <code>dat</code> argument except for the response
 variable.</p>
 <p><code>q</code> - specifies the number of quantiles to be used.</p>
 <p><code>B</code> - number of bootstrap samples when using
-<code>qgcomp.glm.noboot()</code>. If we fit a non-linear model, we will
+<code>qgcomp.glm.boot()</code>. If we fit a non-linear model, we will
 employ bootstrap for simulation based inference. Usually we use the
 default value, which is 200.</p>
 <p><code>seed</code> - random seed for bootstrap-based inference.
@@ -1826,7 +1826,7 @@ system.time(qc.fit &lt;- qgcomp(BMXBMIlog~.,
                             b = 1, # only set 1 bootstrap sample, not recommended for estimation, just use for time comparison
                 b1_pos = TRUE, b1_constr = FALSE, family = &quot;gaussian&quot;, seed=1))</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.092   0.005   0.099</code></pre>
+##   0.098   0.007   0.105</code></pre>
 <p>The <code>gWQS</code> resulted in a longer elapsed time compared to
 the <code>qgcomp</code> model.</p>
 <p>The output of the linear model is demonstrated below:</p>
