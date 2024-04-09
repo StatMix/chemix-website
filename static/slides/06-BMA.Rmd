@@ -40,6 +40,8 @@ Let $K$ denote the number of all potential models, the model probability of mode
 
 $$Pr(M_k|D) = \frac{Pr(D|M_k)Pr(M_k)}{\sum_{l=1}^K Pr(D|M_l)Pr(M_l)}$$
 
+Bayesian Model Averaging combines predictions from multiple models by weighting them according to their posterior probabilities given observed data, a process facilitated by Bayes' Theorem, while the Law of Total Probability ensures a comprehensive estimation by considering all possible model outcomes.
+
 The model $M$ can take various forms, such as linear models, generalized linear models, survival analysis. Here in this tutorial, we will only focus on BMA for linear regression.
 
 There are three packages available: `BAS`, `BMS`, and `BMA`. A thorough comparison are presented in this [paper](https://www.researchgate.net/profile/Christopher-Parmeter/publication/268216833_Bayesian_model_averaging_in_R/links/54ac4c040cf2479c2ee7b14e/Bayesian-model-averaging-in-R.pdf). Here we use `BAS` package for its fast computation, flexible choices of priors, and various options for inference and diagnosis.
@@ -102,8 +104,8 @@ We also plot the distributions of our variables of interest involved in the mode
 
 ## Bayesian Model Averaging for Linear Regression Models
 
-As shown in the formula above, BMA addresses model uncertainty in a regression problem, and here we consider $M_k$ to be a linear regression. Suppose a linear model structure, with $y$ being the dependent variable, $\alpha_\gamma$, an intercept, $\beta_\gamma$ the coefficients, and $\epsilon$ a normal IID error term with variance $\sigma^2$:
-$$y=\alpha_\gamma+X_\gamma \beta_\gamma+\epsilon \hspace{1cm}\epsilon \sim N(0, \sigma^2I)$$
+As shown in the formula above, BMA addresses model uncertainty in a regression problem, and here we consider $M_k$ to be a linear regression. Suppose a linear model structure, with $y$ being the dependent variable, $\alpha_\gamma$, an intercept, $\beta_\gamma$ the coefficients, and $\epsilon_i$ a normal IID error term with variance $\sigma^2$:
+$$y=\alpha_\gamma+X_\gamma \beta_\gamma+\epsilon \hspace{1cm}\epsilon \sim N(0, \sigma^2I)$$, where $y$ is a $n$ by 1 vector $y=(y_1,...,y_n)’$ where n is sample size
 
 The value of $\gamma$ determines how much weight or importance is assigned to each individual model in the model set when combining their predictions or estimating parameters.
 - When $\gamma = 0$: No model averaging takes place. In this case, only the "best" model (the one with the highest posterior probability) is used for estimation or prediction.
