@@ -104,7 +104,11 @@ We also plot the distributions of our variables of interest involved in the mode
 
 ## Bayesian Model Averaging for Linear Regression Models
 
-As shown in the formula above, BMA addresses model uncertainty in a regression problem, and here we consider $M_k$ to be a linear regression. Suppose a linear model structure, with $y$ being the dependent variable, $\alpha_\gamma$, an intercept, $\beta_\gamma$ the coefficients, and $\epsilon_i$ a normal IID error term with variance $\sigma^2$:
+As shown in the formula above, BMA addresses model uncertainty in a regression problem, and here we consider $M_k$ to be a linear regression. Suppose a linear model structure, with $y$ being the dependent variable, $\alpha$, an intercept, $\beta$ the coefficients, and $\epsilon$ a normal IID error term with variance $\sigma^2$:
+$$y=\alpha+X \beta+\epsilon \hspace{1cm}\epsilon \sim N(0, \sigma^2I)$$, where $y$ is a $n$ by 1 vector $y=(y_1,...,y_n)’$ where n is sample size
+
+Since the X's may be correlated, we may want to select a subset of all the $p$ variables. All the combinations of potential models are $2^p$, since for each variable, we could choose to either include it or not. We have $p$ variables, therefore we have $2^p$ possible models $(M_1, …, M_2^p)$ To indicate whether we include the variable, we introduce an indicator $gamma_i$, where $i = 1,...,p$ The inclusion probability here is $\sum_{i=1}^n Pr(gamma_i=1)$. Therefore the model forms become 
+
 $$y=\alpha_\gamma+X_\gamma \beta_\gamma+\epsilon \hspace{1cm}\epsilon \sim N(0, \sigma^2I)$$, where $y$ is a $n$ by 1 vector $y=(y_1,...,y_n)’$ where n is sample size
 
 The value of $\gamma$ determines how much weight or importance is assigned to each individual model in the model set when combining their predictions or estimating parameters.
@@ -115,7 +119,7 @@ In BMA, the inclusion probability ($\pi_i$) for a model or variable i is calcula
 
 We perform log transformation to all the variables since the EDA suggests the long tail and extreme values in the original scale. We fit a BMA model on the dataset using BMI as the response variable, and all of the 10 URX variables as predictor variables. 
 
-To get started, we will use `BAS` with the Zellner-Siow Cauchy prior on the coefficients.
+To get started, we will use `BAS` with the Zellner-Siow Cauchy prior on the coefficients. We will discuss the different choice of priors in later sections.
 
 ```{r}
 nhanes_URX<-log(nhanes_URX)
@@ -124,10 +128,12 @@ model <-bas.lm(BMXBMI ~ .,
   prior = "ZS-null",
   modelprior = uniform(), initprobs = "eplogp", method="MCMC",
   force.heredity = FALSE, pivot = TRUE
+  # The force.heredity = TRUE argument means that we force levels of a factor 
+  #to enter or leave together
 )
 ```
 
-Here we specify the `ZS-null` as the prior argument, and the argument `uniform()` means that the prior distribution over the models is a uniform distribution which assigns equal probabilities to all models. The optional argument `initprobs=eplogp` provides a way to initialize the sampling algorithm and order the variables in the tree structure that represents the model space in BAS. The `eplogp` option uses the Bayes factor calibration of p-values $-eplog(p)$ to provide an approximation to the marginal inclusion probability that the coefficient of each predictor is zero, using the p-values from the full model. The `force.heredity = TRUE` argument means that we force levels of a factor to enter or leave together. Pivot is logical variable to allow pivoting of columns when obtaining the OLS estimates of a model so that models that are not full rank can be fit.
+Here we specify the `ZS-null` as the prior argument, and the argument `uniform()` means that the prior distribution over the models is a uniform distribution which assigns equal probabilities to all models. The optional argument `initprobs=eplogp` provides a way to initialize the sampling algorithm and order the variables in the tree structure that represents the model space in BAS. The `eplogp` option uses the Bayes factor calibration of p-values $-eplog(p)$ to provide an approximation to the marginal inclusion probability that the coefficient of each predictor is zero, using the p-values from the full model. The `force.heredity = TRUE` argument means that we force levels of a factor to enter or leave together. 
 
 ```{r}
 summary(model)
@@ -178,6 +184,9 @@ plot(model, ask = F)
 diagnostics(model, type = "pip", pch = 16) 
 ```
 
+The Residuals vs. Fitted Values plot helps to check for linearity and homoscedasticity. Ideally, residuals should be randomly scattered around the horizontal line at zero, indicating that the model captures the underlying linear relationship between the predictors and the response variable without systematic patterns.
+
+The convergence plot is a straight line, which indicates that the sampler has reached convergence, meaning that the sampled values adequately represent the posterior distribution of interest.
 
 ## Model Predictions of BMA
 
