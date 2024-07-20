@@ -64,12 +64,12 @@ load(file='nhanes1518.rda')
 
 ## Exploratory Data Analysis
 
-We focus on exploring the poential effect of URX predictors (i.e. the ones related to phthalates concentrations) on BMI. Here we first subset the dataset and then filter out `NA` values:
+We focus on exploring the poential effect of URX predictors (i.e. the ones related to phthalates concentrations) on BMI. Here we first select URX predictors and then filter out `NA` values:
 
 ```{r}
 nhanes_URX<-nhanes1518%>%
   select(BMXBMI, URXUCR, URXCNP,URXCOP,URXECP,URXHIBP,URXMBP,URXMC1,URXMEP,URXMHBP,URXMHH)%>%
-  na.omit()
+  na.omit() 
 ```
 
 We start exploration by plotting a correlation matrix between the variables of interest. We can use the `corrplot` function within the `corrplot` package, and adjust the style to fit our aesthetics of desire. We see that the predictors are highly correlated, especially between URXMHH and URXECP, and URXMHBP and URXMBP.
@@ -119,6 +119,8 @@ We called it inclusion probability ($\pi_i$). It measures the importance of vari
 
 We perform log transformation to all the variables since the EDA suggests the long tail and extreme values in the original scale. We fit a BMA model on the dataset using BMI as the response variable, and all of the 10 URX variables as predictor variables. 
 
+BAS uses a model formula similar to `lm` to specify the full model with all of the potential predictors. Here we are using the shorthand . to indicate that all remaining variables in the data frame provided by the data argument. 
+
 To get started, we will use `BAS` with the Zellner-Siow Cauchy prior on the coefficients. We will discuss the different choice of priors in later sections.
 
 ```{r}
@@ -153,7 +155,7 @@ The `image` function help to visualize the potential model candidates, which loo
 image(model, rotate=F)
 ```
 
-Here, the predictors, including the intercept, are on the y-axis, while the x-axis corresponds to each different model. The color indicates log posterior odds, representing how likely the corresponding model are supported by the data. And black color indicates the corresponding variable (row-wise) is not included in a particular model (column-wise). We usually view the image by rows to check the importance of a variable. Here the plot indicates that most of the URX variables are significant in most models, except for `URXMC1`,`URXCOP`,`URXMBP`,`URXMHH` which are less likely included in most models. 
+Here, the predictors, including the intercept, are on the y-axis, while the x-axis corresponds to each different model. The color indicates log posterior odds, representing how likely the corresponding model are supported by the data. And black color indicates the corresponding variable (row-wise) is not included in a particular model (column-wise). The colors show how well each model fits the data, with the color scale proportional to posterior probabilities. Orange signifies the best-fitting models, while dark violet indicates the least supported models among the top 20. Models with similar colors can be considered to have no significant difference in performance. We usually view the image by rows to check the importance of a variable. Here the plot indicates that most of the URX variables are significant in most models, except for `URXMC1`,`URXCOP`,`URXMBP`,`URXMHH` which are less likely included in most models. 
 
 
 We can also plot the posterior distributions of these coefficients to take a closer look at potential influence of each variable:
@@ -170,7 +172,8 @@ Notice the sticks located at 0 represent posterior inclusion probability. If not
 
 ```{r}
 confint(coef.model)
-plot(confint(coef.model),estimator = "HPM") 
+# set parm = 2:11 to exclude intercept in the visualization
+plot(confint(coef.model,parm = 2:11),estimator = "HPM") 
 ```
 
 The output of `confint()` is a table, with columns `2.5%`, `97.5%` representing 2.5% and 97.5% quantiles of posterior distribution, column `beta` representing the posterior mean. We see that URXCOP does not have significant effect on BMI since the credible interval include 0. URXUCR and URXMEP have strong positive effects on BMI since the credible interval is entirely positive, whereas URXHIBP and URXCNP have negative effects on BMI since the credible interval is negative. `HPM` stands for the highest probability model. Other choices of estimator include `MPM` (the median probability model of Berbieri and Berger), `BPM` (best predictive model) and `BMA` (Bayesian model averaging).
@@ -183,7 +186,7 @@ plot(model, ask = F)
 ```
 
 
-The Residuals vs. Fitted Values plot helps to check for linearity and homoscedasticity. Ideally, residuals should be randomly scattered around the horizontal line at zero, indicating that the model captures the underlying linear relationship between the predictors and the response variable without systematic patterns. 
+The Residuals vs. Fitted Values plot helps to check for linearity and homoscedasticity. Ideally, residuals should be randomly scattered around the horizontal line at zero, indicating that the model captures the underlying linear relationship between the predictors and the response variable without systematic patterns. However, the residuals form an elliptical pattern, suggesting that the assumptions of linearity and homoscedasticity may be violated. Possible reasons for this include the omission of important factors in the model and the constraint that the chemical mixtures are bounded by 0.
 
 The model probabilities plot provides cumulative probability of posterior probabilities of models. We can observe model 15 and model 16 have relative large posterior probabilities compared to other alternatives.
 
@@ -201,18 +204,53 @@ The convergence plot is a straight line, which indicates that the sampler has re
 
 `BAS` has methods defined to return fitted values, namely `fitted`, using the observed design matrix and predictions at either the observed data or potentially new values, predict, as with linear regressions. `predict` provides model fitting and prediction. `fitted` produce the fitted values, which is equivalent to `predict()$fit`
 
+```{r}
+BMA_fitted <- fitted(model, estimator = "BMA")
+# predict has additional slots for fitted values under BMA, predictions under each model
+BMA <- predict(model, estimator = "BMA")
+
+```
+
+
+Using the `se.fit = TRUE`, we can also calculate standard deviations for prediction or for the mean and use this as input for the `confint` function for the prediction object. The mean BMI of a population with fairly typical exposure values will between 24.37 and 24.71. For an individual with fairly typical exposure values, his/her BMI on average will between 14.67 and 41.54.
+
 
 ```{r}
-BMA <- predict(model, estimator = "BMA")
-# predict has additional slots for fitted values under BMA, predictions under each model
-BMA_fitted <- fitted(model, estimator = "BMA")
-all(BMA_fitted==BMA$fit)
+# take the average of chemical exposures. 
+avg_ind = as.data.frame(t(apply(nhanes_URX[,-1],2,mean)))
+
+BMA_pred <- predict(model, avg_ind, estimator = "BMA", se.fit = TRUE)
+# confidence interval
+confint(BMA_pred, parm = "mean") |> exp() 
+# prediction interval
+confint(BMA_pred, parm = "pred") |> exp() 
+
 ```
+
+The package also offers visualizations for the intervals. When predicting individuals with minimal exposure (1st percentile), typical exposure (50th percentile), and high exposure (99th percentile), we provide visualizations for both the population-level confidence intervals and individual-level prediction intervals. We observe that, at the population level, individuals with typical exposure have higher BMIs compared to those with minimal or high exposure. However, at the individual level, the differences are quite small, as indicated by the overlapping prediction intervals.
+
+
+```{r}
+newdat = as.data.frame(apply(nhanes_URX[,-1],2,quantile,c(0.01,0.5,0.99)))
+
+bma_pred <- predict(model, newdat, estimator = "BMA", se.fit = TRUE)
+model.fit <- confint(bma_pred, parm = "mean")
+model.pred <- confint(bma_pred, parm = "pred")
+## visualize confidence interval
+vis_confidence = model.fit %>% exp()
+class(vis_confidence) <- "confint.bas"
+plot(vis_confidence)
+## visualize prediction interval
+vis_pred = model.pred %>% exp()
+class(vis_pred) <- "confint.bas"
+plot(vis_pred)
+```
+
 
 
 ## Model Predictions with Model Selection
 
-In addition to using BMA, we can use the posterior means under model selection. This corresponds to a decision rule that combines estimation and selection. `BAS` currently implements the following options:
+In addition to using BMA, we can use the posterior means under model selection. This corresponds to a decision rule that combines estimation and selection. The BAS package currently offers three options: the highest probability model (HPM), the median probability model (MPM), and the best predictive model (BPM). The choice of model depends on the analysis goal. For interpretation purposes, we recommend using HPM. If the model includes many variables and the sample size is relatively small, to avoid overfitting and achieve robustness, we suggest using MPM. For prioritizing prediction performance, we recommend using BPM.
 
 ### Highest Probability Model
 
@@ -286,41 +324,16 @@ BPM <- predict(model, estimator = "BPM")
 variable.names(BPM)
 ```
 
-Now we use `ggpairs` to see how these models compare:
-
-```{r}
-library(GGally)
-GGally::ggpairs(data.frame(
-  HPM = as.vector(HPM$fit), # this used predict so we need to extract fitted values
-  MPM = as.vector(MPM$fit), # this used fitted
-  BPM = as.vector(BPM$fit), # this used fitted
-  BMA = as.vector(BMA$fit)
-)) # this used predict
-```
-
-Using the `se.fit = TRUE` option with `predict` we can also calculate standard deviations for prediction or for the mean and use this as input for the `confint` function for the prediction object. Since there are many predictions, here we slice 15 samples and observe their confidence intervals:
-
-```{r}
-BPM <- predict(model, estimator = "BPM", se.fit = TRUE)
-model.fit <- confint(BPM, parm = "mean")
-model.pred <- confint(BPM, parm = "pred")
-# take 15 samples
-sample<-model.fit[1:15,]
-class(sample) <- "confint.bas"
-plot(sample)
-```
-
-
-```{r}
-sample<-model.pred[1:15,]
-class(sample) <- "confint.bas"
-plot(sample)
-```
 
 ## Prior Selection
 
-BAS uses a model formula similar to lm to specify the full model with all of the potential predictors. Here we are using the shorthand . to indicate that all remaining variables in the data frame provided by the data argument. Prior selection is a critical step in Bayesian model averaging (BMA) as it determines the weights assigned to each model in the model space. The choice of prior distribution for the model parameters can significantly impact the BMA results. A well-informed prior can help avoid overfitting, reduce uncertainty, and improve model selection. However, selecting an appropriate prior can be challenging as it requires balancing between being informative enough to guide the model towards plausible solutions and being uninformative enough to avoid biasing the results. Prior elicitation techniques such as expert opinion, empirical data, and sensitivity analysis can be employed to guide the choice of priors. Overall, careful prior selection is crucial for obtaining reliable and accurate BMA results.
-Different prior distributions on the regression coefficients may be specified using the prior argument, and include
+
+Prior selection is a critical step in Bayesian model averaging (BMA) as it determines the weights assigned to each model in the model space. The choice of prior distribution for the model parameters can significantly impact the BMA results. A well-informed prior can help avoid overfitting, reduce uncertainty, and improve model selection. However, selecting an appropriate prior can be challenging as it requires balancing between being informative enough to guide the model towards plausible solutions and being uninformative enough to avoid biasing the results. Prior elicitation techniques such as expert opinion, empirical data, and sensitivity analysis can be employed to guide the choice of priors. Overall, careful prior selection is crucial for obtaining reliable and accurate BMA results.
+
+If you lack strong prior knowledge, we recommend using the default prior of the package, the Zellner-Siow prior (ZS-null). This prior strikes a balance between model complexity and goodness of fit, typically resulting in a robust estimator.
+
+Below, we list all the prior options available in the package, along with detailed information and comparisons for each.
+
 
 - “BIC”
 - “AIC
