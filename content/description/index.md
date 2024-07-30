@@ -36,6 +36,17 @@ We are exposed to numerous environmental chemicals each day. We are interested i
 
 In this project, we aim to summarize advanced statistical approaches for analysis of complex mixtures and knit them to R tutorials to make them accessible to researchers without extensive statistics or mathematics backgrounds. This will include online tutorials to introduce advanced statistical approaches to scientists and to provide examples of their use using national survey data. A possible side project, depending on skills and interests, includes improving workflow using virtual lab notebooks for data collection and annotation.
 
+The tutorials will mainly be based on materials from NIEHS 2015 workshop and PRIME program. This research project is supported by [Superfund Research Center at Duke University](https://sites.nicholas.duke.edu/superfund/).
+
+### NIEHS 2015 workshop
+
+In 2015, the National Institute of Environmental Health Sciences (NIEHS) convened a workshop to bring together experts to **identify and compare statistical approaches for analyzing chemical mixture data in epidemiological studies**. The collection of abstract, codes, and datasets from the workshop are all available on the [NIEHS website](https://www.niehs.nih.gov/news/events/pastmtg/2015/statistical/index.cfm). 
+
+### PRIME Program
+
+NIEHS also launched a funding initiative to **address the analytical challenges of environmental mixtures research**, called Powering Research through Innovative methods for Mixtures in Epidemiology (PRIME) program. Various new statistical methods supported by the NIEHS PRIME Program are available in [Github](https://github.com/niehs-prime/).
+
+
 ## Project Objectives
 
 In this project, you will ...
