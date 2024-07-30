@@ -13,17 +13,6 @@
     url = "/schedule/"
     weight = 20
 
-[[main]]
-   # pre = "<i class=\"fa fa-info-circle\"></i>"
-    name = "Project"
-    url = "/project/"
-    weight = 30
-
-[[main]]
-   # pre = "<i class=\"fa fa-question-circle\" aria-hidden=\"true\"></i>"
-    name = "Resources"
-    url = "/resources/"
-    weight = 60
     
 [[main]]
     url = "https://github.com/StatMix"
