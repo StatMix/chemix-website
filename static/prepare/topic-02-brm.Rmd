@@ -20,13 +20,3 @@ knitr::opts_chunk$set(echo = TRUE)
 -   [brms](https://paul-buerkner.github.io/brms/)
 
 -   [rstanarm](https://cran.r-project.org/web/packages/rstanarm/rstanarm.pdf)
-
-### Framework
-
--   Brief introduction on Bayesian statistics, how it different from frequentists' view
-
--   Introduction to Bayesian regression. Including assumption, estimation methods, most importantly, how to interpret
-
--   Tutorial for Bayesian regression
-
--   Bayesian hierarchical model (? Probably)
