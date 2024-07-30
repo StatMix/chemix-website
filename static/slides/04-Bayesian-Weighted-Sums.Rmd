@@ -1,6 +1,6 @@
 ---
-title: "Bayesian Weighted Sums"
-author: "Ryan Mitchell & Bradley Bowen"
+title: "Work in progress: Bayesian Weighted Sums"
+author: "Bradley Bowen"
 date: "Last Updated `r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
