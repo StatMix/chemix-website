@@ -1,66 +1,39 @@
-<table class="table schedule center" style="max-width:80%" align = "center">
-        {{- range .Site.Data.schedule }}
-        {{- range . }}
-        <tr>
-                 <td align="left" style="width:15%;text-align:right">{{ .week }}</td>
-            <td align="right" style="width:25%;text-align:right">{{ .date }}</td>
-            <td style="width:40%;text-align:left">{{ .title | markdownify }}</td>
+<table class="table schedule center" style="max-width:80%" align="center">
+    {{- range .Site.Data.schedule }}
+    {{- range . }}
+    <tr>
+        <td align="left" style="width:15%;text-align:right">{{ .week }}</td>
+        <td align="right" style="width:25%;text-align:right">{{ .date }}</td>
+        <td style="width:40%;text-align:left">{{ .title | markdownify }}</td>
 
-            {{- if .header }} 
-            <td style="width:5%;text-align:center" class="mid-table-header">Readings</td>
-            <td style="width:5%;text-align:center" class="mid-table-header">Tutorials</td>
-            
-            {{- else }} 
+        {{- if .header }} 
+        <td style="width:5%;text-align:center" class="mid-table-header">Readings</td>
+        <td style="width:5%;text-align:center" class="mid-table-header">Tutorials</td>
+        {{- else }} 
 
-          {{- if .prepare }}
-            <td align="center" style="width:8%;text-align:center"><a
-                    href="{{ .Site.baseurl }}/prepare/{{ .prepare }}">
-                    <i class="fas fa-book-reader fa-lg"></i></a></td>
-            {{- else }}
-            <td align="center" style="width:8%;text-align:center">
-                <font color="f1f1f1">
-                    <i class="fas fa-book-reader fa-lg"></i></font>
-            </td>
-            {{- end }}
-            
-
-             {{- if .slides }}
-            <td align="center" style="width:8%;text-align:center"><a
-                    href="{{ .Site.baseurl }}/slides/{{ .slides }}">
-                    <i class="fas fa-laptop fa-lg"></i></a></td>
-            {{- else }}
-            <td align="center" style="width:8%;text-align:center">
-                <font color="f1f1f1">
-                    <i class="fas fa-laptop fa-lg"></i></font>
-            </td>
-            {{- end }}
-
-           {{- if .ae }}
-            <td align="center" style="width:8%;text-align:center"><a
-                    href="{{ .Site.baseurl }}/appex/{{ .ae }}">
-                    <i class="fas fa-users fa-lg"></i></a></td>
-            {{- else }}
-            <td align="center" style="width:8%;text-align:center">
-                <font color="f1f1f1">
-                    <i class="fas fa-users fa-lg"></i></font>
-            </td>
-            {{- end }}
-
-            {{- if .lab }}
-            <td align="center" style="width:8%;text-align:center"><a href="{{ .Site.baseurl }}/labs/{{ .lab }}">
-                    <i class="far fa-file-code fa-lg"></i></a></td>
-            {{- else }}
-            <td align="center" style="width:8%;text-align:center">
-                <font color="f1f1f1">
-                    <i class="far fa-file-code fa-lg"></i></font>
-            </td>
-            {{- end }}
-            
-
-            {{- end }}
-        </tr>
+        {{- if .prepare }}
+        <td align="center" style="width:8%;text-align:center"><a href="{{ .Site.baseurl }}/prepare/{{ .prepare }}">
+                <i class="fas fa-book-reader fa-lg"></i></a></td>
+        {{- else }}
+        <td align="center" style="width:8%;text-align:center">
+            <font color="f1f1f1">
+                <i class="fas fa-book-reader fa-lg"></i></font>
+        </td>
         {{- end }}
-     {{- end }} 
 
+        {{- if .slides }}
+        <td align="center" style="width:8%;text-align:center"><a href="{{ .Site.baseurl }}/slides/{{ .slides }}">
+                <i class="fas fa-laptop fa-lg"></i></a></td>
+        {{- else }}
+        <td align="center" style="width:8%;text-align:center">
+            <font color="f1f1f1">
+                <i class="fas fa-laptop fa-lg"></i></font>
+        </td>
+        {{- end }}
+
+        {{- end }}
+    </tr>
+    {{- end }}
+    {{- end }} 
 </table>
 </div>
