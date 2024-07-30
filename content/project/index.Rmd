@@ -12,10 +12,6 @@ library(broom)
 ```
 
 
-## Timeline 
-
-[Topic ideas](#topic-ideas) due **Monday, October 11**
-
 ## Introduction 
 
 The tutorials will mainly be based on materials from NIEHS 2015 workshop and PRIME program. This research project is supported by [Superfund Research Center at Duke University](https://sites.nicholas.duke.edu/superfund/).

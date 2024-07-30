@@ -1,5 +1,5 @@
 ---
-title: Additional Resources and Tips
+title: Additional Resources for R
 ---
 
 ```{r include = F}
@@ -8,48 +8,12 @@ library(knitr)
 library(broom)
 ```
 
-## Additional resources
+## Additional resources for R
 
 - [R for Data Science](https://r4ds.had.co.nz/)
 - [R Markdown Cookbook](https://bookdown.org/yihui/rmarkdown-cookbook/)
-- [Slides in R using Xaringan](https://slides.yihui.org/xaringan/#1)
 - Data visualization
   - [ggplot2 Reference](https://ggplot2.tidyverse.org/reference/index.html)
   - [ggplot2: Elegant Graphics for Data Analysis](https://ggplot2-book.org/)
   - [Data Visualization: A Practice Introduction](https://socviz.co/index.html)
-  - [Patchwork R Package](https://patchwork.data-imaginist.com/index.html)
   
-
-
-### Formatting + communication tips
-
-- Include R code in website
-
-```r
-knitr::opts_chunk$set(echo = FALSE,
-                      warning = FALSE, 
-                      message = FALSE)
-```
-
-- See [Section 4.5](https://bookdown.org/yihui/rmarkdown-cookbook/bibliography.html) of the R Markdown Cookbook to learn about the citation functionality in R Markdown. 
-
-
-- Resize plots and figures, so you have more space for the narrative. 
-    - **Resize individual figures**: Use the code chunk header `{r plot1, fig.height = 3, fig.width = 5}`, replacing `plot1` with a meaningful label and the height and width with values appropriate for your write up.
-    - **Resize all figures**: Include the `fig_width` and `fig_height` options in your YAML header as shown below:
-
-```
----
-title: "Your Title"
-author: "Team Name + Group Members"
-output: 
-  pdf_document:
-    fig_width: 5
-    fig_height: 3
----
-```
-
-- If you're using ggplot2 functions, the `patchwork` package makes it easy to arrange plots in a grid. See the documentation and examples [here](https://patchwork.data-imaginist.com/).
-
-
-
