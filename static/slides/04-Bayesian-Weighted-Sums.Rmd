@@ -1,5 +1,5 @@
 ---
-title: "Work in progress: Bayesian Weighted Sums"
+title: "Work in Progress: Bayesian Weighted Sums"
 author: "Bradley Bowen"
 date: "Last Updated `r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -9,13 +9,125 @@ output:
     toc_float: true
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,
-                      warning=FALSE,
-                      message=FALSE)
+Bayesian Weighted Sums shares many similarities with Weighted Quantile Sums (WQS) and quantile g-computation (qgcomp). However, these methods rely on frequentest statistical methods while Bayesian Weighted Sums integrate priors and posteriors. As discussed in previous tutorials, Bayesian methods can also be applied to quantile regression methods. In other words, when predictors are highly correlated with each other, Bayesian methods can be utilized to determine the "bad actors."
+
+## Preparation
+
+In this tutorial, we will use the BWQS package, which can be installed from GitHub running the following lines in the Console. 
+
+```{r}
+#| message: false
+# Additional installations may be necessary for installing bwqs, which can be loaded using the additional code below:
+#install.packages("clusterGeneration")
+
+# install BWQS package
+#devtools::install_github("ElenaColicino/bwqs", build_vignettes = TRUE)
+
+# loading packages
+library(BWQS)
+library(tidyverse)
 ```
 
-## Topics 
+
+Similar to previous tutorials, we will use datum from NHANES and look at participants who are over 18 years old and will take the natural log of BMI. Phalates will be analyzed similar to the greater. 
 
 
-## Installations and Data
+```{r}
+load(file='nhanes1518.rda')
+head(nhanes1518)
+```
+
+Below, we remove the participants under the age of eighteen and take the log of BMI.
+
+```{r}
+nhanes <- nhanes1518 |>
+    filter(RIDAGEYR >= 18)|>
+    mutate(BMXBMIlog = log(BMXBMI),
+          RIDAGEYR = RIDAGEYR - 18)|>
+    dplyr::select(BMXBMI, BMXBMIlog, URXMHBP, URXMOH, URXMHP, URXMHH, URXMCOH, URXMHNC, URXMHH, URXECP, URXHIBP, URXMIB, RIDAGEYR)
+# We specify the select function comes from package `dplyr` by using `dplyr::select`
+nhanes <- drop_na(nhanes)
+
+nhanes
+```
+
+
+
+## Bayesian Weighted Sums
+
+The prior commonly used for Bayesian Weighted Sums (BWS) is the Dirichlet distribution. The Dirichlet is generalized from the beta distribution and is a continuous and multivariate probability distribution. This specific prior is used to ensure that the weights in the regression model sum to 1. This requires  Therefore, Bayesian weighted sums applies the Dirichlet prior to the weights (w1,w2,...,wn) to ensure that the assigned weights properly sum to 1. The assumptions for the Dirichlet distribution include all weights must be positive, real numbers and must sum to 1. Despite the constraints on the weights, the overall estimate (𝜃1) can be any value.
+
+
+𝐸[𝑔(𝑌)]=𝜃0+𝜃1(𝑤1𝑋1+𝑤2𝑋2+𝑤3)
+
+In this model, 𝜃1 is the combined effect of the three mixture exposures, while w is each individual weight. In this model, weights (w1,w2,...,wn) to must sum to 1.
+
+Another useful method for Bayesian Weighted Sums is that the unidirectional assumption (which has been discussed in previous tutorials) can be accounted for. Instead of constraining all exposures to contribute to a single direction, a grouping method of variables can be used for positive and negative directions.
+
+## Model Fitting
+
+
+`BWQS` has similar arguments to the `gWQS` and `qgcomp` packages:
+
+`q` - specifies the number of quantiles to be used
+
+`B` - number of bootstrap samples
+
+`iter` - the number of iterations in the model
+
+It is important to note that the prior of the beta-1 coefficient can be manually set to either the positive or negative direction. This can be useful if we have specific information regarding the prior and is accomplished by writing prior = "positive" or  prior = "negative".
+
+```{r}
+
+chem_names_new <- c('URXMHBP', 'URXMOH',  'URXMHP',  'URXMHH',  'URXMCOH', 'URXMHNC', 'URXECP', 'URXHIBP', 'URXMIB')
+
+nhanes_s = sample_n(tbl = nhanes,size = 50,replace = FALSE)
+
+fit_bwqs = bwqs(BMXBMIlog~RIDAGEYR, mix_name = chem_names_new,
+                data = nhanes_s, q = 4, family = "gaussian",iter = 100)
+```
+
+## Model Interpretation and Inference
+
+In addition to the model, the BWQS package has built-in visualization tools. Similar to WQS and GWQS, we can visualize the weights assigned to each of the predictors in our model.
+
+```{r}
+bwqs_plot(fit_bwqs, parms = "W", size = 2)
+# set parms = "W" to only visualize credible intervals of weights.
+```
+
+Additionally, similar to standard Bayesian regression models, we can us a 95% credible interval to view the results. We want the credible interval corresponding to our beta1 value, as shown below.
+
+```{r}
+fit_bwqs$summary_fit
+```
+
+We can state that there is a 95% confident that the average BMI for an individual above the age of 18 lies between -0.05040 and 0.11400. It is important to note that if the credible interval includes 0, the relationship is not considered significant. In this example, 0 is contained within the interval, so we there is not sufficient evidence to conclude there is a relationship between the phalates and log BMI.
+
+Also, we can interpret the beta 1 term for the model: 
+
+Beta 1: For every one unit increase in WQS (for every one increase in quantile of each chemical mixture), we expect a 0.03322 increase in log BMI.
+
+Additional information provided by the model includes the standard error, the effective sample size (number of cases in the population), and R-hat which is the corresponds to the convergence of MCMC simulations. 
+
+## Model Prediction
+
+## Model Evaluation
+
+For the model evaluation, instead of using AIC for our model evaluation, we use WAIC, which is widely used with Bayesian regression models. 
+
+```{r}
+bwqs_waic(fit_bwqs$fit)
+```
+
+Our WAIC metric is approximately 8.72. 
+
+## Conclusion
+
+In all, the BWQS model has many similarities to WQS and QGCOMP. However, the Bayesian methods can be utilized allowing additional flexibility in the model. The dirichlet distribution is often used with Bayesian Weighted Sums. However, other priors can be used if background information is known regarding the datum. Additional information about the model can be found: https://rdrr.io/github/ElenaColicino/bwqs/f/vignettes/bwqs_vignette.Rmd
+
+## References
+
+
+
+
