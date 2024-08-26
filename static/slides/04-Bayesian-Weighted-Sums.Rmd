@@ -58,11 +58,17 @@ nhanes
 
 ## Bayesian Weighted Sums
 
-Weighted quantile sum regression has several foundations that are essential to BWS: A weighted quantile sum regression has two core differences compared to an ordinary regression. First, it uses quantiles instead of its original scales as predictors, where ??????????? takes values as ???????. Second, it contains a weighted sum, which poses a constraint on the weights coefficients that should sum up to 1, w1 + w2 + … + wq = 1. Since the posterior has the same support as that of the prior, such constraint on weights is easily addressed in Bayesian methods by specifying a prior on weights subject to the constraint.The prior commonly used with BWS is Dirichlet distribution. The Dirichlet is generalized from the beta distribution and is a continuous and multivariate probability distribution.
+\*\*INTRODUCE THE MODEL
+
+$$ Eg(Y)= \beta_0 + \beta_1  \times (w_1X_1 + w_2X_2 +...+w_nX_n) $$
+
+In this model, beta 1 is the combined effect of the three mixture exposures, while w is each individual weight. In this model, weights (w1,w2,...,wn) to must sum to 1.
+
+Weighted quantile sum regression has several foundations that are essential to BWS: A weighted quantile sum regression has two core differences compared to an ordinary regression. First, it uses quantiles instead of its original scales as predictors, where X takes values as quantiles. Second, it contains a weighted sum, which poses a constraint on the weights coefficients that should sum up to 1, w1 + w2 + … + wq = 1. Since the posterior has the same support as that of the prior, such constraint on weights is easily addressed in Bayesian methods by specifying a prior on weights subject to the constraint.The prior commonly used with BWS is Dirichlet distribution. The Dirichlet is generalized from the beta distribution and is a continuous and multivariate probability distribution.
 
 Parameters of the distribution are α1, α2, ..., αK where K is are greater than or equal to 2:
 
-![](img/Dirichlet.jpg){width="815"}
+![](img/Dirichlet.jpg){width="469"}
 
 As shown above in the image, when alphas are equal, the resulting weights will be equal. However, if the alphas are unbalanced, there must be prior knowledge. We can assign unequal weights if we have strong prior knowledge showing some of predictors have more potential impact than the others. We can also adjust the amplitude of alpha to indicate the degree of confidence we have on prior knowledge. By default, we set all alpha’s to 1, indicating we the predictors have the same importance and we have weak information.
 
@@ -71,12 +77,6 @@ Therefore, we can generalize the formula for the Dirichlet Distribution where B(
 ![](img/Dirichlet2.png){width="294"}
 
 It is important to note, the assumptions for the Dirichlet distribution include all weights must be positive, real numbers and must sum to 1. Despite the constraints on the weights, the overall estimate (𝜃1) can be any value.
-
-Using the Dirichlet distribution as our prior, we can use a similar formula as WQS for Bay
-
-$$ Eg(Y)= \beta_0 + \beta_1  \times (w_1X_1 + w_2X_2 +...+w_nX_n) $$
-
-In this model, beta 1 is the combined effect of the three mixture exposures, while w is each individual weight. In this model, weights (w1,w2,...,wn) to must sum to 1.
 
 Another useful method for Bayesian Weighted Sums is that the unidirectional assumption (which has been discussed in previous tutorials) can be accounted for. Instead of constraining all exposures to contribute to a single direction, a grouping method of variables can be used accounting for a positive and negative beta one.
 
@@ -127,7 +127,7 @@ Also, we can interpret the beta 1 term for the model:
 
 Beta 1: For every one unit increase in WQS (for every one increase in quantile of each chemical mixture), we expect a 0.03322 increase in log BMI.
 
-Additional information provided by the model includes the standard error, the effective sample size (number of cases in the population), and R-hat which is the corresponds to the convergence of MCMC simulations.
+Additional information provided by the model includes the standard error, the effective sample size (number of cases in the population), and R-hat which is the corresponds to the convergence of MCMC simulations. (LESS THAN 1.01)!!
 
 ## Model Prediction
 
@@ -182,4 +182,4 @@ In all, the BWQS model has many similarities to WQS and QGCOMP. However, the Bay
 
 <https://github.com/ElenaColicino/bwqs>
 
-<https://mc-stan.org/docs/2_18/reference-manual/effective-sample-size-section.html>
+<https://stat.columbia.edu/~gelman/research/published/rhat.pdf>
