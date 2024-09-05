@@ -58,13 +58,13 @@ nhanes
 
 ## Bayesian Weighted Sums
 
-\*\*INTRODUCE THE MODEL
+Bayes Weighted Sums follows a similar formula to WQS. Each independent variable is assigned a weight and multiplied by the beta 1 coefficient. The formula is displayed below:
 
 $$ Eg(Y)= \beta_0 + \beta_1  \times (w_1X_1 + w_2X_2 +...+w_nX_n) $$
 
-In this model, beta 1 is the combined effect of the three mixture exposures, while w is each individual weight. In this model, weights (w1,w2,...,wn) to must sum to 1.
+In this model, beta 1 is the combined effect of the three mixture exposures, while w is each individual weight. In this model, weights (w1,w2,...,wn) to must sum to 1. It is important to note that the parameters in the BWS model can have informative priors assigned. However, for this example, we do not have valuable prior information, so will use a the standard normal distribution for each parameter.
 
-Weighted quantile sum regression has several foundations that are essential to BWS: A weighted quantile sum regression has two core differences compared to an ordinary regression. First, it uses quantiles instead of its original scales as predictors, where X takes values as quantiles. Second, it contains a weighted sum, which poses a constraint on the weights coefficients that should sum up to 1, w1 + w2 + … + wq = 1. Since the posterior has the same support as that of the prior, such constraint on weights is easily addressed in Bayesian methods by specifying a prior on weights subject to the constraint.The prior commonly used with BWS is Dirichlet distribution. The Dirichlet is generalized from the beta distribution and is a continuous and multivariate probability distribution.
+Weighted quantile sum regression has several foundations that are essential to BWS: A weighted quantile sum regression has two core differences compared to an ordinary regression. First, it uses quantiles instead of its original scales as predictors, where X takes values as quantiles. Second, it contains a weighted sum, which poses a constraint on the weights coefficients that should sum up to 1, w1 + w2 + … + wq = 1. Since the posterior has the same support as that of the prior, such constraint on weights is easily addressed in Bayesian methods by specifying a prior on weights subject to the constraint. The prior commonly used with BWS is Dirichlet distribution. The Dirichlet is generalized from the beta distribution and is a continuous and multivariate probability distribution.
 
 Parameters of the distribution are α1, α2, ..., αK where K is are greater than or equal to 2:
 
@@ -127,7 +127,7 @@ Also, we can interpret the beta 1 term for the model:
 
 Beta 1: For every one unit increase in WQS (for every one increase in quantile of each chemical mixture), we expect a 0.03322 increase in log BMI.
 
-Additional information provided by the model includes the standard error, the effective sample size (number of cases in the population), and R-hat which is the corresponds to the convergence of MCMC simulations. (LESS THAN 1.01)!!
+Additional information provided by the model includes the standard error, the effective sample size (number of cases in the population), and R-hat which is the corresponds to the convergence of MCMC simulations. A reasonable effective sample size (R-hat) is typically considered reasonable if it is less that 1.01.
 
 ## Model Prediction
 
