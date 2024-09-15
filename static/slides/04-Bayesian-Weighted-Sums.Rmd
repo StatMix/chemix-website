@@ -129,11 +129,11 @@ Additionally, similar to standard Bayesian regression models, we can us a 95% cr
 fit_bwqs$summary_fit 
 ```
 
-We are 95% confident that the average BMI for an individual at the age of 18 with low level of all chemical mixtures lies between `r exp(fit_bwqs$summary_fit)[1,4]` and `r exp(fit_bwqs$summary_fit)[1,5]`. 
+We are 95% confident that the average BMI for an individual at the age of 18 with low level of all chemical mixtures lies between `r round(exp(fit_bwqs$summary_fit)[1,4],3)` and `r round(exp(fit_bwqs$summary_fit)[1,5],3)`. 
 
-Holding other variables constant, for every one unit increase in WQS (for every one increase in quantile of each chemical mixture), we are 95% confidence to see BMI increase by a percentage between `r (exp(fit_bwqs$summary_fit)[2,4]-1)/100`% and `r (exp(fit_bwqs$summary_fit)[2,5]-1)/100`%. (It is calculated by exp(beta1-1) since we use logBMI as response.) 
+Holding other variables constant, for every one unit increase in WQS (for every one increase in quantile of each chemical mixture), we are 95% confidence to see BMI increase by a percentage between `r round((exp(fit_bwqs$summary_fit)[2,4]-1)*100,3)`% and `r round((exp(fit_bwqs$summary_fit)[2,5]-1),3)*100`%. (It is calculated by exp(beta1-1) since we use logBMI as response.) 
 
-Holding other variables constant, for each additional year of age, we are 95% confidence to see BMI increase by a percentage between `r (exp(fit_bwqs$summary_fit)[3,4]-1)/100`% and `r (exp(fit_bwqs$summary_fit)[3,5]-1)/100`%. 
+Holding other variables constant, for each additional year of age, we are 95% confidence to see BMI increase by a percentage between `r round((exp(fit_bwqs$summary_fit)[3,4]-1)*100,3)`% and `r round((exp(fit_bwqs$summary_fit)[3,5]-1)*100,3)`%. 
 
 It is important to note that if the credible interval includes 0, the relationship is not considered significant. In this example, 0 is contained within the interval, so we there is not sufficient evidence to conclude there is a relationship between the phalates and log BMI.
 
@@ -181,7 +181,7 @@ mean(result.sample)
 quantile (result.sample,c(0.025,0.975))
 ```
 
-For a population of 18 years old and with fairly typical exposure values , we are 95% confident that the BMI will between `r exp(quantile (result.sample,c(0.025,0.975))[1])` and `r exp(quantile (result.sample,c(0.025,0.975))[2])`.
+For a population of 18 years old and with fairly typical exposure values , we are 95% confident that the BMI will between `r round(exp(quantile (result.sample,c(0.025,0.975))[1]),3)` and `r round(exp(quantile (result.sample,c(0.025,0.975))[2]),3)`.
 
 
 ## Model Evaluation
