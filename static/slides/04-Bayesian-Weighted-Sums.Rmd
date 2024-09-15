@@ -9,9 +9,13 @@ output:
     toc_float: true
 ---
 
-Bayesian Weighted Sums (BWS) is a Bayesian version of Weighted Quantile Sums Regression, which reweights quantiles of predictors and regresses the sum of weighted predictors on the outcome. Unlike WQS/qgcomp which is based on frequentist methods, BWS is a Bayesian method which integrates insights from data to update prior knowledge, and make inference based on posterior. shares many similarities with Weighted Quantile Sums (WQS) and quantile g-computation (qgcomp). Similar to weighted quantile sums regression, BWS helps summarize the impact of highly correlated predictors and evaluate the importance of each predictor. In addition, Bayesian methods provide a more natural way to address the restriction (weights sum up to 1) in the model fitting, and is flexible to incorporate our prior knowledge, and also provide a uncertainty quantification for weights.
 
-In this tutorial, we are interested in predicting log BMI using phalate measurements from urine samples for individuals above 18 years of age.
+
+Bayesian Weighted Sums (BWS) is a Bayesian version of Weighted Quantile Sums Regression, which reweights quantiles of predictors and regresses the sum of weighted predictors on the outcome. Unlike WQS/qgcomp which is based on frequentist methods, BWS is a Bayesian method which integrates insights from data to update prior knowledge, and make inference based on posterior. 
+
+Bayesian Weighted Sums shares many similarities with Weighted Quantile Sums (WQS) and quantile g-computation (qgcomp). Similar to weighted quantile sums regression, BWS helps summarize the impact of highly correlated predictors and evaluate the importance of each predictor. In addition, Bayesian methods provide a more natural way to address the restriction (weights sum up to 1) in the model fitting, and is flexible to incorporate our prior knowledge, and also provides an uncertainty quantification for weights.
+
+In this tutorial, we are interested in the same research question: predicting log BMI using phalate measurements from urine samples for individuals above 18 years of age.
 
 ## Preparation
 
@@ -60,25 +64,28 @@ nhanes
 
 Bayes Weighted Sums follows a similar formula to WQS. Each independent variable is assigned a weight and multiplied by the beta 1 coefficient. The formula is displayed below:
 
-$$ Eg(Y)= \beta_0 + \beta_1  \times (w_1X_1 + w_2X_2 +...+w_nX_n) $$
+$$ Eg(Y)= \beta_0 + \beta_1  \times (w_1X_1 + w_2X_2 +...+w_kX_k) + \beta_2Z$$
 
-In this model, beta 1 is the combined effect of the three mixture exposures, while w is each individual weight. In this model, weights (w1,w2,...,wn) to must sum to 1. It is important to note that the parameters in the BWS model can have informative priors assigned. However, for this example, we do not have valuable prior information, so will use a the standard normal distribution for each parameter.
+In this model, $X$ are quantiles of chemical mixtures, $Z$ are other covariates. $w$ are weights ranging from 0 to 1, and sum up to 1, presenting the importance of each chemical. $\beta_0$ is intercept, $\beta_1$ and $\beta_2$ are coefficients. $\beta_1$ is the coefficient of weighted quantile sum, measuring the combined effect of the mixture exposures. 
 
-Weighted quantile sum regression has several foundations that are essential to BWS: A weighted quantile sum regression has two core differences compared to an ordinary regression. First, it uses quantiles instead of its original scales as predictors, where X takes values as quantiles. Second, it contains a weighted sum, which poses a constraint on the weights coefficients that should sum up to 1, w1 + w2 + … + wq = 1. Since the posterior has the same support as that of the prior, such constraint on weights is easily addressed in Bayesian methods by specifying a prior on weights subject to the constraint. The prior commonly used with BWS is Dirichlet distribution. The Dirichlet is generalized from the beta distribution and is a continuous and multivariate probability distribution.
+In a Bayesian regression, we assign prior to unknown parameters. The prior specification is based on our prior knowledge. For this example, we do not have valuable prior information, so we use a relative less informative prior, the default prior in the package $N(0,100)$ for each coefficient. 
 
-Parameters of the distribution are α1, α2, ..., αK where K is are greater than or equal to 2:
+Unlike $\beta$, the specification for weights $w$ different since it poses a constraint that should sum up to 1, $w_1 + w_2 + … + w_k = 1$. Since the posterior has the same support as that of the prior, such constraint on weights is easily addressed in Bayesian methods by specifying a prior on weights subject to the constraint. The prior commonly used for weights is Dirichlet distribution, denoted as $w \sim Dir(\alpha)$. $w$ represents weights with length $k$, $alpha$ represents concentration parameters with length $k$.
 
-![](img/Dirichlet.jpg){width="469"}
-
-As shown above in the image, when alphas are equal, the resulting weights will be equal. However, if the alphas are unbalanced, there must be prior knowledge. We can assign unequal weights if we have strong prior knowledge showing some of predictors have more potential impact than the others. We can also adjust the amplitude of alpha to indicate the degree of confidence we have on prior knowledge. By default, we set all alpha’s to 1, indicating we the predictors have the same importance and we have weak information.
-
-Therefore, we can generalize the formula for the Dirichlet Distribution where B(α) is the (multivariate) beta distribution:
+The Dirichlet distribution is generalized from the beta distribution and is a continuous and multivariate probability distribution shown below. Notice $B(\alpha)$ is the (multivariate) beta distribution. The concentration parameters $\alpha_1, \dots, \alpha_k$ of the distribution controls the distribution of probability, where $k$ is the number of categories (number of chemicals in our case).
+ 
 
 ![](img/Dirichlet2.png){width="294"}
 
-It is important to note, the assumptions for the Dirichlet distribution include all weights must be positive, real numbers and must sum to 1. Despite the constraints on the weights, the overall estimate (𝜃1) can be any value.
 
-Another useful method for Bayesian Weighted Sums is that the unidirectional assumption (which has been discussed in previous tutorials) can be accounted for. Instead of constraining all exposures to contribute to a single direction, a grouping method of variables can be used accounting for a positive and negative beta one.
+![](img/Dirichlet.jpg){width="469"}
+
+As shown above in the image, when $\alpha$ are equal, indicating same importance for all categories. However, if $\alpha$ are unbalanced, having different, suggest a tendency that some categories are more important. We can assign unequal $alpha$, if we have some prior knowledge showing some of predictors have more potential impact than the others. 
+
+The amplitude of $\alpha$ indicates the degree of confidence we have on prior knowledge. If we strongly believe they have same importance, we can assign a large value for $\alpha$ and set them to be equal. If we have no prior knowledge or very weak information, we can set the $\alpha$ to be same but with $\alpha = 1$, which is also the default prior in `BWQS` package. 
+
+It is important to note, the assumptions for the Dirichlet distribution include all weights must be positive, real numbers and must sum to 1. This indicates that BWQS require chemical mixtures contribute to the same direction. (*unidirection assumption*) But such assumption can be relaxed. With the flexibility of Bayesian methods, we can group the mixtures and model using different parameters separately. Please see [the paper by Colicino et. al., 2020](https://pubmed.ncbi.nlm.nih.gov/32613152/).
+
 
 ## Model Fitting
 
@@ -94,21 +101,22 @@ Another useful method for Bayesian Weighted Sums is that the unidirectional assu
 
 `prior` - the direction of the prior distribution ("None" default, "Positive", "Negative)
 
-It is important to note that the prior of the beta-1 coefficient can be manually set to either the positive or negative direction. This can be useful if we have specific information regarding the prior and is accomplished by writing prior = "positive" or prior = "negative".
+It is important to note that the prior of the $\beta_1$ coefficient can be manually set to either the positive or negative direction. This can be useful if we have specific information regarding the prior and is accomplished by writing prior = "positive" or prior = "negative".
 
 ```{r}
 
 chem_names_new <- c('URXMHBP', 'URXMOH',  'URXMHP',  'URXMHH',  'URXMCOH', 'URXMHNC', 'URXECP', 'URXHIBP', 'URXMIB')
-
-nhanes_s = sample_n(tbl = nhanes,size = 50,replace = FALSE)
+# here we only select 100 individuals as an example
+set.seed(1)
+nhanes_s = sample_n(tbl = nhanes,size = 100,replace = FALSE)
 
 fit_bwqs = bwqs(BMXBMIlog~RIDAGEYR, mix_name = chem_names_new,
-                data = nhanes_s, q = 4, family = "gaussian",iter = 100)
+                data = nhanes_s, q = 4, family = "gaussian",iter = 5000)
 ```
 
 ## Model Interpretation and Inference
 
-In addition to the model, the BWQS package has built-in visualization tools. Similar to WQS and GWQS, we can visualize the weights assigned to each of the predictors in our model.
+In addition to the model, the BWQS package has built-in visualization tools. Similar to WQS and gWQS, we can visualize the weights assigned to each of the predictors in our model.
 
 ```{r}
 bwqs_plot(fit_bwqs, parms = "W", size = 2)
@@ -118,59 +126,93 @@ bwqs_plot(fit_bwqs, parms = "W", size = 2)
 Additionally, similar to standard Bayesian regression models, we can us a 95% credible interval to view the results. We want the credible interval corresponding to our beta1 value, as shown below. Note the small dots correspond to the median, the large dots are the mean, and the credible interval is displayed by a line.
 
 ```{r}
-fit_bwqs$summary_fit
+fit_bwqs$summary_fit 
 ```
 
-We can state that there is a 95% confident that the average BMI for an individual above the age of 18 lies between -0.05040 and 0.11400. It is important to note that if the credible interval includes 0, the relationship is not considered significant. In this example, 0 is contained within the interval, so we there is not sufficient evidence to conclude there is a relationship between the phalates and log BMI.
+We are 95% confident that the average BMI for an individual at the age of 18 with low level of all chemical mixtures lies between `r exp(fit_bwqs$summary_fit)[1,4]` and `r exp(fit_bwqs$summary_fit)[1,5]`. 
 
-Also, we can interpret the beta 1 term for the model:
+Holding other variables constant, for every one unit increase in WQS (for every one increase in quantile of each chemical mixture), we are 95% confidence to see BMI increase by a percentage between `r (exp(fit_bwqs$summary_fit)[2,4]-1)/100`% and `r (exp(fit_bwqs$summary_fit)[2,5]-1)/100`%. (It is calculated by exp(beta1-1) since we use logBMI as response.) 
 
-Beta 1: For every one unit increase in WQS (for every one increase in quantile of each chemical mixture), we expect a 0.03322 increase in log BMI.
+Holding other variables constant, for each additional year of age, we are 95% confidence to see BMI increase by a percentage between `r (exp(fit_bwqs$summary_fit)[3,4]-1)/100`% and `r (exp(fit_bwqs$summary_fit)[3,5]-1)/100`%. 
 
-Additional information provided by the model includes the standard error, the effective sample size (number of cases in the population), and R-hat which is the corresponds to the convergence of MCMC simulations. A reasonable effective sample size (R-hat) is typically considered reasonable if it is less that 1.01.
+It is important to note that if the credible interval includes 0, the relationship is not considered significant. In this example, 0 is contained within the interval, so we there is not sufficient evidence to conclude there is a relationship between the phalates and log BMI.
+
+
+Additional information provided by the model includes the standard error, the effective sample size (size of independent samples), and R-hat which is the corresponds to the convergence of MCMC simulations. A reasonable effective sample size (R-hat) is typically considered reasonable if it is less that 1.01.
 
 ## Model Prediction
 
-When predicting using Bayesian methods, a **prediction interval** is used which accounts for sampling uncertainty from the data. Below, we can use phalate data to predict the log BMI for an individual above 18 years old:
+When predicting using Bayesian methods, we usually obtain prediction interval based on posterior samples. Here we provide an example for calculating prediction interval manually. Notice the `BWQS` package is based on `rstan` package, which does not have `predict()` function. We need to manually construct our own `predict()` function based on our model.
 
 ```{r}
-predict(fit_bwqs,
-        newdata = data.frame(URXMHBP = c(1.5),URXMOH = c(12), URXMHP = c(0.75), URXMHH = c(1.5), URXMCOH = c(3), URXMHNC = c(14),URXECP = c(11.2),URXHIBP = c(1.7), URXMIB = c(5)),
-        interval = "prediction",
-        level = 0.95) |>
-  knitr::kable(digits = 2)
+
+# obtain the average chemical mixture level of the dataset.
+# you can specify your own data to predict
+new_data = nhanes_s %>%
+  apply(.,2,mean) %>%
+  t() %>%
+  as.data.frame() %>%
+  select(-BMXBMI, - BMXBMIlog)
+new_data$RIDAGEYR = 0
+
+# transfer the new data to the quantiles defined by the quantile of original data
+q = 4 # the quantile we use
+for (i in 1:length(chem_names_new)){
+      dat_num = as.numeric(unlist(nhanes_s[, chem_names_new[i]]))
+      bound = unique(quantile(dat_num, probs = seq(0, 1, by = 1/q), na.rm = TRUE)) 
+      new_data[[chem_names_new[i]]] = cut(new_data[[chem_names_new[i]]],breaks = bound,labels = FALSE,include.lowest = TRUE)-1
+}
+# new data presented in quantiles
+new_data = new_data %>% as.matrix()
+
+# Plug the data to the model
+## our model is : Xb = beta0 + beta1*(X*W) + KV*delta
+
+### posterior samples of parameters
+param.sample <- as.data.frame(rstan::extract(fit_bwqs$fit)) %>%
+  select(beta0:W.9) %>% as.matrix()
+
+result.sample<- apply(param.sample, 1, function(x) 
+  x["beta0"] + x["beta1"]*sum(new_data[-10] * x[4:12]) + x["delta"]*new_data[10])
+
+
+## posterior mean and sd
+mean(result.sample)
+quantile (result.sample,c(0.025,0.975))
 ```
 
-The prediction interval estimates that for individuals over 18 years old likely has a BMI between \_\_\_\_\_ and \_\_\_\_.
+For a population of 18 years old and with fairly typical exposure values , we are 95% confident that the BMI will between `r exp(quantile (result.sample,c(0.025,0.975))[1])` and `r exp(quantile (result.sample,c(0.025,0.975))[2])`.
+
 
 ## Model Evaluation
 
-For the model evaluation, instead of using AIC for our model evaluation, we use WAIC, which is widely used with Bayesian regression models. We will create a second model predicting log BMI using age as a covariate.
+For the model evaluation, instead of using AIC for our model evaluation, we use WAIC, which is widely used with Bayesian regression models. We will create a second model predicting log BMI but only use half of chemical mixtures (remove the 3 chemicals).
 
 ```{r}
-chem_names_newage <- c('URXMHBP', 'URXMOH',  'URXMHP',  'URXMHH',  'URXMCOH', 'URXMHNC', 'URXECP', 'URXHIBP', 'URXMIB','RIDAGEYR')
+chem_names_newage <- c('URXMHH','URXMCOH', 'URXMHNC', 'URXECP', 'URXHIBP', 'URXMIB','RIDAGEYR')
+nhanes_s1 = nhanes_s %>% select(-c('URXMHBP', 'URXMOH',  'URXMHP'))
 
-nhanes_samp = sample_n(tbl = nhanes,size = 50,replace = FALSE)
-
-fit_bwqs_age = bwqs(BMXBMIlog~RIDAGEYR, mix_name = chem_names_newage,
-                data = nhanes_samp, q = 4, family = "gaussian",iter = 100)
+fit_bwqs_less = bwqs(BMXBMIlog~RIDAGEYR, mix_name = chem_names_newage,
+                data = nhanes_s1, q = 4, family = "gaussian",iter = 5000)
 ```
 
-The WAIC metric from the model without the age covariate:
+The WAIC metric from the original model:
 
 ```{r}
-bwqs_waic(fit_bwqs$fit)
+bwqs_waic(fit_bwqs$fit)$waic
 ```
 
-The WAIC metric from the model with age as a covariate:
+The WAIC metric from the model with less chemical mixtures:
 
 ```{r}
-bwqs_waic(fit_bwqs_age$fit)
+bwqs_waic(fit_bwqs_less$fit)$waic
 ```
 
-## Conclusion
+A smaller WAIC value is better. Therefore, the model with more chemical mixtures is better. 
 
-In all, the BWQS model has many similarities to WQS and QGCOMP. However, the Bayesian methods can be utilized allowing additional flexibility in the model. <https://rdrr.io/github/ElenaColicino/bwqs/f/vignettes/bwqs_vignette.Rmd>
+## Discussion
+
+In all, the BWQS model has many similarities to WQS and qgcomp. However, the Bayesian methods can be utilized allowing additional flexibility in the model which I do not address here. Please see this [vignette](https://rdrr.io/github/ElenaColicino/bwqs/f/vignettes/bwqs_vignette.Rmd) for more details on HIerarchical Bayesian Quantile Weighted Sums.
 
 ## References
 
