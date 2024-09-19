@@ -11,9 +11,9 @@ output:
 
 
 
-Bayesian Weighted Sums (BWS) is a Bayesian version of Weighted Quantile Sums Regression, which reweights quantiles of predictors and regresses the sum of weighted predictors on the outcome. Unlike WQS/qgcomp which is based on frequentist methods, BWS is a Bayesian method which integrates insights from data to update prior knowledge, and make inference based on posterior. 
+Bayesian Weighted Sums (BWS) is a Bayesian version of Weighted Quantile Sums Regression, which reweights quantiles of predictors and regresses the sum of weighted predictors on the outcome. Unlike WQS/qgcomp which is based on frequentist methods, BWS is a Bayesian method which integrates insights from data to update prior knowledge, and make inference based on the posterior distribution. 
 
-Bayesian Weighted Sums shares many similarities with Weighted Quantile Sums (WQS) and quantile g-computation (qgcomp). Similar to weighted quantile sums regression, BWS helps summarize the impact of highly correlated predictors and evaluate the importance of each predictor. In addition, Bayesian methods provide a more natural way to address the restriction (weights sum up to 1) in the model fitting, and is flexible to incorporate our prior knowledge, and also provides an uncertainty quantification for weights.
+Bayesian Weighted Sums shares many similarities with Weighted Quantile Sums (WQS) and quantile g-computation (qgcomp). Similar to weighted quantile sum regression, BWS helps summarize the impact of highly correlated predictors and evaluate the importance of each predictor. In addition, Bayesian methods provide a more natural way to address the restriction (weights sum up to 1) in the model fitting, and is flexible to incorporate our prior knowledge, and also provides an uncertainty quantification for weights.
 
 In this tutorial, we are interested in the same research question: predicting log BMI using phalate measurements from urine samples for individuals above 18 years of age.
 
