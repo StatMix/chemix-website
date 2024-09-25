@@ -144,10 +144,10 @@ When predicting using Bayesian methods, we usually obtain the prediction interva
 
 # obtain the average chemical mixture level of the dataset.
 # you can specify your own data to predict
-new_data = nhanes_s %>%
-  apply(.,2,mean) %>%
-  t() %>%
-  as.data.frame() %>%
+new_data = nhanes_s |>
+  apply(.,2,mean) |>
+  t() |>
+  as.data.frame() |>
   select(-BMXBMI, - BMXBMIlog)
 new_data$RIDAGEYR = 0
 
@@ -159,14 +159,16 @@ for (i in 1:length(chem_names_new)){
       new_data[[chem_names_new[i]]] = cut(new_data[[chem_names_new[i]]],breaks = bound,labels = FALSE,include.lowest = TRUE)-1
 }
 # new data presented in quantiles
-new_data = new_data %>% as.matrix()
+new_data = new_data |>
+  as.matrix()
 
 # Plug the data to the model
 ## our model is : Xb = beta0 + beta1*(X*W) + KV*delta
 
 ### posterior samples of parameters
-param.sample <- as.data.frame(rstan::extract(fit_bwqs$fit)) %>%
-  select(beta0:W.9) %>% as.matrix()
+param.sample <- as.data.frame(rstan::extract(fit_bwqs$fit)) |>
+  select(beta0:W.9) |>
+  as.matrix()
 
 result.sample<- apply(param.sample, 1, function(x) 
   x["beta0"] + x["beta1"]*sum(new_data[-10] * x[4:12]) + x["delta"]*new_data[10])
@@ -175,6 +177,13 @@ result.sample<- apply(param.sample, 1, function(x)
 ## posterior mean and sd
 mean(result.sample)
 quantile (result.sample,c(0.025,0.975))
+```
+
+```{r}
+param.new <- as.data.frame(rstan::extract(fit_bwqs$fit))|>
+  filter(x>0)|>
+  slect(beta)
+ 
 ```
 
 For a population of 18 years old and with fairly typical exposure values, 95% of the posterior distribution for the mean BMI for an 18 year old exposed in the lowest quantile to all mixture elements is between `r round(exp(quantile (result.sample,c(0.025,0.975))[1]),3)` and `r round(exp(quantile (result.sample,c(0.025,0.975))[2]),3)`.
@@ -209,7 +218,7 @@ A smaller WAIC value is better. Therefore, the model with more chemicals is bett
 
 In all, the BWQS model has many similarities to WQS and qgcomp. However, the Bayesian methods can be utilized allowing additional flexibility in the model which I do not address here. Please see this [vignette](https://rdrr.io/github/ElenaColicino/bwqs/f/vignettes/bwqs_vignette.Rmd) for more details on Hierarchical Bayesian Quantile Weighted Sums.
 
-Let's refine this. What are the advantages of BWQS as implemented compared to WQS as implemented?  Certainly uncertainty quantification is one of them.
+Let's refine this. What are the advantages of BWQS as implemented compared to WQS as implemented?  Certainly uncertainty quantification is one of them.
 
 ## References
 
