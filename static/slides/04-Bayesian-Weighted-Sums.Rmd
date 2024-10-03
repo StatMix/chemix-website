@@ -126,9 +126,9 @@ fit_bwqs$summary_fit
 
 We can say 95% of the posterior distribution for the mean BMI for an 18 year old exposed in the lowest quantile to all mixture elements is between `r round(exp(fit_bwqs$summary_fit)[1,4],3)` and `r round(exp(fit_bwqs$summary_fit)[1,5],3)`.
 
-Holding other variables constant, for every one unit increase in WQS (for every one increase in quantile of each chemical mixture), we expect to see BMI increase by a percentage between `r round((exp(fit_bwqs$summary_fit)[2,4]-1)*100,3)`% and `r round((exp(fit_bwqs$summary_fit)[2,5]-1),3)*100`%. (It is calculated by exp(beta1-1) since we use logBMI as response.)
+Holding other variables constant, for every one unit increase in WQS (for every one increase in quantile of each chemical mixture), 95% of the posterior distribution for an increase in BMI is between `r round((exp(fit_bwqs$summary_fit)[2,4]-1)*100,3)`% and `r round((exp(fit_bwqs$summary_fit)[2,5]-1),3)*100`%. (It is calculated by exp(beta1-1) since we use logBMI as response.)
 
-Holding other variables constant, for each additional year of age, we are 95% confidence to see BMI increase by a percentage between `r round((exp(fit_bwqs$summary_fit)[3,4]-1)*100,3)`% and `r round((exp(fit_bwqs$summary_fit)[3,5]-1)*100,3)`%.
+Holding other variables constant, for each additional year of age, 95% of the posterior distribution for an increase in BMI is between `r round((exp(fit_bwqs$summary_fit)[3,4]-1)*100,3)`% and `r round((exp(fit_bwqs$summary_fit)[3,5]-1)*100,3)`%.
 
 It is important to note that if the credible interval includes 0, the relationship is not considered significant. In this example, 0 is contained within the interval, so we there is not sufficient evidence to conclude there is a relationship between the phthalates and log BMI.
 
