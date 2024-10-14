@@ -7,6 +7,7 @@ output:
     css: "./tutorials.css"
     toc: true
     toc_float: true
+bibliography: references.bib    
 ---
 
 Bayesian Weighted Sums (BWS) is a Bayesian version of Weighted Quantile Sums Regression, which reweights quantiles of predictors and regresses the sum of weighted predictors on the outcome. Unlike WQS/qgcomp which is based on frequentist methods, BWS is a Bayesian method which integrates insights from data to update prior knowledge, and make inference based on the posterior distribution.
@@ -190,7 +191,7 @@ For a population of 18 years old and with fairly typical exposure values, 95% of
 
 ## Model Evaluation
 
-For the model evaluation, instead of using AIC for our model evaluation, we use WAIC, which is widely used with Bayesian regression models. We will create a second model predicting log BMI but only use half of chemical mixtures (remove the 3 chemicals).
+For the model evaluation, instead of using AIC for our model evaluation, we use WAIC, which is widely used with Bayesian regression models ([@waic]). We will create a second model predicting log BMI but only use half of chemical mixtures (remove the 3 chemicals).
 
 ```{r}
 chem_names_newage <- c('URXMHH','URXMCOH', 'URXMHNC', 'URXECP', 'URXHIBP', 'URXMIB','RIDAGEYR')
@@ -216,18 +217,62 @@ A smaller WAIC value is better. Therefore, the model with more chemicals is bett
 
 ## Discussion
 
-In all, the BWQS model has many similarities to WQS and qgcomp. However, the Bayesian methods can be utilized allowing additional flexibility in the model which I do not address here. Please see this [vignette](https://rdrr.io/github/ElenaColicino/bwqs/f/vignettes/bwqs_vignette.Rmd) for more details on Hierarchical Bayesian Quantile Weighted Sums.
-
-Let's refine this. What are the advantages of BWQS as implemented compared to WQS as implemented?  Certainly uncertainty quantification is one of them.
+In all, the BWQS model has many similarities to WQS and qgcomp. In WQS regression, weights are provided through point estimates and the beta terms. Uncertainty in this model is usually computed by bootstrapping methods. BWQS can provide uncertainty quantification of the weights and the effects. This is evident through credible intervals for the predictors, this provides a better quantification instead of simply point estimates in other models. Additionally, the Bayesian methods allows for additional flexibility and complex models. For examples, hierarchical models can be used with BWQS to determine the statistical significance of the predictors explaining the variance of the outcome variable. Please see this [vignette](https://rdrr.io/github/ElenaColicino/bwqs/f/vignettes/bwqs_vignette.Rmd) for more details on Hierarchical Bayesian Quantile Weighted Sums.
 
 ## References
 
-<https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7289141/>
+Add to .bib file
 
-<https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7913173/>
+```         
+@article{elena,
+  title={Per- and poly-fluoroalkyl substances and bone mineral density},
+  author={Elena Colicino,et.al},
+  journal={The National Institutes of Health},
+  year={2020},
+  url={https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7289141/}
+```
 
-<https://en.wikipedia.org/wiki/Dirichlet_distribution>
+```         
+@article{ghassan,
+  title={Bayesian Weighted Sums: A Flexible Approach to Estimate Summed Mixture Effects},
+  author={Ghassan Hamra,et.al},
+  journal={The National Institutes of Health},
+  year={2021},
+  url={https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7913173/}
+```
 
-<https://github.com/ElenaColicino/bwqs>
+```         
+@article{image,
+  title={Dirichlet Distribution},
+  journal={Wikipedia},
+  url={https://en.wikipedia.org/wiki/Dirichlet_distribution}
+```
 
-<https://stat.columbia.edu/~gelman/research/published/rhat.pdf>
+```         
+@article{elenabwqs,
+  title={Bayesian Weighted Quantile Sum},
+  author={Elena Colicino},
+  journal={GitHub},
+  year={2023},
+  url={https://github.com/ElenaColicino/bwqs}
+```
+
+
+```         
+@article{rhat,
+  title={Rank-Normalization, Folding, and Localization: An Improved R^ for Assessing Convergence of MCMC},
+  author={Aki Vehtari, et al.},
+  journal={Bayesian Analysis},
+  year={2020},
+  url={https://stat.columbia.edu/~gelman/research/published/rhat.pdf}
+```
+
+```         
+@article{waic,
+  title={A Widely Applicable Bayesian Information Criterion},
+  author={Sumio Watanabe, et al.},
+  journal={Journal of Machine Learning Research},
+  year={2013},
+  url={https://stat.columbia.edu/~gelman/research/published/rhat.pdf}
+```
+
