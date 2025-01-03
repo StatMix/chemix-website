@@ -1,7 +1,7 @@
 ---
 title: "Work in progress: Bayesian Kernel Machine Regression"
-author: "Olivia Fan"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
+author: "Bradley Bowen"
+date: "Last Updated `r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
     css: "./tutorials.css"
@@ -9,36 +9,27 @@ output:
     toc_float: true
 ---
 
-<!-- Setup -->
+## Introduction
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,
-                      warning=FALSE,
-                      message=FALSE)
+Often the case with health data, mixtures may have non-linear relationships with the outcome variable, meaning that standard additive models may not be best suited. Working with highly correlated exposures and complex interaction effects with previous models could potentially lead to inconsistent estimates. In this tutorial, we will explore Bayesian Kernel Machine Regression (BKMR) which allows for increased flexibility for complex relationships between the predictor and outcome variables.
+
+BMKR provides a more flexible approach by using a kernel. Kernels in regression are beneficial as they provide an estimation of the relationship between the predictors and outcome without knowing the form (linear, logistic, exponential, etc). This means that the kernel is a non-parametric technique. In order to determine the best fit between the predictor variables and outcome of interest, the kernel weights data points that are close in distance to outcome higher, and points that have a greater distance lower. This method allows the regression model to better fit the data and account for complex relationships between variables.
+
+Additionally, the BKMR is able to integrate Bayesian frameworks by integrating priors, likelihoods, posteriors, inferences, and hierarchical modeling.
+
+## Preparation
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(ggcorrplot)
+library(corrplot)
+
 ```
 
-## Background & Introduction 
+Exploratory Data Analysis
 
-Bayesian kernel machine regression (BKMR) is a popular tool in machine learning literature which flexibly models the relationship between a large number of variables and a particular dependent outcome variable.
-
-## Topics 
-
-- Advantages of BKMR through flexibility of kernal function, hierarchical variable selection 
-
-- Demonstrating the ability of BKMR to model highly correlated predictors through URX variables in the chemical dataset using the Gaussian kernel
-
-- Bayesian model diagnostics through effective sample size (ESS) and autocorrelation
-
-## 1. Definitions
-
-We consider the general framework
-
-$$g(\mu_i) = h(z_{i1},...z{iM})+\beta x_i \space i=1,...,n$$
-
-
-## 2. Exploratory Data Analysis
-
-To illustrate how BKMR empowers hierarhical modeling of highly correlated predictors, we will be using the ``nhanes`` dataset where the variables are described in the file `nhanes-codebook.txt`. Load this data with the `load` function and specify the data file. 
+To illustrate how BKMR empowers hierarhical modeling of highly correlated predictors, we will be using the `nhanes` dataset where the variables are described in the file `nhanes-codebook.txt`. Load this data with the `load` function and specify the data file.
 
 ```{r}
 load(file='nhanes1518.rda')
@@ -47,81 +38,231 @@ load(file='nhanes1518.rda')
 We first explore the URX predictors (i.e. the ones related to phthalates concentrations), subsetting subset the dataset to include only the predictors in the weighted quantile sum module, and then filter out `NA` values:
 
 ```{r}
-library(tidyverse)
-df<-nhanes1518%>%
-  select(BMXBMI, URXUCR, URXCNP,URXCOP,URXECP,URXHIBP,URXMBP,URXMC1,URXMEP,URXMHBP,URXMHH,RIDAGEYR)%>%na.omit()
-nhanes_URX<-nhanes1518%>%
-  select(BMXBMI, URXUCR, URXCNP,URXCOP,URXECP,URXHIBP,URXMBP,URXMC1,URXMEP,URXMHBP,URXMHH)%>%na.omit()
+nhanes<-nhanes1518 |>
+  select(BMXBMI, URXUCR, URXCNP,URXCOP,URXECP,URXHIBP,URXMBP,URXMC1,URXMEP,URXMHBP,URXMHH,RIDAGEYR)|>
+  na.omit()|>
+  mutate(BMXBMI = log(BMXBMI))
+nhanes_URX<-nhanes1518 |>
+  select(BMXBMI, URXUCR, URXCNP,URXCOP,URXECP,URXHIBP,URXMBP,URXMC1,URXMEP,URXMHBP,URXMHH)|>
+  na.omit()|>
+  mutate(BMXBMI = log(BMXBMI))
 ```
 
+We first start exploring the data by plotting a correlation matrix between the variables of interest. We can use the `corrplot` function within the `corrplot()` package, and adjust the style to fit our aesthetics of desire. We see that the predictors are highly correlated, especially between URXMHH and URXECP, and URXMHBP and URXMBP:
+
 ```{r}
-library(corrplot)
 corr_mat=cor(nhanes_URX,method="s")
-corrplot(corr_mat) # circles
-corrplot(corr_mat, method = 'color', order = 'alphabet') # squares
 corrplot(corr_mat, # colorful number
          addCoef.col = 1,    # Change font size of correlation coefficients
          number.cex = 0.5) 
-corrplot.mixed(corr_mat, lower = 'shade', upper = 'pie', order = 'hclust')
 ```
 
-We first start exploring the data by plotting a correlation matrix between the variables of interest. We can use the `corrplot` function within the `corrplot()` package, and adjust the style to fit our aesthetics of desire. We see that the predictors are highly correlated, especially between URXMHH and URXECP, and URXMHBP and URXMBP.  
 
-## 3. Libraries
+## Bayesian Kernel Machine Regression
 
-To fit the BKMR model, we use the `kmbayes` function. This function implements the Markov chain Monte Carlo (MCMC) algorithm. 
+### Model Fitting
 
-```{r eval=FALSE}
+To fit the BKMR model, we use the `kmbayes` function. This function implements the Markov chain Monte Carlo (MCMC) algorithm.
+
+```{r}
 #install.packages("bkmr")
 library(bkmr)
 ```
 
-The argument `iter` indicates the number of iterations of the MCMC sampler; `y` is the vector of outcomes, `Z` is a matrix of exposures (each column is an exposure variable); `X` is a matrix of covariates (each column is a covariate); `verbose` indicates whether interim output summarizing the progress of the model fitting should be printed; and `varsel` indicates whether to conduct variable selection on the predictors
+In the model:
 
-## 4. Example: URX Modeling
+-   y is a vector of the response
 
-```{r eval=FALSE, cache=TRUE}
-set.seed(111)
-dat <- SimData(n = 50, M = 4)
-y <- dat$y # bmi
-Z <- dat$Z # chemical mixtures
-X <- dat$X # age
+-   Z is the matrix containing exposures
 
-fitkm <- kmbayes(y = y, Z = Z, X = X, iter = 10000, verbose = FALSE, varsel = TRUE)
-```
+-   X is the matrix containing covariates
 
-```{r cache=TRUE}
+Similar to previous tutorials, the variable year will be utilized as a covariate.
+
+```{r}
 # set.seed(111)
 # fitkm_corr <- kmbayes(y = d2$y, Z = d2$Z, X = d2$X, iter = 10000, varsel = TRUE, verbose = FALSE)
 # fitkm_hier <- kmbayes(y = d2$y, Z = d2$Z, X = d2$X, iter = 10000, varsel = TRUE, 
 #                       groups = c(1,2,1,3), verbose = FALSE)
-set.seed(111)
-sampled_data <- df %>% sample_frac(0.01)
+#set.seed(111)
+#sampled_data <- nhanes |> sample_frac(0.01)
 
-y<-sampled_data$BMXBMI # bmi
-Z <- sampled_data%>%select(-BMXBMI) # chemical mixtures
+y<-nhanes$BMXBMI # bmi
+Z <- nhanes |> select(-BMXBMI, -URXMC1, -URXMEP, -RIDAGEYR) # chemical mixtures
 # group 1: URXMBP, URXMIB, URXMC1, URXMEP, URXMZP
 # group 2: URXECP, URXMHH, URXMOH, URXMHP
-X <- sampled_data%>%select(RIDAGEYR)
+X <- nhanes |> select(RIDAGEYR)
 # log every term
-fitkm_corr <- bkmr::kmbayes(y = y, Z = Z, X = X, iter = 2000, varsel = TRUE, verbose = FALSE)
+
+```
+
+To fit the BKMR model, the kmbayes function can be used.
+
+```{r}
+fitkm_corr <- bkmr::kmbayes(y = y, Z = Z, X = X, iter = 10, varsel = TRUE, verbose = FALSE)
 #fitkm_hier <- kmbayes(y = y, Z = Z, X = X, iter = 10000, varsel = TRUE, groups = c(1,2,1,3), verbose = FALSE)
+print(fitkm_corr)
 ```
 
-
-```{r}
-sel<-seq(0,1000,by=1)
-bkmr::TracePlot(fit = fitkm_corr, par = "beta", sel=sel)
-```
-
-```{r cache=TRUE}
-pred.resp.univar <- bkmr::PredictorResponseUnivar(fit = fitkm_corr)
-```
+### Model Interpretation and Inference
+### Model Prediction
+### Model Evaluation
+Below we can view a summary of the model:
 
 ```{r}
-library(ggplot2)
-ggplot(pred.resp.univar, aes(z, est, ymin = est - 1.96*se, ymax = est + 1.96*se)) + 
-    geom_smooth(stat = "identity") + 
-    facet_wrap(~ variable) +
-  ylab("h(z)")
+summary(fitkm_corr)
 ```
+
+Below, we can visualize the general trace of the Markov Chain Monte Carlo method for the samples. This graphs the beta parameter used in the BKMR model.
+
+```{r}
+TracePlot(fit = fitkm_corr, par = "beta")
+```
+
+Next, we can estimate posterior inclusion probabilities (PIP), which provides the probability that a given predictor will be used in the model. As demonstrated below, #NEED TO CHECK!! URXUCR, URXCOP, URXMBP, URXMC1, URXMEP, and URXMHH are most likely not to be included in the model.
+
+```{r}
+ExtractPIPs(fitkm_corr)
+```
+
+Additionally, it is beneficial to examine the exposure-response function created by the model. With Z, the matrix containing exposures, h(z) models how the chemical mixtures influence the outcome variable (log(BMI)). This function allows us to account for non-linear relationships as well as potential interactions.
+
+The BKMR package can estimate h(z) using three methods:
+
+1.  Primarily, it can average estimates from the model to quickly produce h(z). This method uses the posterior means and variances to estimate the function and is very efficient. Can be completed using method = "approx".
+
+2.  The second approach also uses the mean and variance, but averages the posterior mean and variance samples. This method produces an unbiased estimates, but large datasets, the process can take an extended period to complete. For
+
+3.  The final method takes many samples from the posterior distribution of h(z), creating a full posterior distribution of h(z). This method provides an unbiased estimate of the posterior.
+
+The three methods are demonstrated below using the median values of the Phalates and Phytoestrogens from the NHANES dataset.
+
+```{r}
+med <- apply(Z, 2, median)
+
+Znew <- matrix(med, nrow = 1)
+
+h_est1 <- ComputePostmeanHnew(fitkm_corr, Znew = Znew, method = "approx")
+h_est2 <- ComputePostmeanHnew(fitkm_corr, Znew = Znew, method = "exact")
+set.seed(111)
+
+samps3 <- SamplePred(fitkm_corr, Znew = Znew, Xnew = cbind(0))
+
+compare <- data.frame(
+  method = c(1:3),
+  post_mean = c(h_est1$postmean, h_est2$postmean, mean(samps3)),
+  post_sd = c(sqrt(h_est1$postvar), sqrt(h_est2$postvar), sd(samps3))
+)
+
+print(compare)
+```
+
+As demonstrated above, both the second and third methods produced similar posterior means. However, the first "approximation" method differed slightly from the remaining approaches.
+
+Summary statistics of the exposure-response function h(z) can be also examined and visualized. For example, we can examine how each phthalate contributes to the outcome BMI by comparing the effect at different percentiles while fixing the other variables to specified percentiles. In this example, we examine how the chemical mixtures differ at the 25th, 50th, and 75th percentile. The built-in `SingVarRiskSummaries` function can be used along with `qs.diff` which indicates which quantiles are being compared. Finally, the `q.fixed` argument allows the user to specify what percentiles to fix the other variables.
+
+```{r}
+
+Z<-as.matrix(Z)
+
+X<-as.matrix(X)
+
+```
+
+```{r}
+
+d2 <- SimData(n = 100, M = 4, Zgen = "corr", sigsq.true = 2.2)
+print(d2)
+
+risks.singvar <- SingVarRiskSummaries(fit = fitkm_corr, y = y, Z = Z, X = X, 
+                                      qs.diff = c(0.25, 0.75), 
+                                      q.fixed = c(0.25, 0.50, 0.75),
+                                      method = "exact")
+risks.singvar
+```
+
+In this example —– interpretation
+
+## Heirarchical Selection
+
+One of the appeals of BKMR regression is the ability to use hierarchical variable selection. This method assesses which variables are critical to the model by using grouping. Primarily, the chemical exposures are grouped, often by their relationships with other exposures or by using prior knowledge. Each exposure in the Z matrix can be assigned to a group by using `groups = c(1,1,2,2)` where the first two variables in Z are assigned to group 1, while the remaining variables are placed in group 2. If the variables are not manually grouped, there is an option for component wise selection where variables are evaluated on an individual basis (`varsel = TRUE`). An additional chemical exposure was included in this example to demonstrate correlation between exposures for grouping purposes. Both methods are demonstrated below:
+
+```{r}
+nhanes_URX_new<-nhanes1518 |>
+  select(BMXBMI,RIDAGEYR, URXMBP, URXMIB, URXMC1, URXMEP, URXMZP, URXECP, URXMHH, URXMOH, URXMHP)|>
+  na.omit()|>
+  mutate(BMXBMI = log(BMXBMI))
+
+```
+
+To understand which variables should be grouped, a correlation matrix is utilized to examine each variable's relationship:
+
+```{r}
+corr_mat=cor(nhanes_URX_new,method="s")
+corrplot(corr_mat, # colorful number
+         addCoef.col = 1,    # Change font size of correlation coefficients
+         number.cex = 0.5) 
+```
+
+Based on the correlations, we place the non-correlated variables in group 1: URXMBP, URXMIB, URXMC1, URXMEP, URXMZP.
+
+Higly correlated variables are included in group 2: URXECP, URXMHH, URXMOH, URXMHP.
+
+```{r}
+y_final<-nhanes_URX_new$BMXBMI # bmi
+Z_final <- nhanes_URX_new |> select(-BMXBMI, -RIDAGEYR) # chemical mixtures
+X_final <- nhanes_URX_new |> select(RIDAGEYR)
+
+```
+
+```{r}
+
+fitkm_corr <- kmbayes(y = y_final, Z = Z_final, X = X_final, iter = 10, varsel = TRUE, verbose = FALSE)
+fitkm_hier <- kmbayes(y = y_final, Z = Z_final, X = X_final, iter = 10, varsel = TRUE, 
+                      groups = c(#NEED TO CHANGE), verbose = FALSE)
+# group 1: URXMBP, URXMIB, URXMC1, URXMEP, URXMZP
+# group 2: URXECP, URXMHH, URXMOH, URXMHP
+```
+
+We can contrast the posterior inclusion probabilities from the two models:
+
+Where the exposures were grouped:
+
+```{r}
+ExtractPIPs(fitkm_corr)
+```
+
+\
+For grouped exposures:
+
+```{r}
+ExtractPIPs(fitkm_hier)
+
+```
+
+## Changing BKMR Parameters
+
+An additional features of the BKMR package is that the tuning parameters for the fitting algorithm can be manually adjusted. The model uses the Markov chain Monte Carlo method and also uses Gibbs steps for updating the parameters. The following parameters can be adjusted:
+
+| Parameter          | Parameter Call              | Uses                                       | Description/Notes                                                                  |
+|--------------|--------------|--------------|------------------------------|
+| $$                 
+    \sigma^2         
+    $$               | `a.sigsq`, `b.sigsq`        | Should be used with gaussian distributions | Described as the "shape/rate" of a gamma prior                                     |
+| $$                 
+    \lambda          
+    $$               | `mu.lambda`, `sigma.lambda` |                                            | For gamma priors, it is mean and standard deviation                                |
+| $$                 
+    r_m              
+    $$               | `r.prior`                   | Can be used with all models                | Specifies the prior distributions - options include “gamma”, “invunif”, and “unif” |
+| $$                 
+    \pi              
+    $$               | `a.p0`, `b.p0`              | Should be used when `varsel = TRUE`        |                                                                                    |
+
+Additional options can be found at the following link:
+
+<https://jenfb.github.io/bkmr/overview.html>
+
+## Resources:
+
+<https://jenfb.github.io/bkmr/overview.html>
