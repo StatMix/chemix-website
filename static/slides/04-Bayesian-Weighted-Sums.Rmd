@@ -1,5 +1,5 @@
 ---
-title: "Work in Progress: Bayesian Weighted Sums"
+title: "Bayesian Weighted Sums"
 author: "Bradley Bowen"
 date: "Last Updated `r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -7,10 +7,12 @@ output:
     css: "./tutorials.css"
     toc: true
     toc_float: true
-bibliography: references.bib    
+bibliography: bws-reference.bib    
 ---
 
-Bayesian Weighted Sums (BWS) is a Bayesian version of Weighted Quantile Sums Regression, which reweights quantiles of predictors and regresses the sum of weighted predictors on the outcome. Unlike WQS/qgcomp which is based on frequentist methods, BWS is a Bayesian method which integrates insights from data to update prior knowledge, and make inference based on the posterior distribution.
+## Introduction
+
+Bayesian Weighted Sums (BWS)[@colicino2020per; @hamra2021bayesian] is a Bayesian version of Weighted Quantile Sums Regression, which reweights quantiles of predictors and regresses the sum of weighted predictors on the outcome. Unlike WQS/qgcomp which is based on frequentist methods, BWS is a Bayesian method which integrates insights from data to update prior knowledge, and make inference based on the posterior distribution.
 
 Bayesian Weighted Sums shares many similarities with Weighted Quantile Sum (WQS) and quantile g-computation (qgcomp). Similar to weighted quantile sum regression, BWS helps summarize the impact of highly correlated predictors and evaluate the importance of each predictor. In addition, Bayesian methods provide a more natural way to address the restriction (weights sum up to 1) in the model fitting, and is flexible to incorporate our prior knowledge, and also importantly provides an uncertainty quantification for weights, which are estimated but then treated as known in frequentist approaches.
 
@@ -52,11 +54,10 @@ nhanes <- nhanes1518 |>
     filter(RIDAGEYR >= 18)|>
     mutate(BMXBMIlog = log(BMXBMI),
           RIDAGEYR = RIDAGEYR - 18)|>
-    dplyr::select(BMXBMI, BMXBMIlog, URXMHBP, URXMOH, URXMHP, URXMHH, URXMCOH, URXMHNC, URXMHH, URXECP, URXHIBP, URXMIB, RIDAGEYR)
+    dplyr::select(BMXBMIlog, URXMHBP, URXMOH, URXMHP, URXMHH, URXMCOH, URXMHNC, URXMHH, URXECP, URXHIBP, URXMIB, RIDAGEYR)
 # We specify the select function comes from package `dplyr` by using `dplyr::select`
 nhanes <- drop_na(nhanes)
 
-nhanes
 ```
 
 ## Bayesian Weighted Sums
@@ -67,23 +68,23 @@ $$ Eg(Y)= \beta_0 + \beta_1  \times (w_1X_1 + w_2X_2 +...+w_kX_k) + \beta_2Z$$
 
 In this model, $X$ are quantiles of chemical mixtures, $Z$ are other covariates. $w$ are weights ranging from 0 to 1, and sum up to 1, presenting the importance of each chemical. $\beta_0$ is intercept, $\beta_1$ and $\beta_2$ are coefficients. $\beta_1$ is the coefficient of the weighted quantile sum, measuring the combined effect of the mixture exposures.
 
-In a Bayesian regression, we assign prior to unknown parameters. The prior specification is based on our prior knowledge. For this example, we do not have valuable prior information, so we use a relatively less informative prior, the default prior in the package $N(0,100)$ for each coefficient.
+In a Bayesian regression, we assign prior to unknown parameters. The prior specification is based on our prior knowledge. For this example, we do not have valuable prior information, so we use a relatively less informative prior, the default prior in the package $N(0,100)$ for each coefficient. (Note: the informativeness of the prior will depend on the scale of the predictor and outcome of interest. The N(0,100) prior places 95% of the prior mass on regression coefficient values between -19.6 and 19.6 (within 2 SD of the mean).)
 
-Unlike $\beta$, the specification for weights $w$ is different since it poses a constraint that should sum up to 1, $w_1 + w_2 + … + w_k = 1$. Since the posterior has the same support as that of the prior, such constraint on weights is easily addressed in Bayesian methods by specifying a prior on weights subject to the constraint. The distribution commonly used for weights is the Dirichlet distribution, denoted as $w \sim Dir(\alpha)$. $w$ represents weights with length $k$, and $\alpha$ represents concentration parameters with length $k$.
+Unlike $\beta$, the specification for weights $w$ is different since it poses a constraint that should sum up to 1, $w_1 + w_2 + … + w_k = 1$. Since the posterior has the same support as that of the prior, such constraint on weights is easily addressed in Bayesian methods by specifying a prior on weights subject to the constraint. The prior distribution commonly used for weights is the Dirichlet distribution, denoted as $w \sim Dir(\alpha)$. $w$ represents weights with length $k$, and $\alpha$ represents concentration parameters with length $k$.
 
-The Dirichlet distribution is generalized from the beta distribution and is a continuous and multivariate probability distribution shown below. Notice $B(\alpha)$ is the (multivariate) beta distribution. The concentration parameters $\alpha_1, \dots, \alpha_k$ of the distribution controls the distribution of probability, where $k$ is the number of categories (number of chemicals in our case).
+The Dirichlet distribution is generalized from the beta distribution and is a continuous and multivariate probability distribution shown below [(from wikipedia)](https://en.wikipedia.org/wiki/Dirichlet_distribution). Notice $B(\alpha)$ is the (multivariate) beta distribution. The concentration parameters $\alpha_1, \dots, \alpha_k$ of the distribution controls the distribution of probability, where $k$ is the number of categories (number of chemicals in our case).
 
 ![](img/Dirichlet2.png){width="294"}
 
 ![](img/Dirichlet.jpg){width="469"}
 
-As shown above in the image, when the $\alpha$ are equal, the same probabilitiy is placed on all categories. However, if $\alpha$ are unbalanced, having different, suggest a tendency that some categories are more important. We can assign unequal $\alpha$, if we have some prior knowledge showing some of predictors have more potential impact than the others.
+As shown above in the image, when the $\alpha$ are equal, the same probability is placed on all categories. However, if $\alpha$ are unbalanced, having different, suggest a tendency that some categories are more important. We can assign unequal $\alpha$, if we have some prior knowledge showing some of predictors have more potential impact than the others.
 
 The amplitude of $\alpha$ indicates the degree of confidence we have on prior knowledge. If we strongly believe they have same importance, we can assign a large value for $\alpha$ and set them to be equal. If we have no prior knowledge or very weak information, we can set the $\alpha$ to be same but with $\alpha = 1$, which is also the default prior in `BWQS` package.
 
-It is important to note, the assumptions for the Dirichlet distribution include all weights must be positive, real numbers and must sum to 1. This indicates that BWQS require chemical mixtures are coded such that they all contribute in the same direction (*unidirection assumption*). But such assumption can be relaxed. For more details on avoiding the constraint that all chemicals have effects in similar directions, please see [the paper by Colicino et. al., 2020](https://pubmed.ncbi.nlm.nih.gov/32613152/).
+It is important to note, the assumptions for the Dirichlet distribution include all weights must be positive, real numbers and must sum to 1. This indicates that BWQS require chemical mixtures are coded such that they all contribute in the same direction (*unidirection assumption*). But this assumption can be relaxed. For more details on avoiding the constraint that all chemicals have effects in similar directions, please see [the paper by Colicino et. al., 2020](https://pubmed.ncbi.nlm.nih.gov/32613152/).
 
-## Model Fitting
+### Model Fitting
 
 `BWQS` has similar arguments to the `gWQS` and `qgcomp` packages:
 
@@ -99,18 +100,14 @@ It is important to note, the assumptions for the Dirichlet distribution include 
 
 It is important to note that the prior of the $\beta_1$ coefficient can be manually set to either the positive or negative direction. This can be useful if we have specific information regarding the prior and is accomplished by writing prior = "positive" or prior = "negative". For example, if we feel strongly that greater phthalate exposures will be related to higher weights, we can specify "positive"; if we believe greater phthalate exposures will be related to lower weights, we can specify "negative." If we are unsure, we can specify "None" (the default specification).
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 
 chem_names_new <- c('URXMHBP', 'URXMOH',  'URXMHP',  'URXMHH',  'URXMCOH', 'URXMHNC', 'URXECP', 'URXHIBP', 'URXMIB')
-# here we only select 100 individuals as an example
-set.seed(1)
-nhanes_s = sample_n(tbl = nhanes,size = 100,replace = FALSE)
-
 fit_bwqs = bwqs(BMXBMIlog~RIDAGEYR, mix_name = chem_names_new,
-                data = nhanes_s, q = 4, family = "gaussian",iter = 5000)
+                data = nhanes, q = 4, family = "gaussian",iter = 5000)
 ```
 
-## Model Interpretation and Inference
+### Model Interpretation and Inference
 
 In addition to the model, the BWQS package has built-in visualization tools. Similar to WQS and gWQS, we can visualize the weights assigned to each of the predictors in our model.
 
@@ -119,7 +116,7 @@ bwqs_plot(fit_bwqs, parms = "W", size = 2)
 # set parms = "W" to only visualize credible intervals of weights.
 ```
 
-Additionally, similar to standard Bayesian regression models, we can us a 95% credible interval to view the results. We want the credible interval corresponding to our $\beta1$ value, as shown below. Note the large dots are the mean, and the credible interval is displayed by a line.
+Additionally, similar to standard Bayesian regression models, we can us a 95% credible interval to view the results. We want the credible interval corresponding to our $\beta_1$ value, as shown below. Note the dots are the mean, and the credible interval is displayed by a line.
 
 ```{r}
 fit_bwqs$summary_fit 
@@ -127,35 +124,43 @@ fit_bwqs$summary_fit
 
 We can say 95% of the posterior distribution for the mean BMI for an 18 year old exposed in the lowest quantile to all mixture elements is between `r round(exp(fit_bwqs$summary_fit)[1,4],3)` and `r round(exp(fit_bwqs$summary_fit)[1,5],3)`.
 
-Holding other variables constant, for every one unit increase in WQS (for every one increase in quantile of each chemical mixture), 95% of the posterior distribution for an increase in BMI is between `r round((exp(fit_bwqs$summary_fit)[2,4]-1)*100,3)`% and `r round((exp(fit_bwqs$summary_fit)[2,5]-1),3)*100`%. (It is calculated by exp(beta1-1) since we use logBMI as response.)
+Holding other variables constant, for every one unit increase in WQS (for every one increase in quantile of each chemical mixture), 95% of the posterior distribution for an increase in BMI is between `r round((exp(fit_bwqs$summary_fit)[2,4]-1)*100,3)`% and `r round((exp(fit_bwqs$summary_fit)[2,5]-1),3)*100`%. (It is calculated by exp($\beta_1$-1) since we use logBMI as response.)
 
 Holding other variables constant, for each additional year of age, 95% of the posterior distribution for an increase in BMI is between `r round((exp(fit_bwqs$summary_fit)[3,4]-1)*100,3)`% and `r round((exp(fit_bwqs$summary_fit)[3,5]-1)*100,3)`%.
 
-It is important to note that if the credible interval includes 0, the relationship is not considered significant. In this example, 0 is contained within the interval, so we there is not sufficient evidence to conclude there is a relationship between the phthalates and log BMI.
+It is important to note that if the credible interval includes 0, the relationship is not considered significant. In this example, 0 is contained within the interval, so we there is not sufficient evidence to conclude there is a relationship between the phthalates and log BMI. Moreover, we can calculate the posterior probability that higher phthalate levels are related to increased BMI ($Pr(\beta_1>0|Y)$) is 100%. 
 
-!! it would be good to also go thruogh the posterior probabilities -- e.g. the posterior probability that higher phthalate levels are related to increased BMI is X.
+```{r}
+## beta1 represent the increase of logBMI with 1 unit increase of WQS holding other constant. 
+## beta1>0 indicates higher phthalate levels are related to increased logBMI/BMI. 
+## Calculate Pr(beta1>0|Y)
+## Step 1: extract the posterior samples for beta_1. (use extract function from rstan package)
+beta1_post = rstan::extract(fit_bwqs$fit)$beta1
+## Step 2: calculate the proportion of posterior samples greater than 0.
+mean(beta1_post>0)
+```
 
-Additional information provided by the model includes the standard error, the effective sample size (size of independent samples), and R-hat which is the corresponds to the convergence of MCMC simulations. An effective sample size ($\hat{R}$) is typically considered reasonable if it is less that 1.01.
 
-## Model Prediction
+Additional information provided by the model includes the standard error, the effective sample size (size of independent samples), and R-hat which is the corresponds to the convergence of MCMC simulations. An effective sample size ($\hat{R}$) is typically considered reasonable if it is less that 1.01. [@vehtari2021rank]
+
+### Model Prediction
 
 When predicting using Bayesian methods, we usually obtain the prediction interval based on posterior samples. Here we provide an example for calculating a prediction interval manually. Notice the `BWQS` package is based on the `rstan` package, which does not have a `predict()` function. We need to manually construct our own `predict()` function based on our model.
 
 ```{r}
-
 # obtain the average chemical mixture level of the dataset.
 # you can specify your own data to predict
-new_data = nhanes_s |>
-  apply(.,2,mean) |>
+new_data = nhanes |> 
+  apply(2,mean) |>
   t() |>
   as.data.frame() |>
-  select(-BMXBMI, - BMXBMIlog)
+  select( - BMXBMIlog)
 new_data$RIDAGEYR = 0
 
 # transfer the new data to the quantiles defined by the quantile of original data
 q = 4 # the quantile we use
 for (i in 1:length(chem_names_new)){
-      dat_num = as.numeric(unlist(nhanes_s[, chem_names_new[i]]))
+      dat_num = as.numeric(unlist(nhanes[, chem_names_new[i]]))
       bound = unique(quantile(dat_num, probs = seq(0, 1, by = 1/q), na.rm = TRUE)) 
       new_data[[chem_names_new[i]]] = cut(new_data[[chem_names_new[i]]],breaks = bound,labels = FALSE,include.lowest = TRUE)-1
 }
@@ -180,25 +185,19 @@ mean(result.sample)
 quantile (result.sample,c(0.025,0.975))
 ```
 
-```{r}
-param.new <- as.data.frame(rstan::extract(fit_bwqs$fit))|>
-  filter(x>0)|>
-  slect(beta)
- 
-```
 
-For a population of 18 years old and with fairly typical exposure values, 95% of the posterior distribution for the mean BMI for an 18 year old exposed in the lowest quantile to all mixture elements is between `r round(exp(quantile (result.sample,c(0.025,0.975))[1]),3)` and `r round(exp(quantile (result.sample,c(0.025,0.975))[2]),3)`.
+For a population of 18 years old and with fairly typical exposure values, 95% of the posterior distribution for the mean BMI is between `r round(exp(quantile (result.sample,c(0.025,0.975))[1]),3)` and `r round(exp(quantile (result.sample,c(0.025,0.975))[2]),3)`.
 
-## Model Evaluation
+### Model Evaluation
 
-For the model evaluation, instead of using AIC for our model evaluation, we use WAIC, which is widely used with Bayesian regression models ([@waic]). We will create a second model predicting log BMI but only use half of chemical mixtures (remove the 3 chemicals).
+For the model evaluation, instead of using AIC for our model evaluation, we use WAIC, which is widely used with Bayesian regression models [@watanabe2013widely]. We will create a second model predicting log BMI, excluding three chemicals whose posterior mean weights are close to zero.
 
-```{r}
-chem_names_newage <- c('URXMHH','URXMCOH', 'URXMHNC', 'URXECP', 'URXHIBP', 'URXMIB','RIDAGEYR')
-nhanes_s1 = nhanes_s %>% select(-c('URXMHBP', 'URXMOH',  'URXMHP'))
+```{r message=FALSE, warning=FALSE}
+chem_names_new_1 <- c('URXMOH','URXMHH','URXMCOH', 'URXMHNC', 'URXECP', 'URXMIB')
+nhanes_1 = nhanes %>% select(-c('URXMHBP','URXMHP' , 'URXHIBP'))
 
-fit_bwqs_less = bwqs(BMXBMIlog~RIDAGEYR, mix_name = chem_names_newage,
-                data = nhanes_s1, q = 4, family = "gaussian",iter = 5000)
+fit_bwqs_less = bwqs(BMXBMIlog~RIDAGEYR, mix_name = chem_names_new_1,
+                data = nhanes_1, q = 4, family = "gaussian",iter = 5000)
 ```
 
 The WAIC metric from the original model:
@@ -207,72 +206,17 @@ The WAIC metric from the original model:
 bwqs_waic(fit_bwqs$fit)$waic
 ```
 
-The WAIC metric from the model with fewer chemical mixtures:
+The WAIC metric from the model with fewer chemicals:
 
 ```{r}
 bwqs_waic(fit_bwqs_less$fit)$waic
 ```
 
-A smaller WAIC value is better. Therefore, the model with more chemicals is better.
+A smaller WAIC value is better. Therefore, the model with fewer chemicals is better.
 
 ## Discussion
 
-In all, the BWQS model has many similarities to WQS and qgcomp. In WQS regression, weights are provided through point estimates and the beta terms. Uncertainty in this model is usually computed by bootstrapping methods. BWQS can provide uncertainty quantification of the weights and the effects. This is evident through credible intervals for the predictors, this provides a better quantification instead of simply point estimates in other models. Additionally, the Bayesian methods allows for additional flexibility and complex models. For examples, hierarchical models can be used with BWQS to determine the statistical significance of the predictors explaining the variance of the outcome variable. Please see this [vignette](https://rdrr.io/github/ElenaColicino/bwqs/f/vignettes/bwqs_vignette.Rmd) for more details on Hierarchical Bayesian Quantile Weighted Sums.
+In all, the BWQS model has many similarities to WQS but offers distinct advantages. In WQS regression, weights are provided through point estimates, and uncertainty is typically addressed using bootstrapping methods. In contrast, BWQS provides uncertainty quantification by constructing credible intervals based on posterior samples. Additionally, the Bayesian methods introduces additional flexibility, enabling the construction of more complex models, such as hierarchical Bayesian WQS. Please see this [vignette](https://github.com/ElenaColicino/bwqs) for more details.
 
 ## References
-
-Add to .bib file
-
-```         
-@article{elena,
-  title={Per- and poly-fluoroalkyl substances and bone mineral density},
-  author={Elena Colicino,et.al},
-  journal={The National Institutes of Health},
-  year={2020},
-  url={https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7289141/}
-```
-
-```         
-@article{ghassan,
-  title={Bayesian Weighted Sums: A Flexible Approach to Estimate Summed Mixture Effects},
-  author={Ghassan Hamra,et.al},
-  journal={The National Institutes of Health},
-  year={2021},
-  url={https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7913173/}
-```
-
-```         
-@article{image,
-  title={Dirichlet Distribution},
-  journal={Wikipedia},
-  url={https://en.wikipedia.org/wiki/Dirichlet_distribution}
-```
-
-```         
-@article{elenabwqs,
-  title={Bayesian Weighted Quantile Sum},
-  author={Elena Colicino},
-  journal={GitHub},
-  year={2023},
-  url={https://github.com/ElenaColicino/bwqs}
-```
-
-
-```         
-@article{rhat,
-  title={Rank-Normalization, Folding, and Localization: An Improved R^ for Assessing Convergence of MCMC},
-  author={Aki Vehtari, et al.},
-  journal={Bayesian Analysis},
-  year={2020},
-  url={https://stat.columbia.edu/~gelman/research/published/rhat.pdf}
-```
-
-```         
-@article{waic,
-  title={A Widely Applicable Bayesian Information Criterion},
-  author={Sumio Watanabe, et al.},
-  journal={Journal of Machine Learning Research},
-  year={2013},
-  url={https://stat.columbia.edu/~gelman/research/published/rhat.pdf}
-```
 
