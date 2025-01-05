@@ -64,7 +64,7 @@ nhanes <- drop_na(nhanes)
 
 Bayes Weighted Sums follows a similar formula to WQS. Each independent variable is assigned a weight and multiplied by the $\beta_1$ coefficient. The formula is displayed below:
 
-$$ Eg(Y)= \beta_0 + \beta_1  \times (w_1X_1 + w_2X_2 +...+w_kX_k) + \beta_2Z$$
+$$ g(E(Y))= \beta_0 + \beta_1  \times (w_1X_1 + w_2X_2 +...+w_kX_k) + \beta_2Z$$
 
 In this model, $X$ are quantiles of chemical mixtures, $Z$ are other covariates. $w$ are weights ranging from 0 to 1, and sum up to 1, presenting the importance of each chemical. $\beta_0$ is intercept, $\beta_1$ and $\beta_2$ are coefficients. $\beta_1$ is the coefficient of the weighted quantile sum, measuring the combined effect of the mixture exposures.
 

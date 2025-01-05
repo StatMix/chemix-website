@@ -1663,7 +1663,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Weighted Quantile Sum Regression</h1>
 <h4 class="author">Bradley Bowen</h4>
-<h4 class="date">14 September, 2024</h4>
+<h4 class="date">04 January, 2025</h4>
 
 </div>
 
@@ -1843,12 +1843,12 @@ tidy()</code></pre>
 to standard linear regression model. One difference from the linear
 model is that unique weights are assigned to the predictor
 variables.</p>
-<p><span class="math display">\[ Eg(Y)= \beta_0 + \beta_0  \times (WQS)
-\]</span> or it can be written as an expanded model where <span class="math inline">\(w_n\)</span> corresponds the estimated weights for
+<p><span class="math display">\[ g(E(Y))= \beta_0 + \beta_0  \times
+(WQS) \]</span> or it can be written as an expanded model where <span class="math inline">\(w_n\)</span> corresponds the estimated weights for
 each X variable and <span class="math inline">\(\theta_1\)</span> is the
 predicted impact of the WQS method on all of the chemical exposures.</p>
 <p><span class="math display">\[
-Eg(Y)= \beta_0 + \beta_1(w_1X_1 + w_2X_2 + ... w_nX_n)
+g(E(Y))= \beta_0 + \beta_1(w_1X_1 + w_2X_2 + ... w_nX_n)
 \]</span></p>
 <p>Each outcome variable is assigned a “score”, meaning they are placed
 in bins using quantiles qi = {0, 1, 2, 3, etc.} For each exposure, there

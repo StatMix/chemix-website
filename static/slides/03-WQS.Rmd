@@ -98,11 +98,11 @@ tidy()
 
 Once the conditions are satisfied, a model can be produced, similarly to standard linear regression model. One difference from the linear model is that unique weights are assigned to the predictor variables.
 
-$$ Eg(Y)= \beta_0 + \beta_0  \times (WQS) $$
+$$ g(E(Y))= \beta_0 + \beta_0  \times (WQS) $$
 or it can be written as an expanded model where $w_n$ corresponds the estimated weights for each X variable and $\theta_1$ is the predicted impact of the WQS method on all of the chemical exposures.
 
 $$
-Eg(Y)= \beta_0 + \beta_1(w_1X_1 + w_2X_2 + ... w_nX_n)
+g(E(Y))= \beta_0 + \beta_1(w_1X_1 + w_2X_2 + ... w_nX_n)
 $$
 
 Each outcome variable is assigned a "score", meaning they are placed in bins using quantiles qi = {0, 1, 2, 3, etc.} For each exposure, there are cutoff points (or weights) that determine where each variable is placed. The weighted components are then summed and are fitted to the regression model. gWQS visualizes the assigned weights and regression fit as demonstrated in the package below:

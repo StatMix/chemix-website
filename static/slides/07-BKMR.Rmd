@@ -13,23 +13,20 @@ output:
 
 Often the case with health data, mixtures may have non-linear relationships with the outcome variable, meaning that standard additive models may not be best suited. Working with highly correlated exposures and complex interaction effects with previous models could potentially lead to inconsistent estimates. In this tutorial, we will explore Bayesian Kernel Machine Regression (BKMR) which allows for increased flexibility for complex relationships between the predictor and outcome variables.
 
-BMKR provides a more flexible approach by using a kernel. Kernels in regression are beneficial as they provide an estimation of the relationship between the predictors and outcome without knowing the form (linear, logistic, exponential, etc). This means that the kernel is a non-parametric technique. In order to determine the best fit between the predictor variables and outcome of interest, the kernel weights data points that are close in distance to outcome higher, and points that have a greater distance lower. This method allows the regression model to better fit the data and account for complex relationships between variables.
+Kernel Machine Regression provides a more flexible approach by using a kernel. Kernels in regression are beneficial as they provide an estimation of the relationship between the predictors and outcome without knowing the form (linear, logistic, exponential, etc). This means that the kernel is a non-parametric technique. In order to determine the best fit between the predictor variables and outcome of interest, the kernel weights data points that are close in distance to outcome higher, and points that have a greater distance lower. This method allows the regression model to better fit the data and account for complex relationships between variables.
 
-Additionally, the BKMR is able to integrate Bayesian frameworks by integrating priors, likelihoods, posteriors, inferences, and hierarchical modeling.
+Additionally, the Bayesian Kernel Machine Regression integrates Kernel Machine Regression in a Bayesian framework, placing priors on model parameters, providing uncertainty quantification through the posterior, and allowing for flexibility such as hierarchical variable selection.
 
 ## Preparation
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 library(tidyverse)
 library(tidymodels)
 library(ggcorrplot)
 library(corrplot)
-
 ```
 
-Exploratory Data Analysis
-
-To illustrate how BKMR empowers hierarhical modeling of highly correlated predictors, we will be using the `nhanes` dataset where the variables are described in the file `nhanes-codebook.txt`. Load this data with the `load` function and specify the data file.
+To illustrate how BKMR empowers modeling of highly correlated predictors, we will use the `nhanes` dataset where the variables are described in the file `nhanes-codebook.txt`. Load this data with the `load` function and specify the data file.
 
 ```{r}
 load(file='nhanes1518.rda')
@@ -60,9 +57,39 @@ corrplot(corr_mat, # colorful number
 
 ## Bayesian Kernel Machine Regression
 
+Bayesian Kernel Machine Regression (BKMR) model the relationship between outcome and variables using two parts: a nonparametric function $h(\cdot)$ and linear function.
+
+$$g(E(Y)) = h(X_1,\dots,X_k)+\beta Z$$
+
+where $g(\cdot)$ is a link function, $h(\cdot)$ is a nonparametric function capturing the nonlinear relationship between chemical mixtures $(X_1,\dots,X_k)$ and outcome, and $Z$ represent other variables which may have linear relationship with outcome. 
+
+The nonparametric function $h(\cdot)$ is highly flexible, and usually represented using kernel function. Let $\bf{X} = (X_1,\dots,X_k)$ representing the vector of chemical mixtures, we have the kernel representation of $h(\bf{X})$:
+
+$$h(\bf{X}) = \sum_{i=1}^n K(X_i,X) \alpha_i$$
+
+where $K(X,X')$ is a function measures the similarity of $X$ and $X'$, $\alpha_i$'s are coefficients. The outcome corresponding to $X$ are weighted by similarity of $X$ to the data points $\{X_i,i = 1,\dots,n\}$, data points that are more similar/ closer to $X$ will plays more important role in outcome estimation. A common choice is a Gaussian kernel 
+
+$$K(X,X') = exp\{-\sum_{k=1}^K(X_k-X_k')^2/\rho\}$$.
+
+The BKMR can also allow for variable selection by slightly modifying the kernel:
+
+$$K(X,X';r) = exp\{-\sum_{k=1}^Kr_k(X_k-X_k')^2\}$$
+
+where $r_k$ are non-negative values, with a "slab-and-spike" prior. If $r_k=0$, the variable $X_k$ are excluded from the model. 
+
 ### Model Fitting
 
-To fit the BKMR model, we use the `kmbayes` function. This function implements the Markov chain Monte Carlo (MCMC) algorithm.
+Similar to previous tutorials, we are interested in the research question: predicting log BMI using phthalate measurements from urine samples for individuals above 18 years of age. We assume the age has linear relationship to logBMI.
+
+```{r}
+y<-nhanes$BMXBMI # bmi
+Z <- nhanes |> select(-BMXBMI, -URXMC1, -URXMEP, -RIDAGEYR) # chemical mixtures
+# group 1: URXMBP, URXMIB, URXMC1, URXMEP, URXMZP
+# group 2: URXECP, URXMHH, URXMOH, URXMHP
+X <- nhanes |> select(RIDAGEYR)
+```
+
+To fit the BKMR model, we use the `kmbayes` function in R package `bkmr`. 
 
 ```{r}
 #install.packages("bkmr")
@@ -71,47 +98,37 @@ library(bkmr)
 
 In the model:
 
--   y is a vector of the response
+-   `y` is a vector of the response
 
--   Z is the matrix containing exposures
+-   `Z` is the matrix containing chemical mixtures (variables with nonlinear relationship to outcome)
 
--   X is the matrix containing covariates
+-   `X` is the matrix containing other covariates with linear relationship to outcome
 
-Similar to previous tutorials, the variable year will be utilized as a covariate.
+-   `iter` number of iterations of the MCMC sampler
 
-```{r}
-# set.seed(111)
-# fitkm_corr <- kmbayes(y = d2$y, Z = d2$Z, X = d2$X, iter = 10000, varsel = TRUE, verbose = FALSE)
-# fitkm_hier <- kmbayes(y = d2$y, Z = d2$Z, X = d2$X, iter = 10000, varsel = TRUE, 
-#                       groups = c(1,2,1,3), verbose = FALSE)
-#set.seed(111)
-#sampled_data <- nhanes |> sample_frac(0.01)
+-   `varsel`, whether to conduct variable selection on the predictors $Z$.
 
-y<-nhanes$BMXBMI # bmi
-Z <- nhanes |> select(-BMXBMI, -URXMC1, -URXMEP, -RIDAGEYR) # chemical mixtures
-# group 1: URXMBP, URXMIB, URXMC1, URXMEP, URXMZP
-# group 2: URXECP, URXMHH, URXMOH, URXMHP
-X <- nhanes |> select(RIDAGEYR)
-# log every term
+-   `verbose`, printing the details during modeling fitting
 
-```
-
-To fit the BKMR model, the kmbayes function can be used.
 
 ```{r}
-fitkm_corr <- bkmr::kmbayes(y = y, Z = Z, X = X, iter = 10, varsel = TRUE, verbose = FALSE)
-#fitkm_hier <- kmbayes(y = y, Z = Z, X = X, iter = 10000, varsel = TRUE, groups = c(1,2,1,3), verbose = FALSE)
-print(fitkm_corr)
+set.seed(111)
+fitkm_corr <- bkmr::kmbayes(y = y, Z = Z, X = X, iter = 5000, varsel = FALSE, verbose = FALSE)
 ```
 
 ### Model Interpretation and Inference
-### Model Prediction
-### Model Evaluation
-Below we can view a summary of the model:
 
 ```{r}
 summary(fitkm_corr)
 ```
+
+### Model Prediction
+
+### Model Evaluation
+
+Below we can view a summary of the model:
+
+
 
 Below, we can visualize the general trace of the Markov Chain Monte Carlo method for the samples. This graphs the beta parameter used in the BKMR model.
 
