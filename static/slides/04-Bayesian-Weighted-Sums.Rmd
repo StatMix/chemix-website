@@ -122,11 +122,11 @@ Additionally, similar to standard Bayesian regression models, we can us a 95% cr
 fit_bwqs$summary_fit 
 ```
 
-We can say 95% of the posterior distribution for the mean BMI for an 18 year old exposed in the lowest quantile to all mixture elements is between `r round(exp(fit_bwqs$summary_fit)[1,4],3)` and `r round(exp(fit_bwqs$summary_fit)[1,5],3)`.
+We can say 95% of the posterior distribution for the mean BMI for an 18 year old exposed in the lowest quantile to all mixture elements is between `r round(exp(fit_bwqs$summary_fit)[1,4],3)` and `r round(exp(fit_bwqs$summary_fit)[1,5],3)` (calculate by $e^{\beta_0}$).
 
-Holding other variables constant, for every one unit increase in WQS (for every one increase in quantile of each chemical mixture), 95% of the posterior distribution for an increase in BMI is between `r round((exp(fit_bwqs$summary_fit)[2,4]-1)*100,3)`% and `r round((exp(fit_bwqs$summary_fit)[2,5]-1),3)*100`%. (It is calculated by exp($\beta_1$-1) since we use logBMI as response.)
+There is a 95% probability that the coefficient of WQS is between `r round(fit_bwqs$summary_fit[2,4],3)` and `r round(fit_bwqs$summary_fit[2,5],3)`. To be more specific, holding other variables constant, for every one unit increase in WQS (for every one increase in quantile of each chemical mixture), a `r round((exp(fit_bwqs$summary_fit[2,4])-1)*100,3)`% to `r round((exp(fit_bwqs$summary_fit[2,5])-1)*100,3)`% increase in BMI with 95% probability. (It is calculated by $e^\beta_1-1$ since we use logBMI as response.)
 
-Holding other variables constant, for each additional year of age, 95% of the posterior distribution for an increase in BMI is between `r round((exp(fit_bwqs$summary_fit)[3,4]-1)*100,3)`% and `r round((exp(fit_bwqs$summary_fit)[3,5]-1)*100,3)`%.
+Holding other variables constant, for each additional year of age, 95% of the posterior distribution for the percentage change in BMI is between `r round((exp(fit_bwqs$summary_fit[3,4])-1)*100,3)`% and `r round((exp(fit_bwqs$summary_fit[3,5])-1)*100,3)`%.
 
 It is important to note that if the credible interval includes 0, the relationship is not considered significant. In this example, 0 is contained within the interval, so we there is not sufficient evidence to conclude there is a relationship between the phthalates and log BMI. Moreover, we can calculate the posterior probability that higher phthalate levels are related to increased BMI ($Pr(\beta_1>0|Y)$) is 100%. 
 

@@ -1685,7 +1685,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Bayesian Weighted Sums</h1>
 <h4 class="author">Bradley Bowen</h4>
-<h4 class="date">Last Updated 04 January, 2025</h4>
+<h4 class="date">Last Updated 06 January, 2025</h4>
 
 </div>
 
@@ -1874,15 +1874,16 @@ dots are the mean, and the credible interval is displayed by a line.</p>
 ## sigma      0.23129 0.00010 0.00274 0.22595 0.23655 777.5395 1.00025</code></pre>
 <p>We can say 95% of the posterior distribution for the mean BMI for an
 18 year old exposed in the lowest quantile to all mixture elements is
-between 25.984 and 27.003.</p>
-<p>Holding other variables constant, for every one unit increase in WQS
-(for every one increase in quantile of each chemical mixture), 95% of
-the posterior distribution for an increase in BMI is between 2.605% and
-5.8%. (It is calculated by exp(<span class="math inline">\(\beta_1\)</span>-1) since we use logBMI as
+between 25.984 and 27.003 (calculate by <span class="math inline">\(e^{\beta_0}\)</span>).</p>
+<p>There is a 95% probability that the coefficient of WQS is between
+0.026 and 0.056. To be more specific, holding other variables constant,
+for every one unit increase in WQS (for every one increase in quantile
+of each chemical mixture), a 2.605% to 5.761% increase in BMI with 95%
+probability. (It is calculated by <span class="math inline">\(e^\beta_1-1\)</span> since we use logBMI as
 response.)</p>
 <p>Holding other variables constant, for each additional year of age,
-95% of the posterior distribution for an increase in BMI is between
-0.086% and 0.171%.</p>
+95% of the posterior distribution for the percentage change in BMI is
+between 0.086% and 0.171%.</p>
 <p>It is important to note that if the credible interval includes 0, the
 relationship is not considered significant. In this example, 0 is
 contained within the interval, so we there is not sufficient evidence to
