@@ -300,7 +300,7 @@ Below, we can visualize the general trace of the Markov Chain Monte Carlo method
 TracePlot(fit = fitkm, par = "beta")
 ```
 
-TODO: interpret whether it is good mixing or not. how to check.
+Examining the traceplot, it appears the chains generally show no noticeable patterns across iterations (no apparent wandering trends). Additionally, the samples thoroughly span over a consistent range of parameter values. Therefore, our model has convergence and overall favorable mixing.
 
 ## Miscellaneous
 
