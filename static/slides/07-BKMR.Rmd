@@ -50,6 +50,7 @@ corrplot(corr_mat, # colorful number
          addCoef.col = 1,    # Change font size of correlation coefficients
          number.cex = 0.5) 
 ```
+
 We also plot the distributions of our variables of interest involved in the model, and notice that the variables have a long tail in the original scale, which hints at log transformation which we will perform later on.
 
 ```{r}
@@ -62,20 +63,19 @@ ggplot(df_long, aes(x = value)) +
 
 ```
 
-
 ## Bayesian Kernel Machine Regression
 
 Bayesian Kernel Machine Regression (BKMR) model the relationship between outcome and variables using two parts: a nonparametric function $h(\cdot)$ and linear function.
 
 $$Y_i = h(\bf{Z}_i)+X_i\beta + \epsilon_i$$
 
-where $\bf{Z}_i = (Z_{1i},\dots,Z_{ki})$ are chemical mixtures of observation $i$, $h(\cdot)$ is named predictor-response function, a nonparametric function capturing the nonlinear relationship between chemical mixtures and outcome, and $X_i$ represent other variables which may have linear relationship with outcome and $\beta$ corresponds to coefficient. $\epsilon_i \overset{i.i.d.}{\sim} N(0,\sigma^2)$ is the error term. 
+where $\bf{Z}_i = (Z_{1i},\dots,Z_{ki})$ are chemical mixtures of observation $i$, $h(\cdot)$ is named predictor-response function, a nonparametric function capturing the nonlinear relationship between chemical mixtures and outcome, and $X_i$ represent other variables which may have linear relationship with outcome and $\beta$ corresponds to coefficient. $\epsilon_i \overset{i.i.d.}{\sim} N(0,\sigma^2)$ is the error term.
 
 The nonparametric function $h(\cdot)$ is highly flexible, and usually represented using kernel function:
 
 $$h(\bf{Z}) = \sum_{i=1}^n K(Z_i,Z) \alpha_i$$
 
-where $K(Z,Z')$ is a function measures the similarity of $Z$ and $Z'$, $\alpha_i$'s are coefficients. The outcome corresponding to $X$ are weighted by similarity of $Z$ to the data points $\{Z_i,i = 1,\dots,n\}$, data points that are more similar/ closer to $Z$ will plays more important role in outcome estimation. A common choice is a Gaussian kernel 
+where $K(Z,Z')$ is a function measures the similarity of $Z$ and $Z'$, $\alpha_i$'s are coefficients. The outcome corresponding to $X$ are weighted by similarity of $Z$ to the data points $\{Z_i,i = 1,\dots,n\}$, data points that are more similar/ closer to $Z$ will plays more important role in outcome estimation. A common choice is a Gaussian kernel
 
 $$K(Z,Z') = exp\{-\sum_{k=1}^K(Z_k-Z_k')^2/\rho\}$$.
 
@@ -83,7 +83,7 @@ The BKMR can also allow for variable selection by slightly modifying the kernel:
 
 $$K(Z,Z';r) = exp\{-\sum_{k=1}^Kr_k(Z_k-Z_k')^2\}$$
 
-where $r_k$ are non-negative values, with a "slab-and-spike" prior. If $r_k=0$, the variable $Z_k$ are excluded from the model. 
+where $r_k$ are non-negative values, with a "slab-and-spike" prior. If $r_k=0$, the variable $Z_k$ are excluded from the model.
 
 ### Model Fitting
 
@@ -102,7 +102,7 @@ Z <- as.matrix(Z)
 X <- as.matrix(X)
 ```
 
-To fit the BKMR model, we use the `kmbayes` function in R package `bkmr`. 
+To fit the BKMR model, we use the `kmbayes` function in R package `bkmr`.
 
 ```{r}
 #install.packages("bkmr")
@@ -123,7 +123,7 @@ In the model:
 
 -   `verbose`, printing the details during modeling fitting
 
-In this example, we set `varsel = TRUE` to conduct variable selection while fitting the model. 
+In this example, we set `varsel = TRUE` to conduct variable selection while fitting the model.
 
 ```{r cache=TRUE}
 set.seed(111)
@@ -132,23 +132,21 @@ fitkm <- kmbayes(y = y, Z = Z, X = X, iter = 5000, varsel = TRUE, verbose = FALS
 
 ### Model Interpretation and Inference
 
-#### Estimating Parameters 
+#### Estimating Parameters
 
-`ExtractEsts()` provides the summary statistics (mean, standard deviation, quantiles) of posterior samples of parameters $\beta$, $r_k$, and $\sigma^2$. We can use `q_2.5` and `q_97.5` (2.5% and 97.5% quantiles) to construct 95% credible interval. 
+`ExtractEsts()` provides the summary statistics (mean, standard deviation, quantiles) of posterior samples of parameters $\beta$, $r_k$, and $\sigma^2$. We can use `q_2.5` and `q_97.5` (2.5% and 97.5% quantiles) to construct 95% credible interval.
 
 ```{r}
 ExtractEsts(fitkm)
 ```
 
-
 We can say for the selected sample, holding other variables constant, for each additional year of age, 95% of the posterior distribution for the percentage change in BMI is between `r round((exp(ExtractEsts(fitkm)$beta[3])-1)*100,3)`% and `r round((exp(ExtractEsts(fitkm)$beta[7])-1)*100,3)`%.
 
-#### Estimating posterior inclusion probability 
+#### Estimating posterior inclusion probability
 
 If we conduct variable selection (`varsel = TRUE`) while fitting the model, we can use `ExtractPIPs()` to extract the posterior inclusion probabilities(PIP). The PIPs represent the probability that a specific predictor is included in the model, providing a quantitative measure of the predictor's importance.
 
 For the selected sample, only URXMHP has PIP greater than 0.5, suggesting URXMHP has strongest potential effect to BMI. URXMHH, URXHIBP has PIP close to 0, suggesting these two chemical mixtures have little potential effect to BMI when other chemical mixtures are presented.
-
 
 ```{r}
 ExtractPIPs(fitkm)
@@ -164,14 +162,13 @@ Notice, we cannot directly interpret parameters $r$. Instead, we can estimate $h
 
 #### Estimating h
 
-
-The function $h(\bf{Z})=h((Z_1,\dots,Z_k))$ is called predictor-response function, capturing how the predictors (chemical mixtures) influence the response (outcome variable (log(BMI))). This function allows us to account for nonlinear relationships as well as potential interactions. 
+The function $h(\bf{Z})=h((Z_1,\dots,Z_k))$ is called predictor-response function, capturing how the predictors (chemical mixtures) influence the response (outcome variable (log(BMI))). This function allows us to account for nonlinear relationships as well as potential interactions.
 
 Notice $h(\cdot)$ is a high-dimensional surface which cannot be visualized, and it takes a nonparametric form which is hard to interpret. Here we introduce three different ways to explore $h(\dot)$:
 
--   Estimate h at a given value of predictors: $h(Z=z)$ 
+-   Estimate h at a given value of predictors: $h(Z=z)$
 
--   Uni/Bi-variable predictor-response function: holding other predictors constant, exploring relationship of one or two predictors (chemical mixtures) with the outcome, which is $h(Z_k = z_k|Z_{(-k)}=Z_{(-k),med})$ or $h(Z_k = z_k, Z_m = z_m|Z_{(-k,-m)}=Z_{(-k,-m),med})$. 
+-   Uni/Bi-variable predictor-response function: holding other predictors constant, exploring relationship of one or two predictors (chemical mixtures) with the outcome, which is $h(Z_k = z_k|Z_{(-k)}=Z_{(-k),med})$ or $h(Z_k = z_k, Z_m = z_m|Z_{(-k,-m)}=Z_{(-k,-m),med})$.
 
 -   Overall risk summaries: calculating the overall effect of predictors by comparing $h(Z=z)/h(Z=Z_{med})$.
 
@@ -179,8 +176,7 @@ Notice $h(\cdot)$ is a high-dimensional surface which cannot be visualized, and 
 
 Notice the BKMR can be rewritten as follows:
 
-$$y_i \sim N(h_i+x_i^T\beta,\sigma^2)$$
-$$\bf{h}=(h_1,\dots,h_n)^T \sim N(0,\tau K)$$
+$$y_i \sim N(h_i+x_i^T\beta,\sigma^2)$$ $$\bf{h}=(h_1,\dots,h_n)^T \sim N(0,\tau K)$$
 
 where $K$ is a $n$ by $n$ kernel matrix, with $(i,j)$-element $K(z_i,z_j)=exp{-\sum_{k=1}^Kr_k(z_{ik}-z_{jk})^2}$.
 
@@ -188,11 +184,11 @@ Derived from this model, the posterior distribution of $h(\cdot)$ is normally di
 
 The `BKMR` package can estimate $h(\cdot)$ using three methods:
 
-1.    `ComputePostmeanHnew(method = "approx")`. $h \sim N(\hat{\mu}_h,\hat{V}_h)$, where $\hat{\mu}_h$ and $\hat{V}_h$ are approximated by plugging in posterior mean of $\theta$: $\mu_h(\hat{\theta})$, $V_h(\hat{\theta})$. 
+1.  `ComputePostmeanHnew(method = "approx")`. $h \sim N(\hat{\mu}_h,\hat{V}_h)$, where $\hat{\mu}_h$ and $\hat{V}_h$ are approximated by plugging in posterior mean of $\theta$: $\mu_h(\hat{\theta})$, $V_h(\hat{\theta})$.
 
-2.    `ComputePostmeanHnew(method = "exact")`. $h \sim N(\hat{\mu}_h,\hat{V}_h)$, where $\hat{\mu}_h$ and $\hat{V}_h$ are $E(\mu_h(\theta))$ and $E(V_h(\theta))+Var(\mu_h(\theta))$ estimated by posterior samples.
+2.  `ComputePostmeanHnew(method = "exact")`. $h \sim N(\hat{\mu}_h,\hat{V}_h)$, where $\hat{\mu}_h$ and $\hat{V}_h$ are $E(\mu_h(\theta))$ and $E(V_h(\theta))+Var(\mu_h(\theta))$ estimated by posterior samples.
 
-3.    `SamplePred()`. $h \sim N(\mu_h,V_h)$. Instead of estimating posterior mean and variance, we directly sample $h$ given posterior samples of $\theta$.
+3.  `SamplePred()`. $h \sim N(\mu_h,V_h)$. Instead of estimating posterior mean and variance, we directly sample $h$ given posterior samples of $\theta$.
 
 The first approach is fast but only an approximation. The second and third approaches are exact methods that can provide unbiased estimates of posterior summaries, and the third approach can provide full posterior distribution. But these two exact methods take much longer time especially the third one. We recommend to use the third one for small dataset, the second one for moderate sized datasets and the first one for large dataset.
 
@@ -221,14 +217,11 @@ print(compare)
 
 Both the second and third methods produced similar posterior means. However, the first "approximation" method differed slightly from the remaining approaches, and underestimates the standard deviation.
 
-
-
 ##### Uni/Bi-variable predictor-response function
 
-`PredictorResponseUnivar()` captures relationship between $h$ and single predictor, while fixing other predictors at their median. We observe that for predictors with small PIP(XXXX), the posterior means (blue line) of $h(\cdot)$ are horizontal line at 0, indicating XXXX. The  URXMOH, XXXXX. The URXMHP, XXXX. 
+`PredictorResponseUnivar()` captures relationship between $h$ and single predictor, while fixing other predictors at their median. We observe that for predictors with small PIP(XXXX), the posterior means (blue line) of $h(\cdot)$ are horizontal line at 0, indicating that they do not have a large impact on the response. The URXMOH, XXXXX. The URXMHP, XXXX.
 
 TODO: mention the method = "" and the default method is.
-
 
 ```{r}
 pred.resp.univar <- PredictorResponseUnivar(fit = fitkm)
@@ -238,11 +231,9 @@ ggplot(pred.resp.univar, aes(z, est, ymin = est - 1.96*se, ymax = est + 1.96*se)
   ylab("h(z)")
 ```
 
-
 To investigate relationship between $h$ and two predictors, we can plot the relationship between outcome and the first predictor given the second predictor at varying quantile levels, holding other predictors at a fixed quantile level (we use median by default). We need to apply `PredictorResponseBivar()` to obtain relationship between outcome and two predictors, then apply `PredictorResponseBivarLevels()` to obtain relationship between outcome and first predictor conditional on the second predictor.
 
-Visualizing relationship between $h$ and two predictors can help us check the interactions between two predictors. We observe that only for row `URXMHP` and `URXMOH`, there are clear difference among the lines in different colors. This indicates XXXX.
-We can check whether there exists some interactions between predictors from the plot. If the lines with different color has XXXX .
+Visualizing relationship between $h$ and two predictors can help us check the interactions between two predictors. We observe that only for row `URXMHP` and `URXMOH`, there are clear difference among the lines in different colors. This indicates XXXX. We can check whether there exists some interactions between predictors from the plot. If the lines with different color has XXXX .
 
 ```{r}
 pred.resp.bivar <- PredictorResponseBivar(fit = fitkm, min.plot.dist = 1)
@@ -260,9 +251,7 @@ ggplot(pred.resp.bivar.levels, aes(z1, est)) +
 
 Summary statistics of the exposure-response function h(z) can be also examined and visualized. For example, we can examine how each phthalate contributes to the outcome BMI by comparing the effect at different percentiles while fixing the other variables to specified percentiles. In this example, we examine how the chemical mixtures differ at the 25th, 50th, and 75th percentile. The built-in `SingVarRiskSummaries` function can be used along with `qs.diff` which indicates which quantiles are being compared. Finally, the `q.fixed` argument allows the user to specify what percentiles to fix the other variables.
 
-
 TODO: pick one to interpret XXXX
-
 
 ```{r}
 risks.overall <- OverallRiskSummaries(fit = fitkm, y = y, Z = Z, X = X, 
@@ -272,7 +261,8 @@ risks.overall
 ggplot(risks.overall, aes(quantile, est, ymin = est - 1.96*sd, ymax = est + 1.96*sd)) + 
     geom_pointrange()
 ```
-TODO: what is `SingVarRiskSummaries` for;  interpretation.
+
+TODO: what is `SingVarRiskSummaries` for; interpretation.
 
 ```{r}
 risks.singvar <- SingVarRiskSummaries(fit = fitkm, y = y, Z = Z, X = X, 
@@ -285,7 +275,8 @@ ggplot(risks.singvar, aes(variable, est, ymin = est - 1.96*sd,
     geom_pointrange(position = position_dodge(width = 0.75)) + 
   coord_flip()
 ```
-TODO: what is `SingVarRiskSummaries` for;  interpretation.
+
+TODO: what is `SingVarRiskSummaries` for; interpretation.
 
 ```{r}
 risks.int <- SingVarIntSummaries(fit = fitkm, y = y, Z = Z, X = X, 
@@ -295,14 +286,13 @@ risks.int <- SingVarIntSummaries(fit = fitkm, y = y, Z = Z, X = X,
 risks.int
 ```
 
-
 ### Model Prediction
 
-`SamplePred` 
+`SamplePred`
 
 Use this function to provide example. Refer to the previous tutorial for this chapter and interpret it.
 
-### MCMC Diagnostics {#eva}
+### MCMC Diagnostics
 
 Below, we can visualize the general trace of the Markov Chain Monte Carlo method for the samples. This graphs the $\beta$ parameter used in the BKMR model.
 
@@ -311,8 +301,6 @@ TracePlot(fit = fitkm, par = "beta")
 ```
 
 TODO: interpret whether it is good mixing or not. how to check.
-
-
 
 ## Miscellaneous
 
@@ -375,24 +363,28 @@ ExtractPIPs(fitkm_hier)
 
 ### Changing Tunning Parameters or Prior Distribution
 
-TODO: use two paragraphs, one for tunning parameters (pick the important ones), the other for prior (provide the default prior). and refer to the [github page](https://jenfb.github.io/bkmr/overview.html#changing_the_tuning_parameters_for_fitting_the_algorithm) 
+TODO: use two paragraphs, one for tunning parameters (pick the important ones), the other for prior (provide the default prior). and refer to the [github page](https://jenfb.github.io/bkmr/overview.html#changing_the_tuning_parameters_for_fitting_the_algorithm)
 
-An additional features of the BKMR package is that the tuning parameters for the fitting algorithm can be manually adjusted. The model uses the Markov chain Monte Carlo method and also uses Gibbs steps for updating the parameters. The following parameters can be adjusted:
+Another feature of the BKMR package is that tuning parameters for the fitting algorithm can be manually adjusted. The model uses the Markov chain Monte Carlo method and also uses Gibbs steps for updating the parameters. The parameters can be accessed through the `control.params` argument. In the list of tuning methods, parameters including $\lambda$ (accessed by `lambda.jump`) can be adjusted which is the standard deviaion of the proposed distribution ($\lambda = \tau / \sigma^2$) where $\tau$ is the variance of the kernel matrix, adjusting the smoothness of the exposure-response. Additional adjustments include the standard deviation of the proposal distribution which can adjusted by `r.jump`. Parameters for the Monte Carlo Method can also be adjusted dependent on if the variable is not included and then included in the model or if the variable remains in the proposed model. If the exposure is initially not included to included in the model, the standard deviation can be specified by `r.jump1`. If the variable stays in the proposed model, the standard deviation is accessed through `r.jump2`. Finally, the mean can be modified if the variable is not included to included through `r.muprop`.
 
-| Parameter          | Parameter Call              | Uses                                       | Description/Notes                                                                  |
-|--------------|--------------|--------------|------------------------------|
-| $$                 
-    \sigma^2         
-    $$               | `a.sigsq`, `b.sigsq`        | Should be used with gaussian distributions | Described as the "shape/rate" of a gamma prior                                     |
-| $$                 
-    \lambda          
-    $$               | `mu.lambda`, `sigma.lambda` |                                            | For gamma priors, it is mean and standard deviation                                |
-| $$                 
-    r_m              
-    $$               | `r.prior`                   | Can be used with all models                | Specifies the prior distributions - options include “gamma”, “invunif”, and “unif” |
-| $$                 
-    \pi              
-    $$               | `a.p0`, `b.p0`              | Should be used when `varsel = TRUE`        |                                                                                    |
+In addition to tuning parameters, the the prior distribution can be adjusted. The prior distribution can be specified by `r.prior` with options including include “gamma”, “invunif”, and “unif”. The mean and standard deviation for a gamma prior can be adjusted by `mu.lambda` and `sigma.lambda`. Additional adjustments for the gamma prior include $\sigma^2$ altered through `a.sigsq`, `b.sigsq`. For a beta prior, the shape parameters $\pi$ can be manipulated through `a.p0`, `b.p0` and should be used when `varsel = TRUE`.
+
+\*\* DELETE TABLE BELOW
+
+| Parameter             | Parameter Call              | Uses                                       | Description/Notes                                                                  |
+|---------------|---------------|---------------|---------------------------|
+| $$                    
+     \sigma^2           
+     $$                 | `a.sigsq`, `b.sigsq`        | Should be used with gaussian distributions | Described as the "shape/rate" of a gamma prior                                     |
+| $$                    
+     \lambda            
+     $$                 | `mu.lambda`, `sigma.lambda` |                                            | For gamma priors, it is mean and standard deviation                                |
+| $$                    
+     r_m                
+     $$                 | `r.prior`                   | Can be used with all models                | Specifies the prior distributions - options include “gamma”, “invunif”, and “unif” |
+| $$                    
+     \pi                
+     $$                 | `a.p0`, `b.p0`              | Should be used when `varsel = TRUE`        |                                                                                    |
 
 Additional options can be found at the following link:
 
