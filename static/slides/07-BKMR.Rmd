@@ -371,20 +371,20 @@ In addition to tuning parameters, the the prior distribution can be adjusted. Th
 
 \*\* DELETE TABLE BELOW
 
-| Parameter             | Parameter Call              | Uses                                       | Description/Notes                                                                  |
-|---------------|---------------|---------------|---------------------------|
-| $$                    
-     \sigma^2           
-     $$                 | `a.sigsq`, `b.sigsq`        | Should be used with gaussian distributions | Described as the "shape/rate" of a gamma prior                                     |
-| $$                    
-     \lambda            
-     $$                 | `mu.lambda`, `sigma.lambda` |                                            | For gamma priors, it is mean and standard deviation                                |
-| $$                    
-     r_m                
-     $$                 | `r.prior`                   | Can be used with all models                | Specifies the prior distributions - options include “gamma”, “invunif”, and “unif” |
-| $$                    
-     \pi                
-     $$                 | `a.p0`, `b.p0`              | Should be used when `varsel = TRUE`        |                                                                                    |
+| Parameter                                              | Parameter Call              | Uses                                       | Description/Notes                                                                  |
+|--------------------------------------------------------|-----------------------------|--------------------------------------------|------------------------------------------------------------------------------------|
+| $$                                                     
+                \sigma^2                                 
+                $$                                       | `a.sigsq`, `b.sigsq`        | Should be used with gaussian distributions | Described as the "shape/rate" of a gamma prior                                     |
+| $$                                                     
+                \lambda                                  
+                $$                                       | `mu.lambda`, `sigma.lambda` |                                            | For gamma priors, it is mean and standard deviation                                |
+| $$                                                     
+                r_m                                      
+                $$                                       | `r.prior`                   | Can be used with all models                | Specifies the prior distributions - options include “gamma”, “invunif”, and “unif” |
+| $$                                                     
+                \pi                                      
+                $$                                       | `a.p0`, `b.p0`              | Should be used when `varsel = TRUE`        |                                                                                    |
 
 Additional options can be found at the following link:
 
