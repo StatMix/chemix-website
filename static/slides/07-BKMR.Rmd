@@ -83,7 +83,7 @@ The BKMR can also allow for variable selection by slightly modifying the kernel:
 
 $$K(Z,Z';r) = exp\{-\sum_{k=1}^Kr_k(Z_k-Z_k')^2\}$$
 
-where $r_k$ are non-negative values, with a "slab-and-spike" prior. If $r_k=0$, the variable $Z_k$ are excluded from the model.
+where $r_k$ are non-negative values, with a "slab-and-spike" prior. If $r_k=0$, the variable $Z_k$ are excluded from the model. This variable selection method is similar to the frequentist LASSO shrinkage.
 
 ### Model Fitting
 
@@ -233,7 +233,7 @@ ggplot(pred.resp.univar, aes(z, est, ymin = est - 1.96*se, ymax = est + 1.96*se)
 
 To investigate relationship between $h$ and two predictors, we can plot the relationship between outcome and the first predictor given the second predictor at varying quantile levels, holding other predictors at a fixed quantile level (we use median by default). We need to apply `PredictorResponseBivar()` to obtain relationship between outcome and two predictors, then apply `PredictorResponseBivarLevels()` to obtain relationship between outcome and first predictor conditional on the second predictor.
 
-Visualizing relationship between $h$ and two predictors can help us check the interactions between two predictors. We observe that only for row `URXMHP` and `URXMOH`, there are clear difference among the lines in different colors. This indicates XXXX. We can check whether there exists some interactions between predictors from the plot. If the lines with different color has XXXX .
+Visualizing relationship between $h$ and two predictors can help us check the interactions between two predictors. We observe that only for row `URXMHP` and `URXMOH`, there are clear difference among the lines in different colors. When the lines have a clear overlap, the variables might have a low PIP, indicating they may not be helpful for the model. We can check whether there exists some interactions between predictors from the plot. If the lines with different color cross, this means an interaction may be present.
 
 ```{r}
 pred.resp.bivar <- PredictorResponseBivar(fit = fitkm, min.plot.dist = 1)
@@ -371,20 +371,20 @@ In addition to tuning parameters, the the prior distribution can be adjusted. Th
 
 \*\* DELETE TABLE BELOW
 
-| Parameter                                              | Parameter Call              | Uses                                       | Description/Notes                                                                  |
-|--------------------------------------------------------|-----------------------------|--------------------------------------------|------------------------------------------------------------------------------------|
-| $$                                                     
-                \sigma^2                                 
-                $$                                       | `a.sigsq`, `b.sigsq`        | Should be used with gaussian distributions | Described as the "shape/rate" of a gamma prior                                     |
-| $$                                                     
-                \lambda                                  
-                $$                                       | `mu.lambda`, `sigma.lambda` |                                            | For gamma priors, it is mean and standard deviation                                |
-| $$                                                     
-                r_m                                      
-                $$                                       | `r.prior`                   | Can be used with all models                | Specifies the prior distributions - options include “gamma”, “invunif”, and “unif” |
-| $$                                                     
-                \pi                                      
-                $$                                       | `a.p0`, `b.p0`              | Should be used when `varsel = TRUE`        |                                                                                    |
+| Parameter                                                             | Parameter Call              | Uses                                       | Description/Notes                                                                  |
+|-----------------------------------------------------------------------|-----------------------------|--------------------------------------------|------------------------------------------------------------------------------------|
+| $$                                                                    
+                     \sigma^2                                           
+                     $$                                                 | `a.sigsq`, `b.sigsq`        | Should be used with gaussian distributions | Described as the "shape/rate" of a gamma prior                                     |
+| $$                                                                    
+                     \lambda                                            
+                     $$                                                 | `mu.lambda`, `sigma.lambda` |                                            | For gamma priors, it is mean and standard deviation                                |
+| $$                                                                    
+                     r_m                                                
+                     $$                                                 | `r.prior`                   | Can be used with all models                | Specifies the prior distributions - options include “gamma”, “invunif”, and “unif” |
+| $$                                                                    
+                     \pi                                                
+                     $$                                                 | `a.p0`, `b.p0`              | Should be used when `varsel = TRUE`        |                                                                                    |
 
 Additional options can be found at the following link:
 
