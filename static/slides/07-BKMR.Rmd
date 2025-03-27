@@ -32,13 +32,13 @@ To illustrate how BKMR empowers modeling of highly correlated predictors, we wil
 load(file='nhanes1518.rda')
 ```
 
-We first explore the URX predictors (i.e. the ones related to phthalates concentrations), subsetting subset the dataset to include only the predictors in the weighted quantile sum module, and then filter out `NA` values:
+We first explore the URX predictors (i.e. the ones related to phthalates concentrations), subsetting the dataset to include only the same predictors in the weighted quantile sum module, and then filter out `NA` values:
 
 ```{r}
 nhanes<-nhanes1518 |>
   select(BMXBMI,URXMHBP, URXMOH, URXMHP, URXMHH, URXMCOH, URXMHNC, URXMHH, URXECP, URXHIBP, URXMIB, RIDAGEYR)|>
   na.omit()|>
-  mutate(BMXBMI = log(BMXBMI))
+  mutate(BMXBMI = log(BMXBMI), RIDAGEYR = RIDAGEYR - 18)
 
 ```
 
@@ -65,41 +65,41 @@ ggplot(df_long, aes(x = value)) +
 
 ## Bayesian Kernel Machine Regression
 
-Bayesian Kernel Machine Regression (BKMR) model the relationship between outcome and variables using two parts: a nonparametric function $h(\cdot)$ and linear function.
+Bayesian Kernel Machine Regression (BKMR) models the relationship between outcome and variables using two parts: a nonparametric function $h(\cdot)$ and linear function.
 
-$$Y_i = h(\bf{Z}_i)+X_i\beta + \epsilon_i$$
+$$Y_i = h(\bf{Z}_i)+X_i\beta + \epsilon_i,$$
 
-where $\bf{Z}_i = (Z_{1i},\dots,Z_{ki})$ are chemical mixtures of observation $i$, $h(\cdot)$ is named predictor-response function, a nonparametric function capturing the nonlinear relationship between chemical mixtures and outcome, and $X_i$ represent other variables which may have linear relationship with outcome and $\beta$ corresponds to coefficient. $\epsilon_i \overset{i.i.d.}{\sim} N(0,\sigma^2)$ is the error term.
+where $\bf{Z}_i = (Z_{1i},\dots,Z_{ki})$ are chemical mixtures of observation $i$, $h(\cdot)$ is named predictor-response function, a nonparametric function capturing the nonlinear relationship between chemical mixtures and outcome, and $X_i$ representa other variables which may have linear relationship with outcome and $\beta$ corresponds to its coefficient. $\epsilon_i \overset{i.i.d.}{\sim} N(0,\sigma^2)$ is the error term.
 
 The nonparametric function $h(\cdot)$ is highly flexible, and usually represented using kernel function:
 
-$$h(\bf{Z}) = \sum_{i=1}^n K(Z_i,Z) \alpha_i$$
+$$h(\bf{Z}) = \sum_{i=1}^n K(Z_i,Z) \alpha_i,$$
 
 where $K(Z,Z')$ is a function measures the similarity of $Z$ and $Z'$, $\alpha_i$'s are coefficients. The outcome corresponding to $X$ are weighted by similarity of $Z$ to the data points $\{Z_i,i = 1,\dots,n\}$, data points that are more similar/ closer to $Z$ will plays more important role in outcome estimation. A common choice is a Gaussian kernel
 
-$$K(Z,Z') = exp\{-\sum_{k=1}^K(Z_k-Z_k')^2/\rho\}$$.
+$$K(Z,Z') = exp\{-\sum_{k=1}^K(Z_k-Z_k')^2/\rho\}.$$
 
 The BKMR can also allow for variable selection by slightly modifying the kernel:
 
-$$K(Z,Z';r) = exp\{-\sum_{k=1}^Kr_k(Z_k-Z_k')^2\}$$
+$$K(Z,Z';r) = exp\{-\sum_{k=1}^Kr_k(Z_k-Z_k')^2\},$$
 
-where $r_k$ are non-negative values, with a "slab-and-spike" prior. If $r_k=0$, the variable $Z_k$ are excluded from the model. This variable selection method is similar to the frequentist LASSO shrinkage.
+where $r_k$ are non-negative values, with a "spike-and-slab" prior. If $r_k=0$, the variable $Z_k$ are excluded from the model. This variable selection method is similar to the frequentists' LASSO shrinkage.
 
 ### Model Fitting
 
 Similar to previous tutorials, we are interested in the research question: predicting log BMI using phthalate measurements from urine samples for individuals above 18 years of age. We assume the age has linear relationship to logBMI. For illustration, we randomly sample 10% from the dataset.
 
 ```{r}
-set.seed(1)
+set.seed(123)
 nhanes = nhanes |> sample_frac(size = 0.1)
-y<-nhanes$BMXBMI # bmi
+y <- nhanes$BMXBMI # bmi
 Z <- nhanes |> select(-BMXBMI, -RIDAGEYR) # chemical mixtures
 Z <- log(Z)
 # group 1: URXMBP, URXMIB, URXMC1, URXMEP, URXMZP
 # group 2: URXECP, URXMHH, URXMOH, URXMHP
 X <- nhanes |> select(RIDAGEYR)
-Z <- as.matrix(Z)
-X <- as.matrix(X)
+Z <- as.matrix(Z) |> scale()
+X <- as.matrix(X) 
 ```
 
 To fit the BKMR model, we use the `kmbayes` function in R package `bkmr`.
@@ -125,8 +125,8 @@ In the model:
 
 In this example, we set `varsel = TRUE` to conduct variable selection while fitting the model.
 
-```{r cache=TRUE}
-set.seed(111)
+```{r message=FALSE, warning=FALSE, cache=TRUE}
+set.seed(1)
 fitkm <- kmbayes(y = y, Z = Z, X = X, iter = 5000, varsel = TRUE, verbose = FALSE)
 ```
 
@@ -146,7 +146,7 @@ We can say for the selected sample, holding other variables constant, for each a
 
 If we conduct variable selection (`varsel = TRUE`) while fitting the model, we can use `ExtractPIPs()` to extract the posterior inclusion probabilities(PIP). The PIPs represent the probability that a specific predictor is included in the model, providing a quantitative measure of the predictor's importance.
 
-For the selected sample, only URXMHP has PIP greater than 0.5, suggesting URXMHP has strongest potential effect to BMI. URXMHH, URXHIBP has PIP close to 0, suggesting these two chemical mixtures have little potential effect to BMI when other chemical mixtures are presented.
+For the selected sample, URXHIBP and URXMIB have PIP at 1, suggesting both URXHIBP and URXMIB have potential effects to BMI. URXMHBP, URXMOH, and URXECP have non-zero but small PIP, suggesting these three chemical mixtures may have some potential effect to BMI. For the chemical mixtures with PIP equal 0, they may not have potential effects to BMI when other chemical mixtures are presented.
 
 ```{r}
 ExtractPIPs(fitkm)
@@ -166,11 +166,11 @@ The function $h(\bf{Z})=h((Z_1,\dots,Z_k))$ is called predictor-response functio
 
 Notice $h(\cdot)$ is a high-dimensional surface which cannot be visualized, and it takes a nonparametric form which is hard to interpret. Here we introduce three different ways to explore $h(\dot)$:
 
--   Estimate h at a given value of predictors: $h(Z=z)$
+- Estimate h at a given value of predictors: $h(Z=z)$
 
--   Uni/Bi-variable predictor-response function: holding other predictors constant, exploring relationship of one or two predictors (chemical mixtures) with the outcome, which is $h(Z_k = z_k|Z_{(-k)}=Z_{(-k),med})$ or $h(Z_k = z_k, Z_m = z_m|Z_{(-k,-m)}=Z_{(-k,-m),med})$.
+- Uni/Bi-variable predictor-response function: holding other predictors constant, exploring relationship of one or two predictors (chemical mixtures) with the outcome, which is $h(Z_k = z_k|Z_{(-k)}=Z_{(-k),med})$ or $h(Z_k = z_k, Z_m = z_m|Z_{(-k,-m)}=Z_{(-k,-m),med})$.
 
--   Overall risk summaries: calculating the overall effect of predictors by comparing $h(Z=z)/h(Z=Z_{med})$.
+- Overall risk summaries: calculating the overall effect of predictors by comparing $h(Z=z)/h(Z=Z_{med})$.
 
 ##### Estimate h at a given value of predictors
 
@@ -184,17 +184,17 @@ Derived from this model, the posterior distribution of $h(\cdot)$ is normally di
 
 The `BKMR` package can estimate $h(\cdot)$ using three methods:
 
-1.  `ComputePostmeanHnew(method = "approx")`. $h \sim N(\hat{\mu}_h,\hat{V}_h)$, where $\hat{\mu}_h$ and $\hat{V}_h$ are approximated by plugging in posterior mean of $\theta$: $\mu_h(\hat{\theta})$, $V_h(\hat{\theta})$.
+(1)`ComputePostmeanHnew(method = "approx")`. $h \sim N(\hat{\mu}_h,\hat{V}_h)$, where $\hat{\mu}_h$ and $\hat{V}_h$ are approximated by plugging in posterior mean of $\theta$: $\mu_h(\hat{\theta})$, $V_h(\hat{\theta})$.
 
-2.  `ComputePostmeanHnew(method = "exact")`. $h \sim N(\hat{\mu}_h,\hat{V}_h)$, where $\hat{\mu}_h$ and $\hat{V}_h$ are $E(\mu_h(\theta))$ and $E(V_h(\theta))+Var(\mu_h(\theta))$ estimated by posterior samples.
+(2)`ComputePostmeanHnew(method = "exact")`. $h \sim N(\hat{\mu}_h,\hat{V}_h)$, where $\hat{\mu}_h$ and $\hat{V}_h$ are $E(\mu_h(\theta))$ and $E(V_h(\theta))+Var(\mu_h(\theta))$ estimated by posterior samples.
 
-3.  `SamplePred()`. $h \sim N(\mu_h,V_h)$. Instead of estimating posterior mean and variance, we directly sample $h$ given posterior samples of $\theta$.
+(3)`SamplePred()`. $h \sim N(\mu_h,V_h)$. Instead of estimating posterior mean and variance, we directly sample $h$ given posterior samples of $\theta$.
 
 The first approach is fast but only an approximation. The second and third approaches are exact methods that can provide unbiased estimates of posterior summaries, and the third approach can provide full posterior distribution. But these two exact methods take much longer time especially the third one. We recommend to use the third one for small dataset, the second one for moderate sized datasets and the first one for large dataset.
 
 The three methods are demonstrated below using the median values of the Phalates and Phytoestrogens from the NHANES dataset.
 
-```{r}
+```{r, cache=TRUE}
 # calculate the median of the Z's
 med <- apply(Z, 2, median)
 Znew <- matrix(med, nrow = 1)
@@ -219,9 +219,11 @@ Both the second and third methods produced similar posterior means. However, the
 
 ##### Uni/Bi-variable predictor-response function
 
-`PredictorResponseUnivar()` captures relationship between $h$ and single predictor, while fixing other predictors at their median. We observe that for predictors with small PIP(XXXX), the posterior means (blue line) of $h(\cdot)$ are horizontal line at 0, indicating that they do not have a large impact on the response. The URXMOH, XXXXX. The URXMHP, XXXX.
+`PredictorResponseUnivar()` captures relationship between $h$ and single predictor, while fixing other predictors at their median. As demonstrated in previous section, we can have three difference ways to estimate $h$. The default method is "approx", we can switch to other methods by setting the argument `method =`.
 
-TODO: mention the method = "" and the default method is.
+We observe that for predictors with small PIP, the posterior means (blue line) of $h(\cdot)$ are horizontal line at 0, indicating that they do not have a large impact on the response.
+
+Here we focus on URXHIBP and URXMIB since their PIP equal to 1. Holding other variables at their median level, people with higher value of URXHIBP, are likely have higher BMI. Holding other variables at their median level, people with higher value of URXMIB, are likely have smaller BMI.
 
 ```{r}
 pred.resp.univar <- PredictorResponseUnivar(fit = fitkm)
@@ -233,12 +235,19 @@ ggplot(pred.resp.univar, aes(z, est, ymin = est - 1.96*se, ymax = est + 1.96*se)
 
 To investigate relationship between $h$ and two predictors, we can plot the relationship between outcome and the first predictor given the second predictor at varying quantile levels, holding other predictors at a fixed quantile level (we use median by default). We need to apply `PredictorResponseBivar()` to obtain relationship between outcome and two predictors, then apply `PredictorResponseBivarLevels()` to obtain relationship between outcome and first predictor conditional on the second predictor.
 
-Visualizing relationship between $h$ and two predictors can help us check the interactions between two predictors. We observe that only for row `URXMHP` and `URXMOH`, there are clear difference among the lines in different colors. When the lines have a clear overlap, the variables might have a low PIP, indicating they may not be helpful for the model. We can check whether there exists some interactions between predictors from the plot. If the lines with different color cross, this means an interaction may be present.
+Visualizing relationship between $h$ and two predictors can help us check the interactions between two predictors. Here we only select predictors with non-zero PIPs.
 
-```{r}
+We observe that only for `URXHIBP` and `URXMIB`, there are clear difference among the lines in different colors, consistent with PIP results and the trend are similar to visualization for uni-variable predictor-response.
+
+We can check whether there exists some interactions between predictors from the plot. If the lines with different color cross, this means an interaction may be present. Here most lines are parallel to each other except for the lines between `URXHIBP` and `URXMIB`. `URXMIB` grows faster if `URXHIBP` is at relative small value (0.1 quantile, red line), compared median or high level of `URXHIBP`.
+
+```{r,warning=FALSE,cache=TRUE,message=FALSE}
 pred.resp.bivar <- PredictorResponseBivar(fit = fitkm, min.plot.dist = 1)
 pred.resp.bivar.levels <- PredictorResponseBivarLevels(
   pred.resp.df = pred.resp.bivar, Z = Z, qs = c(0.1, 0.5, 0.9))
+var_nonzero = ExtractPIPs(fitkm)[ExtractPIPs(fitkm)[,2]>0,1]
+pred.resp.bivar.levels = pred.resp.bivar.levels %>%
+  filter(variable1%in%var_nonzero,variable2%in%var_nonzero)
 ggplot(pred.resp.bivar.levels, aes(z1, est)) + 
     geom_smooth(aes(col = quantile), stat = "identity") + 
     facet_grid(variable2 ~ variable1) +
@@ -249,20 +258,25 @@ ggplot(pred.resp.bivar.levels, aes(z1, est)) +
 
 ##### Overall risk summaries
 
-Summary statistics of the exposure-response function h(z) can be also examined and visualized. For example, we can examine how each phthalate contributes to the outcome BMI by comparing the effect at different percentiles while fixing the other variables to specified percentiles. In this example, we examine how the chemical mixtures differ at the 25th, 50th, and 75th percentile. The built-in `SingVarRiskSummaries` function can be used along with `qs.diff` which indicates which quantiles are being compared. Finally, the `q.fixed` argument allows the user to specify what percentiles to fix the other variables.
+Summary statistics of the exposure-response function $h(z)$ can be also examined and visualized. Instead of considering the effect of one predictor conditional on other predictors, we can quantify the total effect of predictors, by comparing the $h(\cdot)$ when all predictors at their certain quantile levels relative to the median.
 
-TODO: pick one to interpret XXXX
+For example, we calculate $h(Z=Z_q)-h(Z=Z_{0.5})$, overall contributions of phthalate at their 0.2, 0.4, 0.6, 0.8 quantiles (`qs`) minus the response at their 0.5 quantiles. Notice, we can select reference quantile by specifying `q.fixed` and select the estimation method (default is `method = "approx"`).
+
+We observe a decreasing trend, suggesting people with total pathalate at higher level tend to have lower BMI holding age constant. For people at the same age, we are 95% confident that people with total pathalate at a higher level (each pathalate is at 0.8 quantile) tend to have log BMI increase by -0.037 to 0.017 as compared to people with total pathalate at moderate level (each pathlate is at median).
+
+
 
 ```{r}
 risks.overall <- OverallRiskSummaries(fit = fitkm, y = y, Z = Z, X = X, 
-                                      qs = seq(0.25, 0.75, by = 0.05), 
-                                      q.fixed = 0.5, method = "exact")
-risks.overall
+                                      qs = seq(0.2, 0.8, by = 0.2), 
+                                      q.fixed = 0.5)
+risks.overall %>%
+  mutate(lowerCI = est - 1.96*sd, upperCI = est + 1.96*sd)
 ggplot(risks.overall, aes(quantile, est, ymin = est - 1.96*sd, ymax = est + 1.96*sd)) + 
     geom_pointrange()
 ```
 
-TODO: what is `SingVarRiskSummaries` for; interpretation.
+`SingVarRiskSummaries` focus on $h(z_{j,q2}-z_{j,q1}|Z_{(-j)}=Z_{(-j),0.5})$ the difference of $h()$ when a predictor is at its $q2$-quantile and $q1$-quantile, conditional on other predictors at a fixed quantile. `qs.diff` which indicates which quantile is being compared for the individual/target predictor, `q.fixed` argument indicates the quantiles of other predictors.
 
 ```{r}
 risks.singvar <- SingVarRiskSummaries(fit = fitkm, y = y, Z = Z, X = X, 
@@ -276,7 +290,7 @@ ggplot(risks.singvar, aes(variable, est, ymin = est - 1.96*sd,
   coord_flip()
 ```
 
-TODO: what is `SingVarRiskSummaries` for; interpretation.
+`SingVarIntSummaries` calculate $h(z_{j,q2}-z_{j,q1}|Z_{(-j)}=Z_{(-j),p2})-h(z_{j,q2}-z_{j,q1}|Z_{(-j)}=Z_{(-j),p1})$. 
 
 ```{r}
 risks.int <- SingVarIntSummaries(fit = fitkm, y = y, Z = Z, X = X, 
@@ -288,9 +302,15 @@ risks.int
 
 ### Model Prediction
 
-`SamplePred`
+We apply `SamplePred` to obtain posterior prediction samples. We can construct 95% credible interval by calculating 0.025 and 0.975 quantiles of posterior samples. Here we provide an example. For an individual with age 18 and fairly typical exposure values, his/her log BMI on average will between 3.07 and 3.13.
 
-Use this function to provide example. Refer to the previous tutorial for this chapter and interpret it.
+```{r}
+med <- apply(Z, 2, median)
+Znew <- matrix(med, nrow = 1)
+y_pred <- SamplePred(fitkm, Znew = Znew, Xnew = 0)
+quantile(y_pred,c(0.025,0.975))
+```
+
 
 ### MCMC Diagnostics
 
@@ -306,43 +326,15 @@ Examining the traceplot, it appears the chains generally show no noticeable patt
 
 ### Hierarchical Variable Selection
 
-One of the appeals of BKMR regression is the ability to use hierarchical variable selection. This method assesses which variables are critical to the model by using grouping. Primarily, the chemical exposures are grouped, often by their relationships with other exposures or by using prior knowledge. Each exposure in the Z matrix can be assigned to a group by using `groups = c(1,1,2,2)` where the first two variables in Z are assigned to group 1, while the remaining variables are placed in group 2. If the variables are not manually grouped, there is an option for component wise selection where variables are evaluated on an individual basis (`varsel = TRUE`). An additional chemical exposure was included in this example to demonstrate correlation between exposures for grouping purposes. Both methods are demonstrated below:
+One of the appeals of BKMR regression is the ability to use hierarchical variable selection. This method assesses which variables are critical to the model by using grouping. Primarily, the chemical exposures are grouped, often by their relationships with other exposures or by using prior knowledge. Each exposure in the Z matrix can be assigned to a group by using `groups = c(1,1,2,2)` where the first two variables in Z are assigned to group 1, while the remaining variables are placed in group 2. If the variables are not manually grouped, there is an option for component wise selection where variables are evaluated on an individual basis (`varsel = TRUE`). 
 
-```{r}
-nhanes_URX_new<-nhanes1518 |>
-  select(BMXBMI,RIDAGEYR, URXMBP, URXMIB, URXMC1, URXMEP, URXMZP, URXECP, URXMHH, URXMOH, URXMHP)|>
-  na.omit()|>
-  mutate(BMXBMI = log(BMXBMI))
+Here we use the previous example, but with three groups: (1) "URXMHBP", "URXMOH", "URXECP"; (2)"URXMHP","URXMHH","URXMCOH","URXMHNC";(3)"URXHIBP","URXMIB".
 
-```
 
-To understand which variables should be grouped, a correlation matrix is utilized to examine each variable's relationship:
-
-```{r}
-corr_mat=cor(nhanes_URX_new,method="s")
-corrplot(corr_mat, # colorful number
-         addCoef.col = 1,    # Change font size of correlation coefficients
-         number.cex = 0.5) 
-```
-
-Based on the correlations, we place the non-correlated variables in group 1: URXMBP, URXMIB, URXMC1, URXMEP, URXMZP.
-
-Highly correlated variables are included in group 2: URXECP, URXMHH, URXMOH, URXMHP.
-
-```{r}
-y_final<-nhanes_URX_new$BMXBMI # bmi
-Z_final <- nhanes_URX_new |> select(-BMXBMI, -RIDAGEYR) # chemical mixtures
-X_final <- nhanes_URX_new |> select(RIDAGEYR)
-
-```
-
-```{r}
-
-fitkm_corr <- kmbayes(y = y_final, Z = Z_final, X = X_final, iter = 10, varsel = TRUE, verbose = FALSE)
-fitkm_hier <- kmbayes(y = y_final, Z = Z_final, X = X_final, iter = 10, varsel = TRUE, 
-                      groups = c(#NEED TO CHANGE), verbose = FALSE)
-# group 1: URXMBP, URXMIB, URXMC1, URXMEP, URXMZP
-# group 2: URXECP, URXMHH, URXMOH, URXMHP
+```{r,cache=TRUE,message=FALSE}
+set.seed(1)
+fitkm_hier <- kmbayes(y = y, Z = Z, X = X, iter = 5000, varsel = TRUE, 
+                      groups = c(1,1,2,2,2,2,1,3,3), verbose = FALSE)
 ```
 
 We can contrast the posterior inclusion probabilities from the two models:
@@ -350,50 +342,32 @@ We can contrast the posterior inclusion probabilities from the two models:
 Where the exposures were grouped:
 
 ```{r}
-ExtractPIPs(fitkm_corr)
+ExtractPIPs(fitkm)
 ```
 
 \
-For grouped exposures:
+For grouped exposures, we can see the first group and third group have PIP greater than 0.5, suggesting including them in the model. Within the first group, URXMHBP is more likely associated with BMI. Within the third group, URXMIB is more likely associated with BMI.
 
 ```{r}
 ExtractPIPs(fitkm_hier)
-
 ```
 
 ### Changing Tunning Parameters or Prior Distribution
 
-TODO: use two paragraphs, one for tunning parameters (pick the important ones), the other for prior (provide the default prior). and refer to the [github page](https://jenfb.github.io/bkmr/overview.html#changing_the_tuning_parameters_for_fitting_the_algorithm)
 
 Another feature of the BKMR package is that tuning parameters for the fitting algorithm can be manually adjusted. The model uses the Markov chain Monte Carlo method and also uses Gibbs steps for updating the parameters. The parameters can be accessed through the `control.params` argument. In the list of tuning methods, parameters including $\lambda$ (accessed by `lambda.jump`) can be adjusted which is the standard deviaion of the proposed distribution ($\lambda = \tau / \sigma^2$) where $\tau$ is the variance of the kernel matrix, adjusting the smoothness of the exposure-response. Additional adjustments include the standard deviation of the proposal distribution which can adjusted by `r.jump`. Parameters for the Monte Carlo Method can also be adjusted dependent on if the variable is not included and then included in the model or if the variable remains in the proposed model. If the exposure is initially not included to included in the model, the standard deviation can be specified by `r.jump1`. If the variable stays in the proposed model, the standard deviation is accessed through `r.jump2`. Finally, the mean can be modified if the variable is not included to included through `r.muprop`.
 
-In addition to tuning parameters, the the prior distribution can be adjusted. The prior distribution can be specified by `r.prior` with options including include “gamma”, “invunif”, and “unif”. The mean and standard deviation for a gamma prior can be adjusted by `mu.lambda` and `sigma.lambda`. Additional adjustments for the gamma prior include $\sigma^2$ altered through `a.sigsq`, `b.sigsq`. For a beta prior, the shape parameters $\pi$ can be manipulated through `a.p0`, `b.p0` and should be used when `varsel = TRUE`.
+In addition to tuning parameters, the the prior distribution can be adjusted. The prior distribution can be specified by `r.prior` with options including include "gamma", "invunif", and "unif". The mean and standard deviation for a gamma prior can be adjusted by `mu.lambda` and `sigma.lambda`. Additional adjustments for the gamma prior include $\sigma^2$ altered through `a.sigsq`, `b.sigsq`. For a beta prior, the shape parameters $\pi$ can be manipulated through `a.p0`, `b.p0` and should be used when `varsel = TRUE`.
 
-\*\* DELETE TABLE BELOW
+Additional options can be found in the [github page](https://jenfb.github.io/bkmr/overview.html#changing_the_tuning_parameters_for_fitting_the_algorithm)
 
-| Parameter                                                             | Parameter Call              | Uses                                       | Description/Notes                                                                  |
-|-----------------------------------------------------------------------|-----------------------------|--------------------------------------------|------------------------------------------------------------------------------------|
-| $$                                                                    
-                     \sigma^2                                           
-                     $$                                                 | `a.sigsq`, `b.sigsq`        | Should be used with gaussian distributions | Described as the "shape/rate" of a gamma prior                                     |
-| $$                                                                    
-                     \lambda                                            
-                     $$                                                 | `mu.lambda`, `sigma.lambda` |                                            | For gamma priors, it is mean and standard deviation                                |
-| $$                                                                    
-                     r_m                                                
-                     $$                                                 | `r.prior`                   | Can be used with all models                | Specifies the prior distributions - options include “gamma”, “invunif”, and “unif” |
-| $$                                                                    
-                     \pi                                                
-                     $$                                                 | `a.p0`, `b.p0`              | Should be used when `varsel = TRUE`        |                                                                                    |
-
-Additional options can be found at the following link:
-
-<https://jenfb.github.io/bkmr/overview.html>
-
-## Discussion
-
-TODO: since this is the last tutorial, compare this to the previous methods. Pros and Cons.
 
 ## References
 
-<https://jenfb.github.io/bkmr/overview.html>
+
+- [manual](https://jenfb.github.io/bkmr/overview.html)
+
+- [paper](https://ehjournal.biomedcentral.com/articles/10.1186/s12940-018-0413-y)
+
+- [github](https://jenfb.github.io/bkmr/overview.html#changing_the_tuning_parameters_for_fitting_the_algorithm)
+
